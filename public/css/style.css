@@ -207,7 +207,8 @@ a:hover{color:var(--tf-yellow-500)}
 
 /* 5. LAYOUT
    ------------------------------------------------------------ */
-.tf-container{width:100%;max-width:1200px;margin-inline:auto;padding-inline:var(--tf-space-4)}
+.container,.tf-container{width:100%;max-width:1200px;margin-inline:auto;padding-inline:var(--tf-space-4)}
+.container{padding-block:var(--tf-space-6)}
 .tf-container-narrow{max-width:880px}
 .tf-container-wide{max-width:1440px}
 .row.justify-content-center{justify-content:center!important}

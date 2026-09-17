@@ -7,6 +7,8 @@
     <title>{{ .title }} | BUFALO</title>
     <link rel="icon" href="data:,">
     <link rel="stylesheet" href="/css/style.css">
+    <!-- Bootstrap Icons se usa en el shell y en todas las vistas autenticadas. -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
 
     <!-- ══════════ LEAFLET — SOLO desde jsdelivr (permitido por CSP) ══════════ -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
@@ -82,26 +84,26 @@
             <i class="bi bi-moon-stars"></i>
         </button>
         <a href="/home" class="bf-brand" aria-label="BUFALO · Inicio">
-            <img src="/img/bufalo.svg" width="90vh">
+            <img src="/img/bufalo.svg" width="90" height="32" alt="BUFALO">
         </a>
     </div>
 
 </header>
-    <div class="container">
+    <main class="container" id="main-content">
         {{ if .flash_success }}
         <div class="alert alert-success alert-dismissible fade show" role="alert">
             <i class="bi bi-check-circle-fill me-2"></i> {{ .flash_success }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            <button type="button" class="btn-close" data-dismiss-alert aria-label="Cerrar aviso"></button>
         </div>
         {{ end }}
         {{ if .flash_error }}
         <div class="alert alert-danger alert-dismissible fade show" role="alert">
             <i class="bi bi-exclamation-triangle-fill me-2"></i> {{ .flash_error }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            <button type="button" class="btn-close" data-dismiss-alert aria-label="Cerrar aviso"></button>
         </div>
         {{ end }}
         {{ embed }}
-    </div>
+    </main>
     <script>
 (function () {
     var root = document.documentElement;
@@ -162,6 +164,14 @@
         }
     };
     document.querySelectorAll('.bf-topnav__link, .bf-sidebar__link').forEach(match);
+
+    /* Los avisos son HTML nativo; no dependemos de Bootstrap JS para cerrarlos. */
+    document.querySelectorAll('[data-dismiss-alert]').forEach(function (button) {
+        button.addEventListener('click', function () {
+            var alert = button.closest('.alert');
+            if (alert) alert.remove();
+        });
+    });
 })();
 </script>
 </body>
