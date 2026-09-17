@@ -237,5 +237,7 @@ appFiber.Use(func(c fiber.Ctx) error {
 
 	// ── Arrancar ──
 	log.Println("🌐 Servidor iniciado en http://localhost:3000")
-	log.Fatal(appFiber.Listen(":3000"))
+	port := env("APP_PORT", "3000")
+	log.Printf("🚀 BUFALO escuchando en :%s", port)
+	log.Fatal(appFiber.Listen(":" + port))
 }

@@ -32,7 +32,8 @@ Si el repositorio no trae `.env.example`, crea `.env` con al menos:
 
 ```env
 APP_ENV=local
-APP_KEY=base64:change-this-local-key
+APP_KEY=0123456789abcdef0123456789abcdef
+DB_CONNECTION=postgres
 DB_HOST=127.0.0.1
 DB_PORT=5432
 DB_DATABASE=bufalo
@@ -60,4 +61,3 @@ Los cambios de esta revisión se realizan en `fix-main-yoenis`. Para comprobarlo
 ```powershell
 git status --short --branch
 ```
-
