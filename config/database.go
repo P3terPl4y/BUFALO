@@ -19,7 +19,9 @@ func init() {
 				"database": config.Env("DB_DATABASE"),
 				"username": config.Env("DB_USERNAME"),
 				"password": config.Env("DB_PASSWORD"),
-				"sslmode":  "disable",
+				// Local PostgreSQL suele usar "disable"; proveedores remotos como
+				// Supabase requieren "require". Se deja configurable por entorno.
+				"sslmode":  config.Env("DB_SSLMODE", "disable"),
 				"singular": false,
 				"prefix":   "",
 				"schema":   config.Env("DB_SCHEMA", "public"),
