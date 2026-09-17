@@ -1,0 +1,358 @@
+<div class="tf-page-header">
+
+    <div>
+        <h1><i class="bi bi-person-plus"></i> Crear Nuevo Usuario</h1>
+        <p>Registra un broker o carrier en el sistema TruckFast</p>
+    </div>
+    <a href="/admin/users" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Volver
+    </a>
+</div>
+
+{{ if .flash_error }}<div class="alert alert-danger tf-mb-4">{{ .flash_error }}</div>{{ end }}
+
+<form action="/admin/users" method="POST" class="tf-form-page">
+<input type="hidden" name="_csrf" value="{{ .csrfToken }}">
+    <!-- ═══════════════════════════════════════════════════════════
+         COLUMNA PRINCIPAL
+         ═══════════════════════════════════════════════════════════ -->
+    <div class="tf-form-page__main">
+        <div class="tf-form-card">
+
+            <!-- ───────── A · IDENTIDAD ───────── -->
+            <section class="tf-form-block" data-block="identity">
+                <header class="tf-form-block__head">
+                    <i class="bi bi-person-vcard-fill tf-form-block__icon"></i>
+                    <div class="tf-form-block__text">
+                        <h2>Identidad</h2>
+                        <p>Datos con los que el usuario iniciará sesión y aparecerá en el sistema.</p>
+                    </div>
+                </header>
+
+                <div class="tf-form-block__body">
+                    <div class="tf-form-row">
+                        <div class="tf-col-12 tf-field">
+                            <label for="name" class="form-label">
+                                Nombre completo <span class="req">*</span>
+                            </label>
+                            <div class="tf-input-icon-wrap">
+                                <i class="bi bi-person"></i>
+                                <input type="text" class="form-control" id="name" name="name"
+                                       value="{{ .old.Name }}"
+                                       placeholder="Ej: María González Ríos"
+                                       autocomplete="name" required>
+                            </div>
+                            {{ if .errors.name }}<small class="tf-field-error">{{ .errors.name }}</small>{{ end }}
+                        </div>
+
+                        <div class="tf-col-12 tf-field">
+                            <label for="email" class="form-label">
+                                Correo electrónico <span class="req">*</span>
+                            </label>
+                            <div class="tf-input-icon-wrap">
+                                <i class="bi bi-envelope"></i>
+                                <input type="email" class="form-control" id="email" name="email"
+                                       value="{{ .old.Email }}"
+                                       placeholder="usuario@empresa.com"
+                                       autocomplete="email" required>
+                            </div>
+                            <span class="tf-field-hint">
+                                <i class="bi bi-info-circle"></i>
+                                Se usará como nombre de usuario para iniciar sesión.
+                            </span>
+                            {{ if .errors.email }}<small class="tf-field-error">{{ .errors.email }}</small>{{ end }}
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ───────── B · ACCESO ───────── -->
+            <section class="tf-form-block tf-form-block--last" data-block="access">
+                <header class="tf-form-block__head">
+                    <i class="bi bi-shield-lock-fill tf-form-block__icon"></i>
+                    <div class="tf-form-block__text">
+                        <h2>Acceso y rol</h2>
+                        <p>Credenciales de seguridad y permisos dentro de la plataforma.</p>
+                    </div>
+                </header>
+
+                <div class="tf-form-block__body">
+                    <div class="tf-form-row">
+
+                        <!-- Contraseña -->
+                        <div class="tf-col-12 tf-field">
+                            <label for="password" class="form-label">
+                                Contraseña temporal <span class="req">*</span>
+                            </label>
+                            <div class="tf-input-icon-wrap tf-input-icon-wrap--action">
+                                <i class="bi bi-key"></i>
+                                <input type="password" class="form-control" id="password" name="password"
+                                       minlength="8" placeholder="Mínimo 8 caracteres"
+                                       autocomplete="new-password" required>
+                                <button type="button" class="tf-input-icon-btn"
+                                        data-toggle-password="password"
+                                        aria-label="Mostrar contraseña">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                            </div>
+                            <div class="tf-password-meter" data-meter-for="password" aria-hidden="true">
+                                <span class="tf-password-meter__bar"></span>
+                                <span class="tf-password-meter__bar"></span>
+                                <span class="tf-password-meter__bar"></span>
+                                <span class="tf-password-meter__bar"></span>
+                            </div>
+                            <span class="tf-field-hint" data-password-hint="password">
+                                El usuario deberá cambiarla en su primer inicio de sesión.
+                            </span>
+                            {{ if .errors.password }}<small class="tf-field-error">{{ .errors.password }}</small>{{ end }}
+                        </div>
+
+                        <!-- Rol como tarjetas -->
+                        <div class="tf-col-12 tf-field">
+                            <span class="form-label">
+                                Rol asignado <span class="req">*</span>
+                            </span>
+
+                            <div class="tf-role-grid" role="radiogroup" aria-label="Selecciona un rol">
+                                <label class="tf-role-card" data-role="broker">
+                                    <input type="radio" name="role" value="broker"
+                                           {{ if eq .old.Role "broker" }}checked{{ end }} required>
+                                    <span class="tf-role-card__marker">
+                                        <i class="bi bi-briefcase-fill"></i>
+                                    </span>
+                                    <span class="tf-role-card__body">
+                                        <strong>Broker</strong>
+                                        <small>Publica y gestiona cargas para transportistas</small>
+                                    </span>
+                                    <span class="tf-role-card__check">
+                                        <i class="bi bi-check-circle-fill"></i>
+                                    </span>
+                                </label>
+
+                                <label class="tf-role-card" data-role="carrier">
+                                    <input type="radio" name="role" value="carrier"
+                                           {{ if eq .old.Role "carrier" }}checked{{ end }}>
+                                    <span class="tf-role-card__marker">
+                                        <i class="bi bi-truck"></i>
+                                    </span>
+                                    <span class="tf-role-card__body">
+                                        <strong>Carrier</strong>
+                                        <small>Acepta y transporta cargas asignadas</small>
+                                    </span>
+                                    <span class="tf-role-card__check">
+                                        <i class="bi bi-check-circle-fill"></i>
+                                    </span>
+                                </label>
+                            </div>
+
+                            {{ if .errors.role }}<small class="tf-field-error">{{ .errors.role }}</small>{{ end }}
+                        </div>
+
+                    </div>
+                </div>
+            </section>
+
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         RAIL LATERAL
+         ═══════════════════════════════════════════════════════════ -->
+    <aside class="tf-form-page__aside">
+
+        <!-- Preview en vivo -->
+        <div class="tf-rail-card">
+            <header class="tf-rail-card__head">
+                <i class="bi bi-eye"></i>
+                <span>Vista previa</span>
+            </header>
+
+            <div class="tf-user-preview" id="tfUserPreview">
+                <span class="tf-user-preview__avatar" data-preview="avatar">
+                    <i class="bi bi-person"></i>
+                </span>
+                <div class="tf-user-preview__info">
+                    <strong data-preview="name">Sin nombre</strong>
+                    <span data-preview="email">sin-email@—</span>
+                </div>
+                <span class="tf-user-preview__role" data-preview="role">—</span>
+            </div>
+
+            <p class="tf-rail-card__hint">
+                Así se verá el usuario en el panel de administración una vez creado.
+            </p>
+        </div>
+
+        <!-- Explicación del rol -->
+        <div class="tf-rail-card">
+            <header class="tf-rail-card__head">
+                <i class="bi bi-info-circle"></i>
+                <span>Permisos del rol</span>
+            </header>
+
+            <div class="tf-role-info" data-role-info="empty">
+                <p class="tf-role-info__hint">Selecciona un rol para ver sus permisos.</p>
+            </div>
+
+            <div class="tf-role-info" data-role-info="broker" hidden>
+                <ul class="tf-role-info__list">
+                    <li><i class="bi bi-check-circle-fill"></i> Publicar nuevas cargas</li>
+                    <li><i class="bi bi-check-circle-fill"></i> Editar y cancelar sus cargas</li>
+                    <li><i class="bi bi-check-circle-fill"></i> Ver transportistas asignados</li>
+                    <li><i class="bi bi-x-circle-fill"></i> Aceptar cargas de otros brokers</li>
+                    <li><i class="bi bi-x-circle-fill"></i> Administrar usuarios</li>
+                </ul>
+            </div>
+
+            <div class="tf-role-info" data-role-info="carrier" hidden>
+                <ul class="tf-role-info__list">
+                    <li><i class="bi bi-check-circle-fill"></i> Ver cargas disponibles</li>
+                    <li><i class="bi bi-check-circle-fill"></i> Aceptar cargas compatibles</li>
+                    <li><i class="bi bi-check-circle-fill"></i> Actualizar estado de entregas</li>
+                    <li><i class="bi bi-x-circle-fill"></i> Publicar cargas propias</li>
+                    <li><i class="bi bi-x-circle-fill"></i> Administrar usuarios</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Seguridad -->
+        <div class="tf-rail-card">
+            <header class="tf-rail-card__head">
+                <i class="bi bi-shield-check"></i>
+                <span>Seguridad</span>
+            </header>
+            <ul class="tf-rail-tips">
+                <li>Usa una contraseña temporal robusta (mín. 12 caracteres).</li>
+                <li>Comparte las credenciales por un canal seguro.</li>
+                <li>El usuario deberá cambiarla al primer acceso.</li>
+            </ul>
+        </div>
+
+        <!-- Acciones -->
+        <div class="tf-rail-card tf-rail-card--actions">
+            <header class="tf-rail-card__head">
+                <i class="bi bi-person-plus"></i>
+                <span>Crear usuario</span>
+            </header>
+            <button type="submit" class="btn btn-primary btn-lg tf-w-full">
+                <i class="bi bi-check-circle"></i> Crear Usuario
+            </button>
+            <a href="/admin/users" class="btn btn-secondary tf-w-full">
+                <i class="bi bi-x-circle"></i> Cancelar
+            </a>
+            <p class="tf-rail-card__hint">
+                Los campos marcados con <span class="req">*</span> son obligatorios.
+            </p>
+        </div>
+
+    </aside>
+
+</form>
+
+<script>
+(function () {
+  const form = document.querySelector('.tf-form-page');
+  if (!form) return;
+
+  /* ─────── Mostrar/ocultar contraseña ─────── */
+  form.querySelectorAll('[data-toggle-password]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const target = document.getElementById(btn.dataset.togglePassword);
+      if (!target) return;
+      const showing = target.type === 'text';
+      target.type = showing ? 'password' : 'text';
+      const icon = btn.querySelector('i');
+      if (icon) icon.className = showing ? 'bi bi-eye' : 'bi bi-eye-slash';
+    });
+  });
+
+  /* ─────── Medidor de contraseña ─────── */
+  const passwordInput = document.getElementById('password');
+  const meter = document.querySelector('[data-meter-for="password"]');
+  const hint = document.querySelector('[data-password-hint="password"]');
+
+  const scorePassword = (v) => {
+    let s = 0;
+    if (v.length >= 8) s++;
+    if (/[A-Z]/.test(v) && /[a-z]/.test(v)) s++;
+    if (/\d/.test(v)) s++;
+    if (/[^A-Za-z0-9]/.test(v)) s++;
+    return s;
+  };
+
+  const labels = {
+    0: 'El usuario deberá cambiarla en su primer inicio de sesión.',
+    1: 'Contraseña débil · añade mayúsculas, números y símbolos.',
+    2: 'Contraseña aceptable · puedes reforzarla más.',
+    3: 'Contraseña fuerte · cumple con los requisitos.',
+    4: 'Contraseña excelente · lista para usar.'
+  };
+
+  if (passwordInput && meter) {
+    passwordInput.addEventListener('input', () => {
+      const v = passwordInput.value;
+      const s = scorePassword(v);
+      meter.dataset.score = String(s);
+      meter.querySelectorAll('.tf-password-meter__bar').forEach((bar, i) => {
+        bar.classList.toggle('is-active', i < s);
+      });
+      if (hint) hint.textContent = labels[s];
+    });
+  }
+
+  /* ─────── Preview en vivo ─────── */
+  const preview = {
+    name:   document.querySelector('[data-preview="name"]'),
+    email:  document.querySelector('[data-preview="email"]'),
+    role:   document.querySelector('[data-preview="role"]'),
+    avatar: document.querySelector('[data-preview="avatar"]')
+  };
+
+  const nameInput  = document.getElementById('name');
+  const emailInput = document.getElementById('email');
+  const roleInputs = form.querySelectorAll('input[name="role"]');
+
+  const roleIcons = {
+    broker:  'bi-briefcase-fill',
+    carrier: 'bi-truck'
+  };
+
+  function updatePreview() {
+    preview.name.textContent  = nameInput?.value.trim()  || 'Sin nombre';
+    preview.email.textContent = emailInput?.value.trim() || 'sin-email@—';
+
+    const role = form.querySelector('input[name="role"]:checked')?.value || '';
+    preview.role.textContent = role ? role.charAt(0).toUpperCase() + role.slice(1) : '—';
+    preview.role.dataset.role = role;
+
+    if (preview.avatar) {
+      const ic = preview.avatar.querySelector('i');
+      if (ic) ic.className = 'bi ' + (roleIcons[role] || 'bi-person');
+    }
+
+    // Permisos del rol
+    document.querySelectorAll('[data-role-info]').forEach(el => {
+      el.hidden = el.dataset.roleInfo !== role;
+    });
+  }
+
+  [nameInput, emailInput, ...roleInputs].forEach(el => {
+    el?.addEventListener('input', updatePreview);
+    el?.addEventListener('change', updatePreview);
+  });
+
+  updatePreview();
+
+  /* ─────── Estado seleccionado del role-card ─────── */
+  form.querySelectorAll('.tf-role-card').forEach(card => {
+    const radio = card.querySelector('input[type="radio"]');
+    const sync = () => card.classList.toggle('is-selected', radio.checked);
+    radio.addEventListener('change', () => {
+      form.querySelectorAll('.tf-role-card').forEach(c => c.classList.remove('is-selected'));
+      sync();
+    });
+    sync();
+  });
+})();
+</script>
+<p style="color:red;">{{.errors}}</p>

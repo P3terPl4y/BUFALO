@@ -1,0 +1,1126 @@
+<div class="tf-page-header">
+    <div>
+        <h1><i class="bi bi-person-plus"></i> Crear Cuenta</h1>
+        <p>Regístrate en TruckFast. Puedes asociarte a una empresa o crear la tuya.</p>
+    </div>
+    <a href="/login" class="btn btn-secondary">
+        <i class="bi bi-box-arrow-in-right"></i> Ya tengo cuenta
+    </a>
+</div>
+
+{{ if .flash_error }}<div class="alert alert-danger tf-mb-4">{{ .flash_error }}</div>{{ end }}
+
+<form action="/register" method="POST" class="tf-form-page" id="registerForm" novalidate>
+    <input type="hidden" name="_csrf" value="{{ .csrfToken }}">
+
+    <div class="tf-form-page__main">
+        <div class="tf-form-card">
+
+            <!-- ═══════════════════════════════════════════════════════
+                 01 · DATOS PERSONALES
+                 ═══════════════════════════════════════════════════════ -->
+            <section class="tf-form-block" id="block-personal" data-block="personal">
+                <header class="tf-form-block__head">
+                    <i class="bi bi-person-vcard-fill tf-form-block__icon"></i>
+                    <div class="tf-form-block__text">
+                        <h2>Datos personales</h2>
+                        <p>Cómo te identificas y accedes al sistema.</p>
+                    </div>
+                </header>
+                <div class="tf-form-block__body">
+                    <div class="tf-form-row">
+                        <div class="tf-col-12 tf-field">
+                            <label for="name" class="form-label">Nombre completo <span class="req">*</span></label>
+                            <input type="text" class="form-control" id="name" name="name"
+                                   value="{{ if .old }}{{ .old.Name }}{{ end }}"
+                                   placeholder="Ej: Juan Pérez" required>
+                            {{ if .errors.name }}<small class="tf-field-error">{{ .errors.name }}</small>{{ end }}
+                        </div>
+                        <div class="tf-col-6 tf-field">
+                            <label for="email" class="form-label">Correo electrónico <span class="req">*</span></label>
+                            <input type="email" class="form-control" id="email" name="email"
+                                   value="{{ if .old }}{{ .old.Email }}{{ end }}"
+                                   placeholder="tu@empresa.com" required>
+                            {{ if .errors.email }}<small class="tf-field-error">{{ .errors.email }}</small>{{ end }}
+                        </div>
+                        <div class="tf-col-6 tf-field">
+                            <label for="password" class="form-label">Contraseña <span class="req">*</span></label>
+                            <div class="tf-input-icon">
+                                <i class="bi bi-key"></i>
+                                <input type="password" class="form-control" id="password" name="password"
+                                       placeholder="Mínimo 8 caracteres" autocomplete="new-password" required>
+                            </div>
+                            {{ if .errors.password }}<small class="tf-field-error">{{ .errors.password }}</small>{{ end }}
+                        </div>
+                    </div>
+                </div>
+                <div class="tf-col-6 tf-field">
+    <label for="phone" class="form-label">Teléfono principal <span class="req">*</span></label>
+    <div class="tf-input-icon">
+        <i class="bi bi-telephone"></i>
+        <input type="tel" class="form-control" id="phone" name="phone"
+               value="{{ if .old }}{{ .old.Phone }}{{ end }}"
+               placeholder="+53 5 123 4567" required>
+    </div>
+    {{ if .errors.phone }}<small class="tf-field-error">{{ .errors.phone }}</small>{{ end }}
+</div>
+
+<div class="tf-col-6 tf-field">
+    <label for="phone_alt" class="form-label">Teléfono alternativo</label>
+    <div class="tf-input-icon">
+        <i class="bi bi-telephone-plus"></i>
+        <input type="tel" class="form-control" id="phone_alt" name="phone_alt"
+               value="{{ if .old }}{{ .old.PhoneAlt }}{{ end }}">
+    </div>
+</div>
+
+<div class="tf-col-6 tf-field">
+    <label for="whatsapp" class="form-label">WhatsApp <span class="req">*</span></label>
+    <div class="tf-input-icon">
+        <i class="bi bi-whatsapp"></i>
+        <input type="tel" class="form-control" id="whatsapp" name="whatsapp"
+               value="{{ if .old }}{{ .old.WhatsApp }}{{ end }}"
+               placeholder="+53 5 123 4567" required>
+    </div>
+    {{ if .errors.whatsapp }}<small class="tf-field-error">{{ .errors.whatsapp }}</small>{{ end }}
+</div>
+
+<div class="tf-col-6 tf-field">
+    <label for="telegram" class="form-label">Telegram</label>
+    <div class="tf-input-icon">
+        <i class="bi bi-telegram"></i>
+        <input type="text" class="form-control" id="telegram" name="telegram"
+               value="{{ if .old }}{{ .old.Telegram }}{{ end }}"
+               placeholder="@usuario">
+    </div>
+</div>
+
+<div class="tf-col-6 tf-field">
+    <label for="emergency_name" class="form-label">Contacto de emergencia</label>
+    <input type="text" class="form-control" id="emergency_name" name="emergency_name"
+           value="{{ if .old }}{{ .old.EmergencyName }}{{ end }}"
+           placeholder="Nombre completo">
+</div>
+
+<div class="tf-col-6 tf-field">
+    <label for="emergency_phone" class="form-label">Teléfono de emergencia</label>
+    <input type="tel" class="form-control" id="emergency_phone" name="emergency_phone"
+           value="{{ if .old }}{{ .old.EmergencyPhone }}{{ end }}">
+</div>
+            </section>
+
+            <!-- ═══════════════════════════════════════════════════════
+                 02 · TIPO DE CUENTA
+                 ═══════════════════════════════════════════════════════ -->
+            <section class="tf-form-block" id="block-role" data-block="role">
+                <header class="tf-form-block__head">
+                    <i class="bi bi-person-badge tf-form-block__icon"></i>
+                    <div class="tf-form-block__text">
+                        <h2>Tipo de cuenta</h2>
+                        <p>Elige cómo vas a usar la plataforma.</p>
+                    </div>
+                </header>
+                <div class="tf-form-block__body">
+                    <div class="tf-role-selector" role="radiogroup" aria-label="Tipo de cuenta">
+                        <label class="tf-role-option" data-role="chofer">
+                            <input type="radio" name="role" value="chofer"
+                                   {{ if and .old (eq .old.Role "chofer") }}checked{{ end }} required>
+                            <span class="tf-role-option__icon"><i class="bi bi-truck"></i></span>
+                            <span class="tf-role-option__body">
+                                <strong>Transportista</strong>
+                                <small>Ofrezco servicios de transporte de carga</small>
+                            </span>
+                            <span class="tf-role-option__check"><i class="bi bi-check-circle-fill"></i></span>
+                        </label>
+                        <label class="tf-role-option" data-role="publicador">
+                            <input type="radio" name="role" value="publicador"
+                                   {{ if and .old (eq .old.Role "publicador") }}checked{{ end }} required>
+                            <span class="tf-role-option__icon"><i class="bi bi-briefcase"></i></span>
+                            <span class="tf-role-option__body">
+                                <strong>Broker (Comercial)</strong>
+                                <small>Publico cargas y conecto transportistas</small>
+                            </span>
+                            <span class="tf-role-option__check"><i class="bi bi-check-circle-fill"></i></span>
+                        </label>
+                    </div>
+                    {{ if .errors.role }}<small class="tf-field-error">{{ .errors.role }}</small>{{ end }}
+                </div>
+            </section>
+
+            <!-- ═══════════════════════════════════════════════════════
+                 03 · CONTACTO Y UBICACIÓN (mapa interactivo)
+                 ═══════════════════════════════════════════════════════ -->
+            <section class="tf-form-block" id="block-location" data-block="location" style="display:none;">
+                <header class="tf-form-block__head">
+                    <i class="bi bi-geo-alt-fill tf-form-block__icon"></i>
+                    <div class="tf-form-block__text">
+                        <h2>Contacto y ubicación</h2>
+                        <p>Tu dirección base y radio de operación.</p>
+                    </div>
+                </header>
+                <div class="tf-form-block__body">
+
+                    <div class="tf-map-picker"
+                         data-map-picker
+                         data-initial-lat="{{ if .old }}{{ .old.Latitude }}{{ end }}"
+                         data-initial-lng="{{ if .old }}{{ .old.Longitude }}{{ end }}">
+
+                        <div class="tf-map-picker__search">
+                            <i class="bi bi-search"></i>
+                            <input type="text"
+                                   class="tf-map-picker__search-input"
+                                   placeholder="Buscar dirección, ciudad o lugar…"
+                                   autocomplete="off">
+                            <div class="tf-map-picker__results" hidden></div>
+                        </div>
+
+                        <div class="tf-map-picker__map" data-map></div>
+
+                        <div class="tf-map-picker__footer">
+                            <span class="tf-map-picker__coords" data-coords data-empty="true">
+                                <i class="bi bi-crosshair"></i>
+                                Arrastra el marcador o haz clic en el mapa
+                            </span>
+                            <span class="tf-map-picker__hint">
+                                <i class="bi bi-info-circle"></i>
+                                <span data-address-hint>Sin ubicación seleccionada</span>
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="tf-form-row" style="margin-top: var(--tf-space-4);">
+                        <div class="tf-col-12 tf-field">
+                            <label for="address" class="form-label">
+                                Dirección <span class="opt">opcional</span>
+                            </label>
+                            <input type="text" class="form-control" id="address" name="address"
+                                   value="{{ if .old }}{{ .old.Address }}{{ end }}"
+                                   placeholder="Calle y número">
+                        </div>
+                        <div class="tf-col-4 tf-field">
+                            <label for="city" class="form-label">Ciudad <span class="req">*</span></label>
+                            <input type="text" class="form-control" id="city" name="city"
+                                   value="{{ if .old }}{{ .old.City }}{{ end }}" required>
+                        </div>
+                        <div class="tf-col-4 tf-field">
+                            <label for="state" class="form-label">Provincia <span class="req">*</span></label>
+                            <input type="text" class="form-control" id="state" name="state"
+                                   value="{{ if .old }}{{ .old.State }}{{ end }}" required>
+                        </div>
+                        <div class="tf-col-4 tf-field">
+                            <label for="country" class="form-label">País <span class="req">*</span></label>
+                            <input type="text" class="form-control" id="country" name="country"
+                                   value="{{ if .old }}{{ .old.Country }}{{ else }}Cuba{{ end }}" required>
+                        </div>
+                        <div class="tf-col-3 tf-field">
+                            <label for="postal_code" class="form-label">Código postal</label>
+                            <input type="text" class="form-control" id="postal_code" name="postal_code"
+                                   value="{{ if .old }}{{ .old.PostalCode }}{{ end }}" maxlength="20">
+                        </div>
+                        <div class="tf-col-3 tf-field">
+                            <label for="latitude" class="form-label">Latitud</label>
+                            <div class="tf-input-icon-wrap">
+                                <i class="bi bi-crosshair"></i>
+                                <input type="number" step="any" class="form-control" id="latitude" name="latitude"
+                                       value="{{ if .old }}{{ .old.Latitude }}{{ end }}"
+                                       placeholder="23.113592">
+                            </div>
+                        </div>
+                        <div class="tf-col-3 tf-field">
+                            <label for="longitude" class="form-label">Longitud</label>
+                            <div class="tf-input-icon-wrap">
+                                <i class="bi bi-crosshair"></i>
+                                <input type="number" step="any" class="form-control" id="longitude" name="longitude"
+                                       value="{{ if .old }}{{ .old.Longitude }}{{ end }}"
+                                       placeholder="-82.366592">
+                            </div>
+                        </div>
+                        <div class="tf-col-3 tf-field">
+                            <label for="radius" class="form-label">Radio <span class="req">*</span></label>
+                            <div class="tf-input-unit">
+                                <input type="number" class="form-control" id="radius" name="radius"
+                                       value="{{ if .old }}{{ .old.Radius }}{{ else }}100{{ end }}" required>
+                                <span class="tf-input-unit__suffix">km</span>
+                            </div>
+                        </div>
+
+                        <div class="tf-col-12">
+                            <div class="tf-detail-note">
+                                <i class="bi bi-lightbulb"></i>
+                                <span>Al hacer clic o arrastrar el marcador, la ciudad, provincia, país y código postal se autocompletan si están vacíos.</span>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+
+            <!-- ═══════════════════════════════════════════════════════
+                 04 · PERFIL DE CHOFER (solo si role=chofer)
+                 ═══════════════════════════════════════════════════════ -->
+            <section class="tf-form-block" id="block-chofer" data-block="chofer" style="display:none;">
+                <header class="tf-form-block__head">
+                    <i class="bi bi-person-vcard tf-form-block__icon"></i>
+                    <div class="tf-form-block__text">
+                        <h2>Perfil de chofer</h2>
+                        <p>Datos profesionales como conductor.</p>
+                    </div>
+                </header>
+                <div class="tf-form-block__body">
+                    <div class="tf-form-row">
+                        <div class="tf-col-6 tf-field">
+                            <label for="chofer_numero_licencia" class="form-label">
+                                Número de licencia <span class="req">*</span>
+                            </label>
+                            <input type="text" class="form-control" id="chofer_numero_licencia"
+                                   name="chofer_numero_licencia" maxlength="50"
+                                   value="{{ if .old }}{{ .old.ChoferNumeroLicencia }}{{ end }}">
+                            {{ if .errors.chofer_numero_licencia }}
+                            <small class="tf-field-error">{{ .errors.chofer_numero_licencia }}</small>
+                            {{ end }}
+                        </div>
+                        <div class="tf-col-6 tf-field">
+                            <label for="chofer_tipo_licencia" class="form-label">
+                                Tipo de licencia <span class="req">*</span>
+                            </label>
+                            <input type="text" class="form-control" id="chofer_tipo_licencia"
+                                   name="chofer_tipo_licencia" maxlength="20"
+                                   value="{{ if .old }}{{ .old.ChoferTipoLicencia }}{{ end }}"
+                                   placeholder="A, B, C…">
+                            {{ if .errors.chofer_tipo_licencia }}
+                            <small class="tf-field-error">{{ .errors.chofer_tipo_licencia }}</small>
+                            {{ end }}
+                        </div>
+                        <div class="tf-col-6 tf-field">
+                            <label for="chofer_pais_emision_licencia" class="form-label">País de emisión</label>
+                            <input type="text" class="form-control" id="chofer_pais_emision_licencia"
+                                   name="chofer_pais_emision_licencia"
+                                   value="{{ if .old }}{{ .old.ChoferPaisEmisionLicencia }}{{ else }}Cuba{{ end }}">
+                        </div>
+                        <div class="tf-col-6 tf-field">
+                            <label for="chofer_fecha_vencimiento_licencia" class="form-label">Vencimiento de licencia</label>
+                            <input type="date" class="form-control" id="chofer_fecha_vencimiento_licencia"
+                                   name="chofer_fecha_vencimiento_licencia"
+                                   value="{{ if .old }}{{ .old.ChoferFechaVencimientoLicencia }}{{ end }}">
+                        </div>
+                        <div class="tf-col-6 tf-field">
+                            <label for="chofer_anios_experiencia" class="form-label">
+                                Años de experiencia <span class="req">*</span>
+                            </label>
+                            <input type="number" min="0" class="form-control" id="chofer_anios_experiencia"
+                                   name="chofer_anios_experiencia"
+                                   value="{{ if .old }}{{ .old.ChoferAniosExperiencia }}{{ end }}">
+                            {{ if .errors.chofer_anios_experiencia }}
+                            <small class="tf-field-error">{{ .errors.chofer_anios_experiencia }}</small>
+                            {{ end }}
+                        </div>
+                        <div class="tf-col-6 tf-field">
+                            <label for="chofer_numero_seguro" class="form-label">Número de seguro</label>
+                            <input type="text" class="form-control" id="chofer_numero_seguro"
+                                   name="chofer_numero_seguro"
+                                   value="{{ if .old }}{{ .old.ChoferNumeroSeguro }}{{ end }}">
+                        </div>
+                        <div class="tf-col-6 tf-field">
+                            <label for="chofer_fecha_vencimiento_seguro" class="form-label">Vencimiento del seguro</label>
+                            <input type="date" class="form-control" id="chofer_fecha_vencimiento_seguro"
+                                   name="chofer_fecha_vencimiento_seguro"
+                                   value="{{ if .old }}{{ .old.ChoferFechaVencimientoSeguro }}{{ end }}">
+                        </div>
+                        <div class="tf-col-12 tf-field">
+                            <label for="chofer_tipos_equipo_permitidos" class="form-label">
+                                Tipos de equipo permitidos
+                            </label>
+                            <input type="text" class="form-control" id="chofer_tipos_equipo_permitidos"
+                                   name="chofer_tipos_equipo_permitidos"
+                                   value="{{ if .old }}{{ .old.ChoferTiposEquipoPermitidos }}{{ end }}"
+                                   placeholder="dry_van,reefer,flatbed">
+                            <span class="tf-field-hint">Separa con comas.</span>
+                        </div>
+                        <div class="tf-col-12 tf-field">
+                            <label for="chofer_certificaciones" class="form-label">Certificaciones</label>
+                            <input type="text" class="form-control" id="chofer_certificaciones"
+                                   name="chofer_certificaciones"
+                                   value="{{ if .old }}{{ .old.ChoferCertificaciones }}{{ end }}"
+                                   placeholder="hazmat,tanker">
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ═══════════════════════════════════════════════════════
+                 05 · PERFIL DE PUBLICADOR (solo si role=publicador)
+                 ═══════════════════════════════════════════════════════ -->
+            <section class="tf-form-block" id="block-publicador" data-block="publicador" style="display:none;">
+                <header class="tf-form-block__head">
+                    <i class="bi bi-briefcase tf-form-block__icon"></i>
+                    <div class="tf-form-block__text">
+                        <h2>Perfil de publicador</h2>
+                        <p>Datos profesionales como broker.</p>
+                    </div>
+                </header>
+                <div class="tf-form-block__body">
+                    <div class="tf-form-row">
+                        <div class="tf-col-6 tf-field">
+                            <label for="publicador_numero_licencia_broker" class="form-label">
+                                Número de licencia de broker <span class="req">*</span>
+                            </label>
+                            <input type="text" class="form-control" id="publicador_numero_licencia_broker"
+                                   name="publicador_numero_licencia_broker" maxlength="50"
+                                   value="{{ if .old }}{{ .old.PublicadorNumeroLicenciaBroker }}{{ end }}"
+                                   placeholder="MC / Broker License">
+                            {{ if .errors.publicador_numero_licencia_broker }}
+                            <small class="tf-field-error">{{ .errors.publicador_numero_licencia_broker }}</small>
+                            {{ end }}
+                        </div>
+                        <div class="tf-col-6 tf-field">
+                            <label for="publicador_pais_emision_licencia" class="form-label">País de emisión</label>
+                            <input type="text" class="form-control" id="publicador_pais_emision_licencia"
+                                   name="publicador_pais_emision_licencia"
+                                   value="{{ if .old }}{{ .old.PublicadorPaisEmisionLicencia }}{{ else }}Cuba{{ end }}">
+                        </div>
+                        <div class="tf-col-6 tf-field">
+                            <label for="publicador_fecha_vencimiento_licencia" class="form-label">Vencimiento de licencia</label>
+                            <input type="date" class="form-control" id="publicador_fecha_vencimiento_licencia"
+                                   name="publicador_fecha_vencimiento_licencia"
+                                   value="{{ if .old }}{{ .old.PublicadorFechaVencimientoLicencia }}{{ end }}">
+                        </div>
+                        <div class="tf-col-6 tf-field">
+                            <label for="publicador_anios_experiencia" class="form-label">
+                                Años de experiencia <span class="req">*</span>
+                            </label>
+                            <input type="number" min="0" class="form-control" id="publicador_anios_experiencia"
+                                   name="publicador_anios_experiencia"
+                                   value="{{ if .old }}{{ .old.PublicadorAniosExperiencia }}{{ end }}">
+                            {{ if .errors.publicador_anios_experiencia }}
+                            <small class="tf-field-error">{{ .errors.publicador_anios_experiencia }}</small>
+                            {{ end }}
+                        </div>
+                        <div class="tf-col-6 tf-field">
+                            <label for="publicador_especialidad" class="form-label">Especialidad</label>
+                            <input type="text" class="form-control" id="publicador_especialidad"
+                                   name="publicador_especialidad"
+                                   value="{{ if .old }}{{ .old.PublicadorEspecialidad }}{{ end }}"
+                                   placeholder="refrigerados, carga pesada…">
+                        </div>
+                        <div class="tf-col-3 tf-field">
+                            <label for="publicador_comision" class="form-label">Comisión</label>
+                            <div class="tf-input-unit">
+                                <input type="number" step="0.01" min="0" max="100" class="form-control"
+                                       id="publicador_comision" name="publicador_comision"
+                                       value="{{ if .old }}{{ .old.PublicadorComision }}{{ end }}">
+                                <span class="tf-input-unit__suffix">%</span>
+                            </div>
+                        </div>
+                        <div class="tf-col-3 tf-field">
+                            <label for="publicador_credit_score" class="form-label">Credit Score</label>
+                            <input type="number" class="form-control" id="publicador_credit_score"
+                                   name="publicador_credit_score"
+                                   value="{{ if .old }}{{ .old.PublicadorCreditScore }}{{ end }}">
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ═══════════════════════════════════════════════════════
+                 06 · PREFERENCIAS (solo chofer)
+                 ═══════════════════════════════════════════════════════ -->
+            <section class="tf-form-block" id="block-preferences" data-block="preferences" style="display:none;">
+                <header class="tf-form-block__head">
+                    <i class="bi bi-sliders tf-form-block__icon"></i>
+                    <div class="tf-form-block__text">
+                        <h2>Preferencias de carga</h2>
+                        <p>Qué tipo de envíos aceptas y sus límites.</p>
+                    </div>
+                </header>
+                <div class="tf-form-block__body">
+                    <div class="tf-form-row">
+                        <div class="tf-col-12 tf-field">
+                            <label for="preferred_equipment_types" class="form-label">Equipos preferidos</label>
+                            <input type="text" class="form-control" id="preferred_equipment_types"
+                                   name="preferred_equipment_types"
+                                   value="{{ if .old }}{{ .old.PreferredEquipmentTypes }}{{ end }}"
+                                   placeholder="dry_van,reefer,flatbed">
+                            <span class="tf-field-hint">Separa con comas.</span>
+                        </div>
+                        <div class="tf-col-12 tf-field">
+                            <label for="preferred_cargo_types" class="form-label">Tipos de carga aceptados</label>
+                            <input type="text" class="form-control" id="preferred_cargo_types"
+                                   name="preferred_cargo_types"
+                                   value="{{ if .old }}{{ .old.PreferredCargoTypes }}{{ end }}"
+                                   placeholder="refrigerados,secos,peligrosos">
+                        </div>
+                        <div class="tf-col-6 tf-field">
+                            <label for="max_weight" class="form-label">Peso máximo</label>
+                            <div class="tf-input-unit">
+                                <input type="number" step="0.01" class="form-control" id="max_weight" name="max_weight"
+                                       value="{{ if .old }}{{ .old.MaxWeight }}{{ end }}" placeholder="25000">
+                                <span class="tf-input-unit__suffix">kg</span>
+                            </div>
+                        </div>
+                        <div class="tf-col-6 tf-field">
+                            <label for="max_distance" class="form-label">Distancia máxima</label>
+                            <div class="tf-input-unit">
+                                <input type="number" step="0.1" class="form-control" id="max_distance" name="max_distance"
+                                       value="{{ if .old }}{{ .old.MaxDistance }}{{ end }}" placeholder="800">
+                                <span class="tf-input-unit__suffix">km</span>
+                            </div>
+                        </div>
+                        <div class="tf-col-12 tf-field">
+                            <label for="preferred_routes" class="form-label">Rutas preferidas</label>
+                            <input type="text" class="form-control" id="preferred_routes" name="preferred_routes"
+                                   value="{{ if .old }}{{ .old.PreferredRoutes }}{{ end }}"
+                                   placeholder="La Habana → Camagüey, Santiago → Holguín">
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ═══════════════════════════════════════════════════════
+                 07 · DISPONIBILIDAD (solo chofer)
+                 ═══════════════════════════════════════════════════════ -->
+            <section class="tf-form-block" id="block-availability" data-block="availability" style="display:none;">
+                <header class="tf-form-block__head">
+                    <i class="bi bi-calendar-week-fill tf-form-block__icon"></i>
+                    <div class="tf-form-block__text">
+                        <h2>Disponibilidad</h2>
+                        <p>Cuándo estás operativo y notas adicionales.</p>
+                    </div>
+                </header>
+                <div class="tf-form-block__body">
+                    <div class="tf-form-row">
+                        <div class="tf-col-6 tf-field">
+                            <label for="available_from" class="form-label">Disponible desde</label>
+                            <input type="datetime-local" class="form-control" id="available_from" name="available_from"
+                                   value="{{ if .old }}{{ .old.AvailableFrom }}{{ end }}">
+                        </div>
+                        <div class="tf-col-6 tf-field">
+                            <label for="available_to" class="form-label">Disponible hasta</label>
+                            <input type="datetime-local" class="form-control" id="available_to" name="available_to"
+                                   value="{{ if .old }}{{ .old.AvailableTo }}{{ end }}">
+                        </div>
+                        <div class="tf-col-12 tf-field">
+                            <label for="notes" class="form-label">Notas</label>
+                            <textarea class="form-control" id="notes" name="notes" rows="3"
+                                      placeholder="Restricciones, condiciones especiales…">{{ if .old }}{{ .old.Notes }}{{ end }}</textarea>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ═══════════════════════════════════════════════════════
+                 08 · EMPRESA
+                 ═══════════════════════════════════════════════════════ -->
+            <section class="tf-form-block tf-form-block--last" id="block-empresa" data-block="empresa" style="display:none;">
+                <header class="tf-form-block__head">
+                    <i class="bi bi-building tf-form-block__icon"></i>
+                    <div class="tf-form-block__text">
+                        <h2>Empresa</h2>
+                        <p id="empresaHint">Puedes asociarte a una empresa existente o crear una nueva.</p>
+                    </div>
+                </header>
+                <div class="tf-form-block__body">
+                    <div class="tf-empresa-mode">
+                        <label class="tf-mode-option">
+                            <input type="radio" name="empresa_mode" value="existing" checked>
+                            <span><i class="bi bi-link-45deg"></i> Asociarme a una existente</span>
+                        </label>
+                        <label class="tf-mode-option">
+                            <input type="radio" name="empresa_mode" value="new">
+                            <span><i class="bi bi-plus-circle"></i> Crear una nueva</span>
+                        </label>
+                    </div>
+<label class="tf-mode-option">
+    <input type="radio" name="empresa_mode" value="none">
+    <span><i class="bi bi-dash-circle"></i> Sin empresa por ahora</span>
+</label>
+                    <div id="empresaExistingBlock" class="tf-form-row">
+                        <div class="tf-col-12 tf-field">
+                            <label for="empresa_id" class="form-label">Empresa</label>
+                            <select class="form-select" id="empresa_id" name="empresa_id">
+                                <option value="">Selecciona una empresa…</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div id="empresaNewBlock" style="display:none;">
+                        <div class="tf-form-row">
+                            <div class="tf-col-12 tf-field">
+                                <label for="empresa_nombre_legal" class="form-label">
+                                    Nombre legal <span class="req">*</span>
+                                </label>
+                                <input type="text" class="form-control" id="empresa_nombre_legal"
+                                       name="empresa_nombre_legal"
+                                       value="{{ if .old }}{{ .old.EmpresaNombreLegal }}{{ end }}">
+                                {{ if .errors.empresa_nombre_legal }}
+                                <small class="tf-field-error">{{ .errors.empresa_nombre_legal }}</small>
+                                {{ end }}
+                            </div>
+                            <div class="tf-col-6 tf-field">
+                                <label for="empresa_nombre_comercial" class="form-label">Nombre comercial</label>
+                                <input type="text" class="form-control" id="empresa_nombre_comercial"
+                                       name="empresa_nombre_comercial"
+                                       value="{{ if .old }}{{ .old.EmpresaNombreComercial }}{{ end }}">
+                            </div>
+                            <div class="tf-col-6 tf-field">
+                                <label for="empresa_tax_id" class="form-label">Tax ID</label>
+                                <input type="text" class="form-control" id="empresa_tax_id" name="empresa_tax_id"
+                                       value="{{ if .old }}{{ .old.EmpresaTaxID }}{{ end }}">
+                            </div>
+                            <div class="tf-col-6 tf-field">
+                                <label for="empresa_mc_number" class="form-label">MC Number</label>
+                                <input type="text" class="form-control" id="empresa_mc_number" name="empresa_mc_number"
+                                       value="{{ if .old }}{{ .old.EmpresaMCNumber }}{{ end }}">
+                            </div>
+                            <div class="tf-col-6 tf-field">
+                                <label for="empresa_dot_number" class="form-label">DOT Number</label>
+                                <input type="text" class="form-control" id="empresa_dot_number" name="empresa_dot_number"
+                                       value="{{ if .old }}{{ .old.EmpresaDOTNumber }}{{ end }}">
+                            </div>
+                            <div class="tf-col-6 tf-field">
+                                <label for="empresa_telefono" class="form-label">Teléfono</label>
+                                <input type="text" class="form-control" id="empresa_telefono" name="empresa_telefono"
+                                       value="{{ if .old }}{{ .old.EmpresaTelefono }}{{ end }}">
+                            </div>
+                            <div class="tf-col-6 tf-field">
+                                <label for="empresa_email" class="form-label">Email de la empresa</label>
+                                <input type="email" class="form-control" id="empresa_email" name="empresa_email"
+                                       value="{{ if .old }}{{ .old.EmpresaEmail }}{{ end }}">
+                            </div>
+                            <div class="tf-col-12 tf-field">
+                                <label for="empresa_sitio_web" class="form-label">Sitio web</label>
+                                <input type="text" class="form-control" id="empresa_sitio_web" name="empresa_sitio_web"
+                                       value="{{ if .old }}{{ .old.EmpresaSitioWeb }}{{ end }}">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+    </div>
+
+    <aside class="tf-form-page__aside">
+        <div class="tf-rail-card">
+            <header class="tf-rail-card__head"><i class="bi bi-list-check"></i><span>Pasos</span></header>
+            <ol class="tf-progress">
+                <li class="tf-progress__step is-current" data-step="personal">
+                    <span class="tf-progress__dot"></span><span class="tf-progress__label">Datos</span>
+                </li>
+                <li class="tf-progress__step" data-step="role">
+                    <span class="tf-progress__dot"></span><span class="tf-progress__label">Rol</span>
+                </li>
+                <li class="tf-progress__step" data-step="location">
+                    <span class="tf-progress__dot"></span><span class="tf-progress__label">Ubicación</span>
+                </li>
+                <li class="tf-progress__step" data-step="perfil-rol">
+                    <span class="tf-progress__dot"></span><span class="tf-progress__label">Perfil</span>
+                </li>
+                <li class="tf-progress__step" data-step="empresa">
+                    <span class="tf-progress__dot"></span><span class="tf-progress__label">Empresa</span>
+                </li>
+            </ol>
+        </div>
+        <div class="tf-rail-card tf-rail-card--actions">
+            <header class="tf-rail-card__head"><i class="bi bi-rocket-takeoff"></i><span>Crear cuenta</span></header>
+            <button type="submit" class="btn btn-success btn-lg tf-w-full">
+                <i class="bi bi-check-circle"></i> Registrarme
+            </button>
+            <a href="/login" class="btn btn-secondary tf-w-full">
+                <i class="bi bi-box-arrow-in-right"></i> Ya tengo cuenta
+            </a>
+        </div>
+    </aside>
+</form>
+
+<script type="application/json" id="empresasData">{
+    "carrier": [{{ range $i, $e := .empresasCarrier }}{{ if $i }},{{ end }}{"id":{{ $e.ID }},"nombre":"{{ $e.NombreLegal }}"}{{ end }}],
+    "broker":  [{{ range $i, $e := .empresasBroker }}{{ if $i }},{{ end }}{"id":{{ $e.ID }},"nombre":"{{ $e.NombreLegal }}"}{{ end }}]
+}</script>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     SCRIPT 1 — MAP PICKER
+     ═══════════════════════════════════════════════════════════════════ -->
+<script>
+(function () {
+    const NOMINATIM_SEARCH  = 'https://nominatim.openstreetmap.org/search';
+    const NOMINATIM_REVERSE = 'https://nominatim.openstreetmap.org/reverse';
+    const COUNTRY_CODES     = 'cu';
+
+    const CUBA_CENTER = [21.5218, -77.7812];
+    const CUBA_ZOOM   = 7;
+
+    const root = document.querySelector('[data-map-picker]');
+    if (!root || typeof L === 'undefined') {
+        console.warn('[map-picker] Leaflet no está disponible; el mapa no se inicializará.');
+        window.__initRegisterMapPicker = function () {};
+        window.__invalidateRegisterMap = function () {};
+        return;
+    }
+
+    const searchInput  = root.querySelector('.tf-map-picker__search-input');
+    const resultsBox   = root.querySelector('.tf-map-picker__results');
+    const mapEl        = root.querySelector('[data-map]');
+    const coordsEl     = root.querySelector('[data-coords]');
+    const hintEl       = root.querySelector('[data-address-hint]');
+
+    const latInput     = document.getElementById('latitude');
+    const lngInput     = document.getElementById('longitude');
+    const cityInput    = document.getElementById('city');
+    const stateInput   = document.getElementById('state');
+    const countryInput = document.getElementById('country');
+    const postalInput  = document.getElementById('postal_code');
+    const addressInput = document.getElementById('address');
+
+    let map = null;
+    let marker = null;
+
+    function makeIcon() {
+        return L.divIcon({
+            className: '',
+            html: '<div class="tf-map-pin tf-map-pin--pickup"><i class="bi bi-geo-alt-fill"></i></div>',
+            iconSize: [32, 32],
+            iconAnchor: [16, 32],
+        });
+    }
+
+    function setMarker(lat, lng, opts) {
+        opts = opts || {};
+        if (!map) return;
+
+        if (marker) {
+            marker.setLatLng([lat, lng]);
+        } else {
+            marker = L.marker([lat, lng], { icon: makeIcon(), draggable: true }).addTo(map);
+            marker.on('dragend', function () {
+                const pos = marker.getLatLng();
+                setMarker(pos.lat, pos.lng);
+            });
+        }
+
+        if (opts.pan !== false) map.panTo([lat, lng], { animate: true });
+
+        if (latInput) latInput.value = lat.toFixed(8);
+        if (lngInput) lngInput.value = lng.toFixed(8);
+
+        if (coordsEl) {
+            coordsEl.dataset.empty = 'false';
+            coordsEl.innerHTML = '<i class="bi bi-crosshair"></i> ' + lat.toFixed(5) + ', ' + lng.toFixed(5);
+        }
+
+        if (!opts.skipReverse) reverseGeocode(lat, lng);
+    }
+
+    let reverseTimer = null;
+    function reverseGeocode(lat, lng) {
+        clearTimeout(reverseTimer);
+        if (hintEl) hintEl.textContent = 'Obteniendo dirección…';
+
+        reverseTimer = setTimeout(function () {
+            const url = NOMINATIM_REVERSE + '?format=json&lat=' + lat + '&lon=' + lng + '&zoom=18&addressdetails=1&accept-language=es';
+            fetch(url, { headers: { Accept: 'application/json' } })
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    const a = data.address || {};
+
+                    if (addressInput && !addressInput.value.trim()) {
+                        addressInput.value = a.road
+                            ? (a.road + (a.house_number ? ' #' + a.house_number : ''))
+                            : (a.neighbourhood || a.suburb || '');
+                    }
+                    if (cityInput && !cityInput.value.trim()) {
+                        cityInput.value = a.city || a.town || a.village || a.municipality || '';
+                    }
+                    if (stateInput && !stateInput.value.trim()) {
+                        stateInput.value = a.state || a.province || a.region || '';
+                    }
+                    if (countryInput && (!countryInput.value.trim() || countryInput.value === 'US')) {
+                        countryInput.value = (a.country_code || '').toUpperCase() || 'CU';
+                    }
+                    if (postalInput && !postalInput.value.trim()) {
+                        postalInput.value = a.postcode || '';
+                    }
+
+                    if (hintEl) hintEl.textContent = data.display_name || 'Ubicación seleccionada';
+                })
+                .catch(function () {
+                    if (hintEl) hintEl.textContent = 'No se pudo obtener la dirección';
+                });
+        }, 400);
+    }
+
+    let searchTimer = null;
+    if (searchInput) {
+        searchInput.addEventListener('input', function () {
+            clearTimeout(searchTimer);
+            const q = searchInput.value.trim();
+            if (q.length < 3) { resultsBox.hidden = true; return; }
+            searchTimer = setTimeout(function () { runSearch(q); }, 450);
+        });
+    }
+
+    function runSearch(q) {
+        const url = NOMINATIM_SEARCH + '?format=json&q=' + encodeURIComponent(q)
+                  + '&countrycodes=' + COUNTRY_CODES + '&limit=6&addressdetails=1&accept-language=es';
+        fetch(url, { headers: { Accept: 'application/json' } })
+            .then(function (r) { return r.json(); })
+            .then(renderResults)
+            .catch(function () {
+                resultsBox.innerHTML = '<div class="tf-map-picker__empty">Error de búsqueda</div>';
+                resultsBox.hidden = false;
+            });
+    }
+
+    function renderResults(items) {
+        if (!items || !items.length) {
+            resultsBox.innerHTML = '<div class="tf-map-picker__empty">Sin resultados</div>';
+            resultsBox.hidden = false;
+            return;
+        }
+        resultsBox.innerHTML = items.map(function (it, idx) {
+            return '<button type="button" class="tf-map-picker__result" data-idx="' + idx + '">'
+                 + '<i class="bi bi-geo-alt-fill"></i>'
+                 + '<span>' + escapeHtml(it.display_name)
+                 + '<small>' + escapeHtml((it.type || '')) + '</small></span></button>';
+        }).join('');
+        resultsBox.hidden = false;
+        resultsBox._items = items;
+
+        resultsBox.querySelectorAll('.tf-map-picker__result').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                const it = resultsBox._items[Number(btn.dataset.idx)];
+                if (!it) return;
+                const lat = parseFloat(it.lat);
+                const lng = parseFloat(it.lon);
+                map.setView([lat, lng], 15);
+                setMarker(lat, lng, { skipReverse: true, pan: false });
+                if (hintEl) hintEl.textContent = it.display_name;
+
+                const a = it.address || {};
+                if (addressInput && !addressInput.value.trim() && (a.road || a.neighbourhood || a.suburb)) {
+                    addressInput.value = a.road
+                        ? a.road + (a.house_number ? ' #' + a.house_number : '')
+                        : (a.neighbourhood || a.suburb);
+                }
+                if (cityInput && !cityInput.value.trim()) {
+                    cityInput.value = a.city || a.town || a.village || a.municipality || '';
+                }
+                if (stateInput && !stateInput.value.trim()) {
+                    stateInput.value = a.state || a.province || a.region || '';
+                }
+                if (countryInput && (!countryInput.value.trim() || countryInput.value === 'US')) {
+                    countryInput.value = (a.country_code || '').toUpperCase() || 'CU';
+                }
+                if (postalInput && !postalInput.value.trim()) {
+                    postalInput.value = a.postcode || '';
+                }
+                searchInput.value = it.display_name;
+                resultsBox.hidden = true;
+            });
+        });
+    }
+
+    document.addEventListener('click', function (e) {
+        if (mapRootSafe() && !root.contains(e.target)) resultsBox.hidden = true;
+    });
+    function mapRootSafe() { return !!root; }
+
+    [latInput, lngInput].forEach(function (inp) {
+        if (!inp) return;
+        inp.addEventListener('change', function () {
+            const lat = parseFloat(latInput.value);
+            const lng = parseFloat(lngInput.value);
+            if (!isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0 && map) {
+                setMarker(lat, lng);
+            }
+        });
+    });
+
+    window.__initRegisterMapPicker = function () {
+        if (map) return;
+        map = L.map(mapEl, {
+            center: CUBA_CENTER,
+            zoom: CUBA_ZOOM,
+            scrollWheelZoom: true,
+            zoomControl: true,
+        });
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap',
+            maxZoom: 18,
+        }).addTo(map);
+
+        map.on('click', function (e) {
+            setMarker(e.latlng.lat, e.latlng.lng);
+        });
+
+        const initLat = parseFloat(root.dataset.initialLat);
+        const initLng = parseFloat(root.dataset.initialLng);
+        if (!isNaN(initLat) && !isNaN(initLng) && initLat !== 0 && initLng !== 0) {
+            map.setView([initLat, initLng], 14);
+            setMarker(initLat, initLng, { skipReverse: true, pan: false });
+        }
+        setTimeout(function () { map.invalidateSize(); }, 150);
+    };
+
+    window.__invalidateRegisterMap = function () {
+        if (map) setTimeout(function () { map.invalidateSize(); }, 100);
+    };
+
+    window.addEventListener('resize', function () { if (map) map.invalidateSize(); });
+
+    function escapeHtml(s) {
+        return String(s)
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+})();
+</script>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     SCRIPT 2 — TOGGLE DE SECCIONES + EMPRESA
+     ═══════════════════════════════════════════════════════════════════ -->
+<script>
+(function () {
+    const form = document.getElementById('registerForm');
+    if (!form) return;
+
+    const empresasData = JSON.parse(document.getElementById('empresasData').textContent);
+
+    const blockPersonal     = document.getElementById('block-personal');
+    const blockRole         = document.getElementById('block-role');
+    const blockLocation     = document.getElementById('block-location');
+    const blockChofer       = document.getElementById('block-chofer');
+    const blockPublicador   = document.getElementById('block-publicador');
+    const blockPreferences  = document.getElementById('block-preferences');
+    const blockAvailability = document.getElementById('block-availability');
+    const blockEmpresa      = document.getElementById('block-empresa');
+
+    const selectEmpresa = document.getElementById('empresa_id');
+    const blockExisting = document.getElementById('empresaExistingBlock');
+    const blockNew      = document.getElementById('empresaNewBlock');
+    const hint          = document.getElementById('empresaHint');
+
+    let mapInitialized = false;
+
+    // ─── Helpers ───
+    function currentRole() {
+        const r = form.querySelector('input[name="role"]:checked');
+        return r ? r.value : '';
+    }
+    function currentMode() {
+        const m = form.querySelector('input[name="empresa_mode"]:checked');
+        return m ? m.value : 'none';
+    }
+    function tipoEmpresaPorRol(role) {
+        if (role === 'chofer')     return 'carrier';
+        if (role === 'publicador') return 'broker';
+        return '';
+    }
+    function show(el, visible) {
+        if (!el) return;
+        el.style.display = visible ? '' : 'none';
+    }
+    function isFilled(el) {
+        if (!el) return false;
+        if (el.type === 'checkbox' || el.type === 'radio') return el.checked;
+        return String(el.value || '').trim() !== '';
+    }
+
+    // ─── Empresas por tipo ───
+    function renderEmpresaOptions(tipo) {
+        const current = selectEmpresa.value;
+        selectEmpresa.innerHTML = '<option value="">Selecciona una empresa…</option>';
+        const list = empresasData[tipo] || [];
+        list.forEach(function (e) {
+            const opt = document.createElement('option');
+            opt.value = e.id;
+            opt.textContent = e.nombre;
+            if (String(e.id) === current) opt.selected = true;
+            selectEmpresa.appendChild(opt);
+        });
+        if (list.length === 0) {
+            const opt = document.createElement('option');
+            opt.disabled = true;
+            opt.textContent = 'No hay empresas disponibles — puedes crear una nueva';
+            selectEmpresa.appendChild(opt);
+        }
+    }
+
+    function waitForVisible(el, cb, maxTries) {
+        if (!el) return;
+        maxTries = maxTries || 60;
+        (function check(n) {
+            if (el.offsetWidth > 0 && el.offsetHeight > 0) { cb(); return; }
+            if (n <= 0) return;
+            requestAnimationFrame(function () { check(n - 1); });
+        })(maxTries);
+    }
+
+    // ─── Visibilidad + required dinámicos ───
+    function updateSections() {
+        const role = currentRole();
+        const isChofer = (role === 'chofer');
+        const isPublicador = (role === 'publicador');
+        const mode = currentMode();
+        const tipo = tipoEmpresaPorRol(role);
+
+        show(blockLocation,     !!role);
+        show(blockChofer,       isChofer);
+        show(blockPublicador,   isPublicador);
+        show(blockPreferences,  isChofer);
+        show(blockAvailability, isChofer);
+        show(blockEmpresa,      !!role);
+
+        if (!role) { updateChecklist(); return; }
+
+        if (hint) {
+            hint.textContent = isChofer
+                ? 'Como transportista puedes asociarte a una empresa de tipo Carrier, crear una nueva u omitir este paso.'
+                : 'Como broker puedes asociarte a una empresa de tipo Broker, crear una nueva u omitir este paso.';
+        }
+
+        renderEmpresaOptions(tipo);
+
+        // Modo empresa
+        show(blockExisting, mode === 'existing');
+        show(blockNew,      mode === 'new');
+        selectEmpresa.required = (mode === 'existing');
+        const nameLegalEl = document.getElementById('empresa_nombre_legal');
+        if (nameLegalEl) nameLegalEl.required = (mode === 'new');
+
+        // Required de perfil de rol
+        const reqMap = {
+            chofer_numero_licencia:              isChofer,
+            chofer_tipo_licencia:                isChofer,
+            chofer_anios_experiencia:            isChofer,
+            publicador_numero_licencia_broker:   isPublicador,
+            publicador_anios_experiencia:        isPublicador,
+        };
+        Object.keys(reqMap).forEach(function (name) {
+            const el = form.querySelector('[name="' + name + '"]');
+            if (el) el.required = reqMap[name];
+        });
+
+        // Mapa
+        if (blockLocation.style.display !== 'none') {
+            if (!mapInitialized && typeof window.__initRegisterMapPicker === 'function') {
+                mapInitialized = true;
+                waitForVisible(document.querySelector('.tf-map-picker__map'), function () {
+                    window.__initRegisterMapPicker();
+                });
+            } else if (typeof window.__invalidateRegisterMap === 'function') {
+                window.__invalidateRegisterMap();
+            }
+        }
+
+        updateChecklist();
+    }
+
+    // ─── Checklist / Progreso ───
+    const progressSteps = document.querySelectorAll('.tf-progress__step');
+
+    function stepDone(stepName) {
+        switch (stepName) {
+            case 'personal': {
+                const ok =
+                    isFilled(document.getElementById('name')) &&
+                    isFilled(document.getElementById('email')) &&
+                    isFilled(document.getElementById('password'));
+                return ok;
+            }
+            case 'role':
+                return !!currentRole();
+
+            case 'location': {
+                const required = [
+                    'city', 'state', 'country', 'radius',
+                ];
+                return required.every(function (id) {
+                    return isFilled(document.getElementById(id));
+                });
+            }
+            case 'perfil-rol': {
+                const role = currentRole();
+                if (role === 'chofer') {
+                    return [
+                        'chofer_numero_licencia',
+                        'chofer_tipo_licencia',
+                        'chofer_anios_experiencia',
+                    ].every(function (id) {
+                        return isFilled(document.getElementById(id));
+                    });
+                }
+                if (role === 'publicador') {
+                    return [
+                        'publicador_numero_licencia_broker',
+                        'publicador_anios_experiencia',
+                    ].every(function (id) {
+                        return isFilled(document.getElementById(id));
+                    });
+                }
+                return false;
+            }
+            case 'empresa': {
+                const role = currentRole();
+                if (!role) return false;
+                const mode = currentMode();
+                if (mode === 'none') return true;
+                if (mode === 'existing') return isFilled(selectEmpresa);
+                if (mode === 'new') {
+                    return isFilled(document.getElementById('empresa_nombre_legal'));
+                }
+                return false;
+            }
+        }
+        return false;
+    }
+
+    function updateChecklist() {
+        if (!progressSteps.length) return;
+
+        let firstIncomplete = null;
+        progressSteps.forEach(function (step) {
+            const name = step.getAttribute('data-step');
+            const done = stepDone(name);
+            step.classList.toggle('is-complete', done);
+            step.classList.remove('is-current');
+            if (!done && !firstIncomplete) firstIncomplete = step;
+        });
+
+        if (firstIncomplete) {
+            firstIncomplete.classList.add('is-current');
+        } else if (progressSteps.length) {
+            // Todo completo → marcamos el último como current
+            progressSteps[progressSteps.length - 1].classList.add('is-current');
+        }
+    }
+
+    // ─── Listeners ───
+    form.querySelectorAll('.tf-role-option').forEach(function (label) {
+        const radio = label.querySelector('input[type="radio"]');
+        const sync = function () { label.classList.toggle('is-selected', radio.checked); };
+        radio.addEventListener('change', function () {
+            form.querySelectorAll('.tf-role-option').forEach(function (o) {
+                o.classList.remove('is-selected');
+            });
+            sync();
+            updateSections();
+        });
+        sync();
+    });
+
+    form.querySelectorAll('input[name="empresa_mode"]').forEach(function (r) {
+        r.addEventListener('change', updateSections);
+    });
+
+    form.addEventListener('input', updateChecklist);
+    form.addEventListener('change', updateChecklist);
+
+    // Init diferido para asegurar que el SCRIPT 1 ya está cargado
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', updateSections);
+    } else {
+        updateSections();
+    }
+    setTimeout(updateSections, 100);
+})();
+</script>

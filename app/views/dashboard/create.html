@@ -1,0 +1,544 @@
+<div class="tf-page-header">
+    <div>
+        <h1><i class="bi bi-plus-circle"></i> Publicar Nueva Carga</h1>
+        <p>Completa los datos para publicar la carga en el sistema</p>
+    </div>
+    <a href="/home" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Volver
+    </a>
+</div>
+
+{{ if .flash_success }}<div class="alert alert-success tf-mb-4">{{ .flash_success }}</div>{{ end }}
+{{ if .flash_error }}<div class="alert alert-danger tf-mb-4">{{ .flash_error }}</div>{{ end }}
+
+<form action="/loads" method="post" class="tf-form-page" id="cargaCreateForm">
+    <input type="hidden" name="_csrf" value="{{ .csrfToken }}">
+
+    <!-- ═══════════════════════════════════════════════════════════
+         COLUMNA PRINCIPAL
+         ═══════════════════════════════════════════════════════════ -->
+    <div class="tf-form-page__main">
+        <div class="tf-form-card">
+
+            <!-- ───────── 01 · IDENTIFICACIÓN ───────── -->
+            <section class="tf-form-block" id="block-identification" data-block="identification">
+                <header class="tf-form-block__head">
+                    <i class="bi bi-tag-fill tf-form-block__icon"></i>
+                    <div class="tf-form-block__text">
+                        <h2>Identificación</h2>
+                        <p>Número de referencia único y tipo de carga.</p>
+                    </div>
+                </header>
+
+                <div class="tf-form-block__body">
+                    <div class="tf-form-row">
+                        <div class="tf-col-6 tf-field">
+                            <label for="numero_referencia" class="form-label">
+                                Número de referencia <span class="req">*</span>
+                            </label>
+                            <input type="text" class="form-control" id="numero_referencia" name="numero_referencia"
+                                   value="{{ if .old }}{{ .old.NumeroReferencia }}{{ end }}"
+                                   placeholder="Ej: REF-2025-001" maxlength="50" required>
+                            {{ if .errors.numero_referencia }}
+                            <small class="tf-field-error">{{ .errors.numero_referencia }}</small>
+                            {{ end }}
+                            <span class="tf-field-hint">Debe ser único en tu sistema.</span>
+                        </div>
+
+                        <div class="tf-col-6 tf-field">
+                            <label for="tipo_carga" class="form-label">
+                                Tipo de carga <span class="req">*</span>
+                            </label>
+                            <select class="form-select" id="tipo_carga" name="tipo_carga" required>
+                                <option value="">Seleccionar…</option>
+                                <option value="FTL" {{ if and .old (eq .old.TipoCarga "FTL") }}selected{{ end }}>
+                                    FTL · Full Truckload
+                                </option>
+                                <option value="LTL" {{ if and .old (eq .old.TipoCarga "LTL") }}selected{{ end }}>
+                                    LTL · Partial
+                                </option>
+                            </select>
+                            {{ if .errors.tipo_carga }}
+                            <small class="tf-field-error">{{ .errors.tipo_carga }}</small>
+                            {{ end }}
+                        </div>
+
+                        <div class="tf-col-12 tf-field">
+                            <label for="commodity" class="form-label">
+                                Mercancía <span class="opt">opcional</span>
+                            </label>
+                            <input type="text" class="form-control" id="commodity" name="commodity"
+                                   value="{{ if .old }}{{ .old.Commodity }}{{ end }}"
+                                   placeholder="Ej: Electrodomésticos, materiales de construcción…"
+                                   maxlength="255">
+                            {{ if .errors.commodity }}
+                            <small class="tf-field-error">{{ .errors.commodity }}</small>
+                            {{ end }}
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ───────── 02 · RUTA ───────── -->
+            <section class="tf-form-block" id="block-route" data-block="route">
+                <header class="tf-form-block__head">
+                    <i class="bi bi-signpost-split-fill tf-form-block__icon"></i>
+                    <div class="tf-form-block__text">
+                        <h2>Ruta</h2>
+                        <p>Origen y destino del envío con sus ventanas de tiempo.</p>
+                    </div>
+                </header>
+
+                <div class="tf-form-block__body">
+                    <div class="tf-route">
+
+                        <!-- Punto A · Recogida -->
+                        <div class="tf-route__point tf-route__point--pickup">
+                            <header class="tf-route__point-head">
+                                <span class="tf-route__dot tf-route__dot--pickup"></span>
+                                <h3>Recogida</h3>
+                            </header>
+
+                            <div class="tf-route__fields">
+                                <div class="tf-field">
+                                    <label for="origen_direccion_id" class="form-label">
+                                        Origen <span class="req">*</span>
+                                    </label>
+                                    <select class="form-select" id="origen_direccion_id"
+                                            name="origen_direccion_id" required>
+                                        <option value="">Selecciona origen…</option>
+                                        {{ range .destinations }}
+                                        <option value="{{ .ID }}"
+                                                data-city="{{ .Ciudad }}"
+                                                data-state="{{ .EstadoProvincia }}"
+                                                {{ if and $.old (eq $.old.OrigenDireccionID .ID) }}selected{{ end }}>
+                                            {{ .Ciudad }} — {{ .EstadoProvincia }} ({{ .Pais }})
+                                        </option>
+                                        {{ end }}
+                                    </select>
+                                    {{ if .errors.origen_direccion_id }}
+                                    <small class="tf-field-error">{{ .errors.origen_direccion_id }}</small>
+                                    {{ end }}
+                                </div>
+
+                                <div class="tf-field">
+                                    <label for="fecha_recogida" class="form-label">
+                                        Fecha y hora <span class="req">*</span>
+                                    </label>
+                                    <input type="datetime-local" class="form-control" id="fecha_recogida"
+                                           name="fecha_recogida"
+                                           value="{{ if .old }}{{ .old.FechaRecogida }}{{ end }}" required>
+                                    {{ if .errors.fecha_recogida }}
+                                    <small class="tf-field-error">{{ .errors.fecha_recogida }}</small>
+                                    {{ end }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Conector visual -->
+                        <div class="tf-route__connector" aria-hidden="true">
+                            <i class="bi bi-arrow-right"></i>
+                        </div>
+
+                        <!-- Punto B · Entrega -->
+                        <div class="tf-route__point tf-route__point--dropoff">
+                            <header class="tf-route__point-head">
+                                <span class="tf-route__dot tf-route__dot--dropoff"></span>
+                                <h3>Entrega</h3>
+                            </header>
+
+                            <div class="tf-route__fields">
+                                <div class="tf-field">
+                                    <label for="destino_direccion_id" class="form-label">
+                                        Destino <span class="req">*</span>
+                                    </label>
+                                    <select class="form-select" id="destino_direccion_id"
+                                            name="destino_direccion_id" required>
+                                        <option value="">Selecciona destino…</option>
+                                        {{ range .destinations }}
+                                        <option value="{{ .ID }}"
+                                                data-city="{{ .Ciudad }}"
+                                                data-state="{{ .EstadoProvincia }}"
+                                                {{ if and $.old (eq $.old.DestinoDireccionID .ID) }}selected{{ end }}>
+                                            {{ .Ciudad }} — {{ .EstadoProvincia }} ({{ .Pais }})
+                                        </option>
+                                        {{ end }}
+                                    </select>
+                                    {{ if .errors.destino_direccion_id }}
+                                    <small class="tf-field-error">{{ .errors.destino_direccion_id }}</small>
+                                    {{ end }}
+                                </div>
+
+                                <div class="tf-field">
+                                    <label for="fecha_entrega" class="form-label">
+                                        Fecha y hora <span class="opt">opcional</span>
+                                    </label>
+                                    <input type="datetime-local" class="form-control" id="fecha_entrega"
+                                           name="fecha_entrega"
+                                           value="{{ if .old }}{{ .old.FechaEntrega }}{{ end }}">
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </section>
+
+            <!-- ───────── 03 · CARGA Y TARIFA ───────── -->
+            <section class="tf-form-block" id="block-cargo" data-block="cargo">
+                <header class="tf-form-block__head">
+                    <i class="bi bi-box-seam-fill tf-form-block__icon"></i>
+                    <div class="tf-form-block__text">
+                        <h2>Carga y tarifa</h2>
+                        <p>Datos operativos del envío y monto ofrecido al transportista.</p>
+                    </div>
+                </header>
+
+                <div class="tf-form-block__body">
+                    <div class="tf-form-row">
+                        <div class="tf-col-4 tf-field">
+                            <label for="peso_kg" class="form-label">
+                                Peso <span class="req">*</span>
+                            </label>
+                            <div class="tf-input-unit">
+                                <input type="number" step="0.01" class="form-control" id="peso_kg" name="peso_kg"
+                                       value="{{ if .old }}{{ .old.PesoKg }}{{ end }}"
+                                       placeholder="1200.50" required>
+                                <span class="tf-input-unit__suffix">kg</span>
+                            </div>
+                            {{ if .errors.peso_kg }}
+                            <small class="tf-field-error">{{ .errors.peso_kg }}</small>
+                            {{ end }}
+                        </div>
+
+                        <div class="tf-col-4 tf-field">
+                            <label for="distancia_km" class="form-label">
+                                Distancia <span class="req">*</span>
+                            </label>
+                            <div class="tf-input-unit">
+                                <input type="number" step="0.1" class="form-control" id="distancia_km"
+                                       name="distancia_km"
+                                       value="{{ if .old }}{{ .old.DistanciaKm }}{{ end }}"
+                                       placeholder="450.5" required>
+                                <span class="tf-input-unit__suffix">km</span>
+                            </div>
+                            {{ if .errors.distancia_km }}
+                            <small class="tf-field-error">{{ .errors.distancia_km }}</small>
+                            {{ end }}
+                        </div>
+
+                        <div class="tf-col-4 tf-field">
+                            <label for="tipo_equipo" class="form-label">
+                                Equipo <span class="req">*</span>
+                            </label>
+                            <select class="form-select" id="tipo_equipo" name="tipo_equipo" required>
+                                <option value="">Seleccionar…</option>
+                                <option value="dry_van"     {{ if and .old (eq .old.TipoEquipo "dry_van") }}selected{{ end }}>Dry Van</option>
+                                <option value="flatbed"     {{ if and .old (eq .old.TipoEquipo "flatbed") }}selected{{ end }}>Flatbed</option>
+                                <option value="reefer"      {{ if and .old (eq .old.TipoEquipo "reefer") }}selected{{ end }}>Reefer</option>
+                                <option value="step_deck"   {{ if and .old (eq .old.TipoEquipo "step_deck") }}selected{{ end }}>Step Deck</option>
+                                <option value="double_drop" {{ if and .old (eq .old.TipoEquipo "double_drop") }}selected{{ end }}>Double Drop</option>
+                                <option value="lowboy"      {{ if and .old (eq .old.TipoEquipo "lowboy") }}selected{{ end }}>Lowboy</option>
+                                <option value="cargo_van"   {{ if and .old (eq .old.TipoEquipo "cargo_van") }}selected{{ end }}>Cargo Van</option>
+                                <option value="box_truck"   {{ if and .old (eq .old.TipoEquipo "box_truck") }}selected{{ end }}>Box Truck</option>
+                                <option value="power_only"  {{ if and .old (eq .old.TipoEquipo "power_only") }}selected{{ end }}>Power Only</option>
+                            </select>
+                            {{ if .errors.tipo_equipo }}
+                            <small class="tf-field-error">{{ .errors.tipo_equipo }}</small>
+                            {{ end }}
+                        </div>
+
+                        <div class="tf-col-4 tf-field">
+                            <label for="tarifa_total" class="form-label">
+                                Tarifa total <span class="req">*</span>
+                            </label>
+                            <div class="tf-input-unit tf-input-unit--money">
+                                <span class="tf-input-unit__prefix">$</span>
+                                <input type="number" step="0.01" class="form-control" id="tarifa_total"
+                                       name="tarifa_total"
+                                       value="{{ if .old }}{{ .old.TarifaTotal }}{{ end }}"
+                                       placeholder="25000.00" required>
+                            </div>
+                            {{ if .errors.tarifa_total }}
+                            <small class="tf-field-error">{{ .errors.tarifa_total }}</small>
+                            {{ end }}
+                        </div>
+
+                        <div class="tf-col-4 tf-field">
+                            <label for="moneda" class="form-label">
+                                Moneda <span class="req">*</span>
+                            </label>
+                            <select class="form-select" id="moneda" name="moneda" required>
+                                <option value="CUP" {{ if and .old (eq .old.Moneda "CUP") }}selected{{ end }}>CUP · Peso cubano</option>
+                                <option value="MLC" {{ if and .old (eq .old.Moneda "MLC") }}selected{{ end }}>MLC · Moneda Libremente Convertible</option>
+                                <option value="USD" {{ if and .old (eq .old.Moneda "USD") }}selected{{ end }}>USD · Dólar</option>
+                                <option value="EUR" {{ if and .old (eq .old.Moneda "EUR") }}selected{{ end }}>EUR · Euro</option>
+                            </select>
+                            {{ if .errors.moneda }}
+                            <small class="tf-field-error">{{ .errors.moneda }}</small>
+                            {{ end }}
+                        </div>
+
+                        <div class="tf-col-4 tf-field">
+                            <label for="tarifa_por_km" class="form-label">
+                                Tarifa por km <span class="opt">auto</span>
+                            </label>
+                            <div class="tf-input-unit tf-input-unit--money">
+                                <span class="tf-input-unit__prefix">$</span>
+                                <input type="number" step="0.0001" class="form-control" id="tarifa_por_km"
+                                       name="tarifa_por_km"
+                                       value="{{ if .old }}{{ .old.TarifaPorKm }}{{ end }}"
+                                       placeholder="Se calcula automáticamente">
+                            </div>
+                            <span class="tf-field-hint">Dejar vacío para calcular: total / distancia.</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ───────── 04 · EXTRAS ───────── -->
+            <section class="tf-form-block tf-form-block--last" id="block-extras" data-block="extras">
+                <header class="tf-form-block__head">
+                    <i class="bi bi-stars tf-form-block__icon"></i>
+                    <div class="tf-form-block__text">
+                        <h2>Extras</h2>
+                        <p>Distancia real, audiencia de publicación y notas adicionales.</p>
+                    </div>
+                </header>
+
+                <div class="tf-form-block__body">
+                    <div class="tf-form-row">
+                        <div class="tf-col-6 tf-field">
+                            <label for="distancia_real_km" class="form-label">
+                                Distancia real <span class="opt">opcional</span>
+                            </label>
+                            <div class="tf-input-unit">
+                                <input type="number" step="0.1" class="form-control" id="distancia_real_km"
+                                       name="distancia_real_km"
+                                       value="{{ if .old }}{{ .old.DistanciaRealKm }}{{ end }}"
+                                       placeholder="Se completa al finalizar el viaje">
+                                <span class="tf-input-unit__suffix">km</span>
+                            </div>
+                        </div>
+
+                        <div class="tf-col-6 tf-field">
+                            <label for="audiencia" class="form-label">Audiencia</label>
+                            <select class="form-select" id="audiencia" name="audiencia">
+                                <option value="load_board"    {{ if and .old (eq .old.Audiencia "load_board") }}selected{{ end }}>Load Board · Público</option>
+                                <option value="red_privada"   {{ if and .old (eq .old.Audiencia "red_privada") }}selected{{ end }}>Red Privada · Solo mis carriers</option>
+                                <option value="red_extendida" {{ if and .old (eq .old.Audiencia "red_extendida") }}selected{{ end }}>Red Extendida</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         RAIL LATERAL — Progreso · Resumen · Acciones
+         ═══════════════════════════════════════════════════════════ -->
+    <aside class="tf-form-page__aside">
+
+        <!-- Progreso -->
+        <div class="tf-rail-card">
+            <header class="tf-rail-card__head">
+                <i class="bi bi-list-check"></i>
+                <span>Progreso</span>
+            </header>
+            <ol class="tf-progress" id="tfProgress">
+                <li class="tf-progress__step is-current" data-step="identification">
+                    <span class="tf-progress__dot"></span>
+                    <span class="tf-progress__label">Identificación</span>
+                </li>
+                <li class="tf-progress__step" data-step="route">
+                    <span class="tf-progress__dot"></span>
+                    <span class="tf-progress__label">Ruta</span>
+                </li>
+                <li class="tf-progress__step" data-step="cargo">
+                    <span class="tf-progress__dot"></span>
+                    <span class="tf-progress__label">Carga y tarifa</span>
+                </li>
+                <li class="tf-progress__step" data-step="extras">
+                    <span class="tf-progress__dot"></span>
+                    <span class="tf-progress__label">Extras</span>
+                </li>
+            </ol>
+        </div>
+
+        <!-- Resumen en vivo -->
+        <div class="tf-rail-card">
+            <header class="tf-rail-card__head">
+                <i class="bi bi-eye"></i>
+                <span>Resumen</span>
+            </header>
+            <dl class="tf-summary" id="tfSummary">
+                <div class="tf-summary__row">
+                    <dt>Ruta</dt>
+                    <dd data-summary="route">— · —</dd>
+                </div>
+                <div class="tf-summary__row">
+                    <dt>Peso</dt>
+                    <dd data-summary="weight">—</dd>
+                </div>
+                <div class="tf-summary__row">
+                    <dt>Equipo</dt>
+                    <dd data-summary="equipment">—</dd>
+                </div>
+                <div class="tf-summary__row">
+                    <dt>Distancia</dt>
+                    <dd data-summary="distance">—</dd>
+                </div>
+                <div class="tf-summary__row tf-summary__row--highlight">
+                    <dt>Tarifa</dt>
+                    <dd data-summary="rate">—</dd>
+                </div>
+                <div class="tf-summary__row">
+                    <dt>Tarifa / km</dt>
+                    <dd data-summary="rate_km">—</dd>
+                </div>
+            </dl>
+        </div>
+
+        <!-- Acciones -->
+        <div class="tf-rail-card tf-rail-card--actions">
+            <header class="tf-rail-card__head">
+                <i class="bi bi-rocket-takeoff"></i>
+                <span>Publicar</span>
+            </header>
+            <button type="submit" class="btn btn-success btn-lg tf-w-full">
+                <i class="bi bi-check-circle"></i> Publicar Carga
+            </button>
+            <a href="/loads" class="btn btn-secondary tf-w-full">
+                <i class="bi bi-x-circle"></i> Cancelar
+            </a>
+            <p class="tf-rail-card__hint">
+                Los campos marcados con <span class="req">*</span> son obligatorios.
+            </p>
+        </div>
+
+    </aside>
+
+</form>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     JS — Progreso + Resumen en vivo + Auto-cálculo tarifa/km
+     ═══════════════════════════════════════════════════════════════ -->
+<script>
+(function () {
+    const form = document.getElementById('cargaCreateForm');
+    if (!form) return;
+
+    const summary = {
+        route:     form.querySelector('[data-summary="route"]'),
+        weight:    form.querySelector('[data-summary="weight"]'),
+        equipment: form.querySelector('[data-summary="equipment"]'),
+        distance:  form.querySelector('[data-summary="distance"]'),
+        rate:      form.querySelector('[data-summary="rate"]'),
+        rate_km:   form.querySelector('[data-summary="rate_km"]')
+    };
+
+    const blocks = ['identification', 'route', 'cargo', 'extras'];
+    const stepEls = {};
+    blocks.forEach(function (id) {
+        stepEls[id] = document.querySelector('.tf-progress__step[data-step="' + id + '"]');
+    });
+
+    // Devuelve la ciudad de la opción seleccionada (data-city) o "—"
+    function selectedCity(id) {
+        const el = document.getElementById(id);
+        if (!el || !el.value) return '—';
+        const opt = el.options[el.selectedIndex];
+        return (opt && opt.dataset && opt.dataset.city) || '—';
+    }
+
+    function fmtNum(v) {
+        if (v === null || v === undefined || v === '') return null;
+        const n = Number(v);
+        return isNaN(n) ? null : n;
+    }
+
+    // Auto-calcular tarifa_por_km si el usuario no la escribió manualmente
+    function autoTarifaKm() {
+        const total = fmtNum(document.getElementById('tarifa_total').value);
+        const dist  = fmtNum(document.getElementById('distancia_km').value);
+        const tarifaKmEl = document.getElementById('tarifa_por_km');
+
+        if (total !== null && dist && dist > 0 && tarifaKmEl.dataset.manual !== 'true') {
+            tarifaKmEl.value = (total / dist).toFixed(4);
+        }
+    }
+
+    function updateSummary() {
+        const pickup  = selectedCity('origen_direccion_id');
+        const dropoff = selectedCity('destino_direccion_id');
+        const weight  = document.getElementById('peso_kg').value;
+        const dist    = document.getElementById('distancia_km').value;
+        const equipment = document.getElementById('tipo_equipo');
+        const rate    = document.getElementById('tarifa_total').value;
+        const currency = document.getElementById('moneda').value;
+        const tarifaKm = document.getElementById('tarifa_por_km').value;
+
+        summary.route.textContent = pickup + ' → ' + dropoff;
+
+        summary.weight.textContent = weight ? weight + ' kg' : '—';
+        summary.distance.textContent = dist ? dist + ' km' : '—';
+
+        summary.equipment.textContent = (equipment && equipment.value)
+            ? equipment.options[equipment.selectedIndex].text
+            : '—';
+
+        summary.rate.textContent = rate ? rate + ' ' + currency : '—';
+
+        summary.rate_km.textContent = tarifaKm
+            ? Number(tarifaKm).toFixed(4) + ' ' + currency + '/km'
+            : '—';
+    }
+
+    function updateProgress() {
+        blocks.forEach(function (id) {
+            const block = document.getElementById('block-' + id);
+            if (!block) return;
+            const required = block.querySelectorAll('[required]');
+            let filled = 0;
+            required.forEach(function (el) { if (el.value.trim() !== '') filled++; });
+            const complete = required.length === 0 || filled === required.length;
+
+            const step = stepEls[id];
+            if (!step) return;
+            step.classList.toggle('is-complete', complete);
+        });
+
+        const firstIncomplete = blocks.find(function (id) {
+            return stepEls[id] && !stepEls[id].classList.contains('is-complete');
+        });
+        blocks.forEach(function (id) { if (stepEls[id]) stepEls[id].classList.remove('is-current'); });
+        if (firstIncomplete && stepEls[firstIncomplete]) {
+            stepEls[firstIncomplete].classList.add('is-current');
+        }
+    }
+
+    form.addEventListener('input', function () {
+        autoTarifaKm();
+        updateSummary();
+        updateProgress();
+    });
+    form.addEventListener('change', function () {
+        autoTarifaKm();
+        updateSummary();
+        updateProgress();
+    });
+
+    // Si el usuario edita tarifa_por_km manualmente, dejamos de auto-calcular
+    const tarifaKmInput = document.getElementById('tarifa_por_km');
+    tarifaKmInput.addEventListener('input', function () {
+        this.dataset.manual = 'true';
+    });
+
+    // Init
+    autoTarifaKm();
+    updateSummary();
+    updateProgress();
+})();
+</script>

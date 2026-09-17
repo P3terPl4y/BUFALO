@@ -1,0 +1,366 @@
+<html
+    data-theme="light">
+
+<body lang="es">
+    <div class="tf-page-header">
+        <div>
+            <h1><i class="bi bi-person-gear"></i> Editar Perfil</h1>
+            <p>Actualiza tu información personal, ubicación y preferencias</p>
+        </div>
+        <a href="/profile" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Volver
+        </a>
+    </div>
+
+    {{ if .flash_success }}<div class="alert alert-success tf-mb-4">{{ .flash_success }}</div>{{ end }}
+    {{ if .flash_error }}<div class="alert alert-danger tf-mb-4">{{ .flash_error }}</div>{{ end }}
+    </p>{{.errors}}</p>
+    <form action="/profile/update" method="POST" class="tf-form-page">
+        <input type="hidden" name="_csrf" value="{{ .csrfToken }}">
+        <input type="hidden" name="_method" value="PUT">
+
+        <!-- ═══════════════════════════════════════════════════════════
+         COLUMNA PRINCIPAL
+         ═══════════════════════════════════════════════════════════ -->
+        <div class="tf-form-page__main">
+            <div class="tf-form-card">
+
+                <!-- ───────── 01 · DATOS BÁSICOS ───────── -->
+                <section class="tf-form-block" id="block-account" data-block="account">
+                    <header class="tf-form-block__head">
+                        <i class="bi bi-person-vcard-fill tf-form-block__icon"></i>
+                        <div class="tf-form-block__text">
+                            <h2>Datos básicos</h2>
+                            <p>Tu identidad en TruckFast y credenciales de acceso.</p>
+                        </div>
+                    </header>
+
+                    <div class="tf-form-block__body">
+                        <div class="tf-form-row">
+                            <div class="tf-col-6 tf-field">
+                                <label for="name" class="form-label">Nombre completo</label>
+                                <input type="text" class="form-control" id="name" name="name"
+                                    value="{{ if .old }}{{ .old.Name }}{{ else }}{{ .user.Name }}{{ end }}"
+                                    placeholder="Ej: Juan Pérez">
+                                {{ if .errors.name }}<small class="tf-field-error">{{ .errors.name }}</small>{{ end }}
+                            </div>
+
+                            <div class="tf-col-6 tf-field">
+                                <label for="email" class="form-label">Correo electrónico</label>
+                                <input type="email" class="form-control" id="email" name="email"
+                                    value="{{ if .old }}{{ .old.Email }}{{ else }}{{ .user.Email }}{{ end }}"
+                                    placeholder="tu@empresa.com">
+                                {{ if .errors.email }}<small class="tf-field-error">{{ .errors.email }}</small>{{ end }}
+                            </div>
+
+                            <div class="tf-col-6 tf-field">
+                                <label for="password" class="form-label">
+                                    Nueva contraseña <span class="opt">opcional</span>
+                                </label>
+                                <div class="tf-input-icon">
+                                    <i class="bi bi-key"></i>
+                                    <input type="password" class="form-control" id="password" name="password"
+                                        placeholder="Dejar vacío para no cambiar" autocomplete="new-password">
+                                </div>
+                                {{ if .errors.password }}<small class="tf-field-error">{{ .errors.password }}</small>{{
+                                end }}
+                                <span class="tf-field-hint">Mínimo 8 caracteres. Solo si deseas cambiarla.</span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ───────── 02 · UBICACIÓN ───────── -->
+                <section class="tf-form-block" id="block-location" data-block="location">
+                    <header class="tf-form-block__head">
+                        <i class="bi bi-geo-alt-fill tf-form-block__icon"></i>
+                        <div class="tf-form-block__text">
+                            <h2>Ubicación</h2>
+                            <p>Tu dirección base y radio de operación.</p>
+                        </div>
+                    </header>
+
+                    <div class="tf-form-block__body">
+                        <div class="tf-form-row">
+                            <div class="tf-col-12 tf-field">
+                                <label for="address" class="form-label">Dirección</label>
+                                <input type="text" class="form-control" id="address" name="address"
+                                    value="{{ if .old }}{{ .old.Address }}{{ else }}{{ .user.Address }}{{ end }}"
+                                    placeholder="Calle y número">
+                            </div>
+
+                            <div class="tf-col-4 tf-field">
+                                <label for="city" class="form-label">Ciudad</label>
+                                <input type="text" class="form-control" id="city" name="city"
+                                    value="{{ if .old }}{{ .old.City }}{{ else }}{{ .user.City }}{{ end }}"
+                                    placeholder="Ej: Monterrey">
+                            </div>
+
+                            <div class="tf-col-4 tf-field">
+                                <label for="state" class="form-label">Estado / Provincia</label>
+                                <input type="text" class="form-control" id="state" name="state"
+                                    value="{{ if .old }}{{ .old.State }}{{ else }}{{ .user.State }}{{ end }}"
+                                    placeholder="Ej: Nuevo León">
+                            </div>
+
+                            <div class="tf-col-4 tf-field">
+                                <label for="country" class="form-label">País</label>
+                                <input type="text" class="form-control" id="country" name="country"
+                                    value="{{ if .old }}{{ .old.Country }}{{ else }}{{ .user.Country }}{{ end }}"
+                                    placeholder="Ej: México">
+                            </div>
+
+                            <div class="tf-col-3 tf-field">
+                                <label for="postal_code" class="form-label">Código postal</label>
+                                <input type="text" class="form-control" id="postal_code" name="postal_code"
+                                    value="{{ if .old }}{{ .old.PostalCode }}{{ else }}{{ .user.PostalCode }}{{ end }}"
+                                    placeholder="64000">
+                            </div>
+
+                            <div class="tf-col-3 tf-field">
+                                <label for="latitude" class="form-label">Latitud</label>
+                                <input type="number" step="0.00000001" class="form-control" id="latitude"
+                                    name="latitude"
+                                    value="{{ if .old }}{{ .old.Latitude }}{{ else }}{{ .user.Latitude }}{{ end }}"
+                                    placeholder="25.686614">
+                            </div>
+
+                            <div class="tf-col-3 tf-field">
+                                <label for="longitude" class="form-label">Longitud</label>
+                                <input type="number" step="0.00000001" class="form-control" id="longitude"
+                                    name="longitude"
+                                    value="{{ if .old }}{{ .old.Longitude }}{{ else }}{{ .user.Longitude }}{{ end }}"
+                                    placeholder="-100.316113">
+                            </div>
+
+                            <div class="tf-col-3 tf-field">
+                                <label for="radius" class="form-label">Radio de operación</label>
+                                <div class="tf-input-unit">
+                                    <input type="number" class="form-control" id="radius" name="radius"
+                                        value="{{ if .old }}{{ .old.Radius }}{{ else }}{{ .user.Radius }}{{ end }}"
+                                        placeholder="100">
+                                    <span class="tf-input-unit__suffix">km</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                {{ if eq .user.Role "carrier" }}
+                <!-- ───────── 03 · PREFERENCIAS DE CARGA ───────── -->
+                <section class="tf-form-block" id="block-preferences" data-block="preferences">
+                    <header class="tf-form-block__head">
+                        <i class="bi bi-sliders tf-form-block__icon"></i>
+                        <div class="tf-form-block__text">
+                            <h2>Preferencias de carga</h2>
+                            <p>Define qué tipo de envíos quieres recibir y sus límites.</p>
+                        </div>
+                    </header>
+
+                    <div class="tf-form-block__body">
+                        <div class="tf-form-row">
+                            <div class="tf-col-12 tf-field">
+                                <label for="preferred_equipment_types" class="form-label">
+                                    Equipos preferidos
+                                </label>
+                                <input type="text" class="form-control" id="preferred_equipment_types"
+                                    name="preferred_equipment_types"
+                                    value="{{ if .old }}{{ .old.PreferredEquipmentTypes }}{{ else }}{{ .user.PreferredEquipmentTypes }}{{ end }}"
+                                    placeholder="van,reefer,flatbed">
+                                <span class="tf-field-hint">Separa los equipos con comas.</span>
+                            </div>
+
+                            <div class="tf-col-12 tf-field">
+                                <label for="preferred_cargo_types" class="form-label">
+                                    Tipos de carga aceptados
+                                </label>
+                                <input type="text" class="form-control" id="preferred_cargo_types"
+                                    name="preferred_cargo_types"
+                                    value="{{ if .old }}{{ .old.PreferredCargoTypes }}{{ else }}{{ .user.PreferredCargoTypes }}{{ end }}"
+                                    placeholder="refrigerados,secos,peligrosos">
+                                <span class="tf-field-hint">Separa los tipos con comas.</span>
+                            </div>
+
+                            <div class="tf-col-6 tf-field">
+                                <label for="max_weight" class="form-label">Peso máximo aceptado</label>
+                                <div class="tf-input-unit">
+                                    <input type="number" step="0.01" class="form-control" id="max_weight"
+                                        name="max_weight"
+                                        value="{{ if .old }}{{ .old.MaxWeight }}{{ else }}{{ .user.MaxWeight }}{{ end }}"
+                                        placeholder="25000">
+                                    <span class="tf-input-unit__suffix">kg</span>
+                                </div>
+                            </div>
+
+                            <div class="tf-col-6 tf-field">
+                                <label for="max_distance" class="form-label">Distancia máxima por viaje</label>
+                                <div class="tf-input-unit">
+                                    <input type="number" step="0.1" class="form-control" id="max_distance"
+                                        name="max_distance"
+                                        value="{{ if .old }}{{ .old.MaxDistance }}{{ else }}{{ .user.MaxDistance }}{{ end }}"
+                                        placeholder="800">
+                                    <span class="tf-input-unit__suffix">km</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ───────── 04 · DISPONIBILIDAD ───────── -->
+                <section class="tf-form-block tf-form-block--last" id="block-availability" data-block="availability">
+                    <header class="tf-form-block__head">
+                        <i class="bi bi-calendar-week-fill tf-form-block__icon"></i>
+                        <div class="tf-form-block__text">
+                            <h2>Disponibilidad</h2>
+                            <p>Cuándo estás disponible y notas adicionales.</p>
+                        </div>
+                    </header>
+
+                    <div class="tf-form-block__body">
+                        <div class="tf-form-row">
+                            <div class="tf-col-6 tf-field">
+                                <label for="available_from" class="form-label">Disponible desde</label>
+                                <input type="datetime-local" class="form-control" id="available_from"
+                                    name="available_from"
+                                    value="{{ if .user.AvailableFrom }}{{ .user.AvailableFrom.Format " 2006-01-02T15:04"
+                                    }}{{ end }}">
+                            </div>
+
+                            <div class="tf-col-6 tf-field">
+                                <label for="available_to" class="form-label">Disponible hasta</label>
+                                <input type="datetime-local" class="form-control" id="available_to" name="available_to"
+                                    value="{{ if .user.AvailableTo }}{{ .user.AvailableTo.Format " 2006-01-02T15:04"
+                                    }}{{ end }}">
+                            </div>
+
+                            <div class="tf-col-12 tf-field">
+                                <label for="notes" class="form-label">
+                                    Notas <span class="opt">opcional</span>
+                                </label>
+                                <textarea class="form-control" id="notes" name="notes" rows="3"
+                                    placeholder="Información adicional sobre tu disponibilidad, restricciones, etc.">{{ if .old }}{{ .old.Notes }}{{ else }}{{ .user.Notes }}{{ end }}</textarea>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                {{ end }}
+
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════
+         RAIL LATERAL
+         ═══════════════════════════════════════════════════════════ -->
+        <aside class="tf-form-page__aside">
+
+            <!-- Tarjeta de usuario (identidad) -->
+            <div class="tf-rail-card tf-rail-card--user">
+                <div class="tf-rail-user">
+                    <span class="tf-rail-user__avatar">
+                        <i class="bi bi-person-fill"></i>
+                    </span>
+                    <div class="tf-rail-user__info">
+                        <strong>{{ .user.Name }}</strong>
+                        <span class="tf-rail-user__role">
+                            {{ if eq .user.Role "admin" }}Administrador{{ else if eq .user.Role "carrier"
+                            }}Transportista{{ else }}{{ .user.Role }}{{ end }}
+                        </span>
+                    </div>
+                </div>
+                <p class="tf-rail-card__hint">
+                    <i class="bi bi-shield-check"></i>
+                    Tus datos se guardan cifrados y solo se comparten con transportistas relevantes.
+                </p>
+            </div>
+
+            <!-- Progreso -->
+            <div class="tf-rail-card">
+                <header class="tf-rail-card__head">
+                    <i class="bi bi-list-check"></i>
+                    <span>Secciones</span>
+                </header>
+                <ol class="tf-progress" id="tfProgress">
+                    <li class="tf-progress__step is-current" data-step="account">
+                        <span class="tf-progress__dot"></span>
+                        <span class="tf-progress__label">Datos básicos</span>
+                    </li>
+                    <li class="tf-progress__step" data-step="location">
+                        <span class="tf-progress__dot"></span>
+                        <span class="tf-progress__label">Ubicación</span>
+                    </li>
+                    {{ if eq .user.Role "carrier" }}
+                    <li class="tf-progress__step" data-step="preferences">
+                        <span class="tf-progress__dot"></span>
+                        <span class="tf-progress__label">Preferencias</span>
+                    </li>
+                    <li class="tf-progress__step" data-step="availability">
+                        <span class="tf-progress__dot"></span>
+                        <span class="tf-progress__label">Disponibilidad</span>
+                    </li>
+                    {{ end }}
+                </ol>
+            </div>
+
+            <!-- Acciones -->
+            <div class="tf-rail-card tf-rail-card--actions">
+                <header class="tf-rail-card__head">
+                    <i class="bi bi-check2-circle"></i>
+                    <span>Guardar cambios</span>
+                </header>
+                <button type="submit" class="btn btn-primary btn-lg tf-w-full">
+                    <i class="bi bi-check-circle"></i> Guardar Cambios
+                </button>
+                <a href="/profile" class="btn btn-secondary tf-w-full">
+                    <i class="bi bi-x-circle"></i> Cancelar
+                </a>
+                <p class="tf-rail-card__hint">
+                    Los cambios se aplican inmediatamente después de guardar.
+                </p>
+            </div>
+
+        </aside>
+
+    </form>
+
+    <!-- JS: progreso dinámico -->
+    <script>
+        (function () {
+            const form = document.querySelector('.tf-form-page');
+            if (!form) return;
+
+            const blocks = Array.from(form.querySelectorAll('[data-block]'))
+                .map(b => b.getAttribute('data-block'));
+            if (!blocks.length) return;
+
+            const stepEls = {};
+            blocks.forEach(id => {
+                stepEls[id] = form.parentElement.querySelector(`.tf-progress__step[data-step="${id}"]`);
+            });
+
+            function updateProgress() {
+                blocks.forEach(id => {
+                    const block = document.getElementById(`block-${id}`);
+                    if (!block) return;
+
+                    const inputs = block.querySelectorAll('input:not([type="hidden"]):not([type="password"]), select, textarea');
+                    const total = inputs.length;
+                    const filled = Array.from(inputs).filter(el => el.value.trim() !== '').length;
+
+                    // Consideramos "completo" si al menos el 70% de los campos tiene datos
+                    const complete = total === 0 || (filled / total) >= 0.7;
+
+                    const step = stepEls[id];
+                    if (!step) return;
+                    step.classList.toggle('is-complete', complete);
+                });
+
+                // Marca el primero incompleto como current
+                const firstIncomplete = blocks.find(id => !stepEls[id]?.classList.contains('is-complete'));
+                blocks.forEach(id => stepEls[id]?.classList.remove('is-current'));
+                if (firstIncomplete) stepEls[firstIncomplete].classList.add('is-current');
+            }
+
+            form.addEventListener('input', updateProgress);
+            updateProgress();
+        })();
+    </script>

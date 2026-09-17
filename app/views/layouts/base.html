@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ .title }} | BUFALO</title>
+    <link rel="icon" href="data:,">
+    <link rel="stylesheet" href="/css/style.css">
+
+    <!-- ══════════ LEAFLET — SOLO desde jsdelivr (permitido por CSP) ══════════ -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/leaflet.geodesic@2.7.0/dist/leaflet.geodesic.umd.min.js"></script>
+ <script>
+      (function () {
+        try {
+          var saved = localStorage.getItem('tf-theme') || 'light';
+          document.documentElement.setAttribute('data-theme', saved);
+        } catch (e) {}
+      })();
+    </script>
+</head>
+
+<body>
+<header class="bf-topbar">
+
+    <!-- LEFT: Perfil de usuario -->
+    <div class="bf-topbar__left">
+        <button type="button" class="bf-user-btn" id="bfUserBtn"
+                aria-haspopup="menu" aria-expanded="false">
+            <span class="bf-user-btn__avatar"><i class="bi bi-person-fill"></i></span>
+            <span class="bf-user-btn__info">
+                <strong>{{ .user.Name }}</strong>
+                <small>{{ if .isAdmin }}Administrador{{ else if .isPublicador }}Publicador{{ else }}{{ end }}</small>
+            </span>
+            <i class="bi bi-chevron-down bf-user-btn__caret"></i>
+        </button>
+
+        <div class="bf-user-menu" id="bfUserMenu" hidden role="menu">
+            <a href="/profile" role="menuitem"><i class="bi bi-person"></i> Ver perfil</a>
+            <a href="/profile/edit" role="menuitem"><i class="bi bi-gear"></i> Editar perfil</a>
+            <hr>
+            <a href="/logout" class="is-danger" role="menuitem">
+                <i class="bi bi-box-arrow-right"></i> Cerrar sesión
+            </a>
+        </div>
+    </div>
+
+    <!-- CENTER: Navegación principal -->
+    <nav class="bf-topnav" aria-label="Navegación principal">
+     {{ if or .isPublicador .isChofer .isAdmin }}
+        <a href="/home" class="bf-topnav__link">
+        
+            <i class="bi bi-house"></i><span>Inicio</span>
+        </a>
+        <a href="/loads" class="bf-topnav__link">
+            <i class="bi bi-truck"></i><span>Cargas</span>
+        </a>
+       
+        <a href="/empresas" class="bf-topnav__link">
+            <i class="bi bi-building"></i><span>Empresas</span>
+        </a>
+        <a href="/direcciones" class="bf-topnav__link">
+            <i class="bi bi-geo-alt"></i><span>Direcciones</span>
+        </a>
+        <a href="/choferes" class="bf-topnav__link">
+            <i class="bi bi-person-badge"></i><span>Choferes</span>
+        </a>
+        {{ end }}
+        {{ if .isAdmin }}
+        <a href="/admin/users" class="bf-topnav__link">
+            <i class="bi bi-people"></i><span>Usuarios</span>
+        </a>
+        {{ end }}
+    </nav>
+
+    <!-- RIGHT: Tema + logo -->
+    <div class="bf-topbar__right">
+        <button type="button" class="bf-theme-toggle" id="tfThemeToggle"
+                aria-label="Cambiar tema" title="Cambiar tema">
+            <i class="bi bi-moon-stars"></i>
+        </button>
+        <a href="/home" class="bf-brand" aria-label="BUFALO · Inicio">
+            <img src="/img/bufalo.svg" width="90vh">
+        </a>
+    </div>
+
+</header>
+    <div class="container">
+        {{ if .flash_success }}
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i> {{ .flash_success }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {{ end }}
+        {{ if .flash_error }}
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i> {{ .flash_error }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {{ end }}
+        {{ embed }}
+    </div>
+    <script>
+(function () {
+    var root = document.documentElement;
+
+    /* ─── Tema toggle ─── */
+    var themeBtn = document.getElementById('tfThemeToggle');
+    if (themeBtn) {
+        var icon = themeBtn.querySelector('i');
+        var syncIcon = function () {
+            var dark = root.getAttribute('data-theme') === 'dark';
+            if (icon) icon.className = dark ? 'bi bi-sun' : 'bi bi-moon-stars';
+        };
+        syncIcon();
+        themeBtn.addEventListener('click', function () {
+            var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+            root.setAttribute('data-theme', next);
+            try { localStorage.setItem('tf-theme', next); } catch (e) {}
+            syncIcon();
+        });
+    }
+
+    /* ─── Menú de usuario ─── */
+    var userBtn = document.getElementById('bfUserBtn');
+    var userMenu = document.getElementById('bfUserMenu');
+    if (userBtn && userMenu) {
+        userBtn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            var open = userMenu.hasAttribute('hidden');
+            if (open) {
+                userMenu.removeAttribute('hidden');
+                userBtn.setAttribute('aria-expanded', 'true');
+            } else {
+                userMenu.setAttribute('hidden', '');
+                userBtn.setAttribute('aria-expanded', 'false');
+            }
+        });
+        document.addEventListener('click', function (e) {
+            if (!userMenu.contains(e.target) && e.target !== userBtn) {
+                userMenu.setAttribute('hidden', '');
+                userBtn.setAttribute('aria-expanded', 'false');
+            }
+        });
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') {
+                userMenu.setAttribute('hidden', '');
+                userBtn.setAttribute('aria-expanded', 'false');
+            }
+        });
+    }
+
+    /* ─── Auto-highlight nav actual ─── */
+    var here = window.location.pathname;
+    var match = function (a) {
+        var href = a.getAttribute('href');
+        if (!href || href === '/logout') return;
+        if (here === href || (href !== '/' && here.indexOf(href) === 0)) {
+            a.setAttribute('aria-current', 'page');
+        }
+    };
+    document.querySelectorAll('.bf-topnav__link, .bf-sidebar__link').forEach(match);
+})();
+</script>
+</body>
+
+</html>

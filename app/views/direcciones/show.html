@@ -1,0 +1,260 @@
+<html data-theme="light">
+<body lang="es">
+    <div class="tf-profile">
+
+        <!-- ═══════════════════════════════════════════════════════════
+             HEADER — breadcrumb + acciones
+             ═══════════════════════════════════════════════════════════ -->
+        <header class="tf-profile__header">
+            <div class="tf-profile__breadcrumb">
+                <a href="/home" class="tf-breadcrumb__link">
+                    <i class="bi bi-house"></i> Inicio
+                </a>
+                <i class="bi bi-chevron-right tf-breadcrumb__sep"></i>
+                <a href="/direcciones" class="tf-breadcrumb__link">
+                    Direcciones
+                </a>
+                <i class="bi bi-chevron-right tf-breadcrumb__sep"></i>
+                <span class="tf-breadcrumb__current">#{{ .direccion.ID }}</span>
+            </div>
+
+            <div class="tf-profile__actions">
+                <a href="/direcciones" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left"></i> Volver
+                </a>
+                {{ if or (eq .role "publicador") (eq .role "chofer") (eq .role "admin") }}
+                <a href="/direcciones/{{ .direccion.ID }}/edit" class="btn btn-primary">
+                    <i class="bi bi-pencil-square"></i> Editar dirección
+                </a>
+                {{ end }}
+            </div>
+        </header>
+
+        {{ if .flash_success }}<div class="alert alert-success tf-mb-4">{{ .flash_success }}</div>{{ end }}
+        {{ if .flash_error }}<div class="alert alert-danger tf-mb-4">{{ .flash_error }}</div>{{ end }}
+
+        <!-- ═══════════════════════════════════════════════════════════
+             HERO — Card de la dirección
+             ═══════════════════════════════════════════════════════════ -->
+        <section class="tf-profile__hero">
+            <div class="tf-profile__avatar">
+                <i class="bi bi-geo-alt-fill"></i>
+                <span class="tf-profile__avatar-status" aria-hidden="true"></span>
+            </div>
+
+            <div class="tf-profile__identity">
+                <h1>{{ .direccion.Ciudad }}, {{ .direccion.EstadoProvincia }}</h1>
+                <p class="tf-profile__email">
+                    <i class="bi bi-globe-americas"></i> {{ .direccion.Pais }}
+                    {{ if .direccion.CodigoPostal }} · CP {{ .direccion.CodigoPostal }}{{ end }}
+                </p>
+
+                {{ if .direccion.Calle }}
+                <p class="tf-profile__email">
+                    <i class="bi bi-house"></i> {{ .direccion.Calle }}
+                </p>
+                {{ end }}
+
+                <span class="tf-role-tag tf-role-tag--carrier">
+                    <i class="bi bi-crosshair"></i>
+                    {{ if and .direccion.Latitud .direccion.Longitud }}
+                        {{ .direccion.Latitud }}, {{ .direccion.Longitud }}
+                    {{ else }}
+                        Sin coordenadas
+                    {{ end }}
+                </span>
+            </div>
+
+            <div class="tf-profile__id">
+                <small>ID de dirección</small>
+                <strong>#{{ .direccion.ID }}</strong>
+            </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════════════════════════
+             GRID DE BLOQUES
+             ═══════════════════════════════════════════════════════════ -->
+        <div class="tf-profile__grid">
+
+            <!-- ───────── 01 · UBICACIÓN ───────── -->
+            <section class="tf-info-block" data-block="location">
+                <header class="tf-info-block__head">
+                    <i class="bi bi-geo-alt-fill tf-info-block__icon"></i>
+                    <div class="tf-info-block__text">
+                        <h2>Ubicación</h2>
+                        <p>Dirección física completa</p>
+                    </div>
+                </header>
+
+                <div class="tf-info-block__body">
+                    <dl class="tf-info-list">
+                        <div class="tf-info-list__row tf-info-list__row--full">
+                            <dt><i class="bi bi-house"></i> Calle y número</dt>
+                            <dd>
+                                {{ if .direccion.Calle }}{{ .direccion.Calle }}
+                                {{ else }}<span class="empty-value">—</span>{{ end }}
+                            </dd>
+                        </div>
+                        <div class="tf-info-list__row">
+                            <dt><i class="bi bi-buildings"></i> Ciudad</dt>
+                            <dd>
+                                {{ if .direccion.Ciudad }}{{ .direccion.Ciudad }}
+                                {{ else }}<span class="empty-value">—</span>{{ end }}
+                            </dd>
+                        </div>
+                        <div class="tf-info-list__row">
+                            <dt><i class="bi bi-map"></i> Provincia</dt>
+                            <dd>
+                                {{ if .direccion.EstadoProvincia }}{{ .direccion.EstadoProvincia }}
+                                {{ else }}<span class="empty-value">—</span>{{ end }}
+                            </dd>
+                        </div>
+                        <div class="tf-info-list__row">
+                            <dt><i class="bi bi-globe-americas"></i> País</dt>
+                            <dd>
+                                {{ if .direccion.Pais }}{{ .direccion.Pais }}
+                                {{ else }}<span class="empty-value">—</span>{{ end }}
+                            </dd>
+                        </div>
+                        <div class="tf-info-list__row">
+                            <dt><i class="bi bi-mailbox"></i> Código postal</dt>
+                            <dd>
+                                {{ if .direccion.CodigoPostal }}{{ .direccion.CodigoPostal }}
+                                {{ else }}<span class="empty-value">—</span>{{ end }}
+                            </dd>
+                        </div>
+                    </dl>
+                </div>
+            </section>
+
+            <!-- ───────── 02 · COORDENADAS ───────── -->
+            <section class="tf-info-block" data-block="coordinates">
+                <header class="tf-info-block__head">
+                    <i class="bi bi-crosshair tf-info-block__icon"></i>
+                    <div class="tf-info-block__text">
+                        <h2>Coordenadas</h2>
+                        <p>Ubicación geográfica precisa</p>
+                    </div>
+                </header>
+
+                <div class="tf-info-block__body">
+                    <dl class="tf-info-list">
+                        <div class="tf-info-list__row">
+                            <dt><i class="bi bi-crosshair"></i> Latitud</dt>
+                            <dd class="tf-tabular">
+                                {{ if .direccion.Latitud }}{{ .direccion.Latitud }}
+                                {{ else }}<span class="empty-value">—</span>{{ end }}
+                            </dd>
+                        </div>
+                        <div class="tf-info-list__row">
+                            <dt><i class="bi bi-crosshair"></i> Longitud</dt>
+                            <dd class="tf-tabular">
+                                {{ if .direccion.Longitud }}{{ .direccion.Longitud }}
+                                {{ else }}<span class="empty-value">—</span>{{ end }}
+                            </dd>
+                        </div>
+                        <div class="tf-info-list__row">
+                            <dt><i class="bi bi-calendar-plus"></i> Creada</dt>
+                            <dd class="tf-tabular">
+                                {{ .direccion.CreatedAt.Format "02/01/2006 15:04" }}
+                            </dd>
+                        </div>
+                        {{ if .direccion.UpdatedAt }}
+                        <div class="tf-info-list__row">
+                            <dt><i class="bi bi-calendar-check"></i> Actualizada</dt>
+                            <dd class="tf-tabular">
+                                {{ .direccion.UpdatedAt.Format "02/01/2006 15:04" }}
+                            </dd>
+                        </div>
+                        {{ end }}
+                    </dl>
+                </div>
+            </section>
+
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════
+             MAPA (si hay coordenadas)
+             ═══════════════════════════════════════════════════════════ -->
+        {{ if and .direccion.Latitud .direccion.Longitud }}
+        <section class="tf-info-block" data-block="map" style="margin-top: var(--tf-space-4, 1rem);">
+            <header class="tf-info-block__head">
+                <i class="bi bi-map-fill tf-info-block__icon"></i>
+                <div class="tf-info-block__text">
+                    <h2>Mapa</h2>
+                    <p>Ubicación en el mapa</p>
+                </div>
+            </header>
+
+            <div class="tf-info-block__body">
+                <div id="direccionMap"
+                     data-lat="{{ .direccion.Latitud }}"
+                     data-lng="{{ .direccion.Longitud }}"
+                     style="width:100%;height:420px;border-radius:var(--tf-radius, 12px);overflow:hidden;"></div>
+            </div>
+        </section>
+        {{ end }}
+
+        <!-- ═══════════════════════════════════════════════════════════
+             ACCIONES FINALES
+             ═══════════════════════════════════════════════════════════ -->
+        <footer class="tf-profile__footer">
+            <a href="/direcciones" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Volver al listado
+            </a>
+            {{ if or (eq .role "publicador") (eq .role "chofer") (eq .role "admin") }}
+            <a href="/direcciones/{{ .direccion.ID }}/edit" class="btn btn-primary">
+                <i class="bi bi-pencil-square"></i> Editar dirección
+            </a>
+            {{ end }}
+        </footer>
+
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         MAPA — Solo si hay coordenadas
+         ═══════════════════════════════════════════════════════════════ -->
+    {{ if and .direccion.Latitud .direccion.Longitud }}
+    <script>
+    (function () {
+        if (typeof L === 'undefined') {
+            console.warn('[direccion-show] Leaflet no está cargado.');
+            return;
+        }
+
+        const el  = document.getElementById('direccionMap');
+        if (!el) return;
+
+        const lat = parseFloat(el.dataset.lat);
+        const lng = parseFloat(el.dataset.lng);
+        if (isNaN(lat) || isNaN(lng)) return;
+
+        const map = L.map(el, {
+            center: [lat, lng],
+            zoom: 15,
+            scrollWheelZoom: true,
+            zoomControl: true,
+        });
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap',
+            maxZoom: 18,
+        }).addTo(map);
+
+        const icon = L.divIcon({
+            className: '',
+            html: '<div class="tf-map-pin tf-map-pin--pickup"><i class="bi bi-geo-alt-fill"></i></div>',
+            iconSize: [32, 32],
+            iconAnchor: [16, 32],
+        });
+
+        L.marker([lat, lng], { icon: icon }).addTo(map);
+
+        setTimeout(function () { map.invalidateSize(); }, 150);
+        window.addEventListener('resize', function () { map.invalidateSize(); });
+    })();
+    </script>
+    {{ end }}
+
+</body>
+</html>

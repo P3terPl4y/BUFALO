@@ -1,0 +1,451 @@
+<div class="tf-profile">
+
+    <!-- ══════════ BREADCRUMB + ACCIONES ══════════ -->
+    <header class="tf-profile__header">
+        <div class="tf-profile__breadcrumb">
+            <a href="/home" class="tf-breadcrumb__link">
+                <i class="bi bi-house"></i> Inicio
+            </a>
+            <i class="bi bi-chevron-right tf-breadcrumb__sep"></i>
+            <a href="/loads" class="tf-breadcrumb__link">Cargas</a>
+            <i class="bi bi-chevron-right tf-breadcrumb__sep"></i>
+            <span class="tf-breadcrumb__current">#{{ .load.ID }}</span>
+        </div>
+
+        <div class="tf-profile__actions">
+            {{ if or (eq .role "admin") (eq .role "publicador") }}
+            <a href="/loads/{{ .load.ID }}/edit" class="btn btn-primary">
+                <i class="bi bi-pencil-square"></i> Editar
+            </a>
+            {{ end }}
+        </div>
+    </header>
+
+    <!-- ══════════ HERO ══════════ -->
+    <section class="tf-profile__hero">
+        <div class="tf-load-hero__id">
+            <span>#</span><strong>{{ .load.ID }}</strong>
+        </div>
+
+        <div class="tf-profile__identity">
+            <h1>{{ .load.NumeroReferencia }}</h1>
+            <div class="tf-load-hero__badges">
+                {{ if eq .load.Estado "publicada" }}
+                <span class="badge bg-success"><i class="bi bi-check-circle"></i> Publicada</span>
+                {{ else if eq .load.Estado "negociando" }}
+                <span class="badge bg-info"><i class="bi bi-chat-dots"></i> Negociando</span>
+                {{ else if eq .load.Estado "asignada" }}
+                <span class="badge bg-warning"><i class="bi bi-person-check"></i> Asignada</span>
+                {{ else if eq .load.Estado "en_transito" }}
+                <span class="badge bg-info"><i class="bi bi-truck"></i> En tránsito</span>
+                {{ else if eq .load.Estado "entregada" }}
+                <span class="badge bg-primary"><i class="bi bi-flag"></i> Entregada</span>
+                {{ else if eq .load.Estado "cancelada" }}
+                <span class="badge bg-danger"><i class="bi bi-x-circle"></i> Cancelada</span>
+                {{ end }}
+
+                <span class="badge bg-light">
+                    <i class="bi bi-truck-front"></i> {{ .load.TipoEquipo }}
+                </span>
+                <span class="badge bg-light">
+                    {{ .load.TipoCarga }}
+                </span>
+            </div>
+        </div>
+
+        <div class="tf-profile__id">
+            <small>Tarifa</small>
+            <strong>{{ if .load.TarifaTotal }}{{ .load.TarifaTotal }}{{ end }}</strong>
+            <em>{{ .load.Moneda }}</em>
+        </div>
+    </section>
+
+    <!-- ══════════ MERCANCÍA ══════════ -->
+    {{ if .load.Commodity }}
+    <section class="tf-info-block">
+        <header class="tf-info-block__head">
+            <i class="bi bi-text-paragraph tf-info-block__icon"></i>
+            <div class="tf-info-block__text">
+                <h2>Mercancía</h2>
+                <p>Tipo de producto transportado</p>
+            </div>
+        </header>
+        <div class="tf-info-block__body">
+            <p class="tf-detail-text">{{ .load.Commodity }}</p>
+        </div>
+    </section>
+    {{ end }}
+
+    <!-- ══════════ RUTA (A → B) ══════════ -->
+    <section class="tf-info-block">
+        <header class="tf-info-block__head">
+            <i class="bi bi-signpost-split-fill tf-info-block__icon"></i>
+            <div class="tf-info-block__text">
+                <h2>Ruta</h2>
+                <p>Origen y destino con sus ventanas de tiempo</p>
+            </div>
+        </header>
+        <div class="tf-info-block__body">
+            <div class="tf-route">
+
+                <!-- Punto A · Recogida -->
+                <div class="tf-route__point tf-route__point--pickup">
+                    <header class="tf-route__point-head">
+                        <span class="tf-route__dot tf-route__dot--pickup"></span>
+                        <h3>Recogida</h3>
+                    </header>
+
+                    <dl class="tf-info-list">
+                        <div class="tf-info-list__row tf-info-list__row--full">
+                            <dt><i class="bi bi-geo-alt"></i> Lugar</dt>
+                            <dd>
+                                {{ if .load.OrigenDireccion }}
+                                    {{ .load.OrigenDireccion.Ciudad }}, {{ .load.OrigenDireccion.EstadoProvincia }}
+                                {{ else }}
+                                    <span class="empty-value">Sin dirección</span>
+                                {{ end }}
+                            </dd>
+                        </div>
+
+                        {{ if .load.OrigenDireccion }}
+                        <div class="tf-info-list__row tf-info-list__row--full">
+                            <dt><i class="bi bi-map"></i> Ubicación</dt>
+                            <dd>
+                                {{ if .load.OrigenDireccion.Calle }}{{ .load.OrigenDireccion.Calle }} · {{ end }}
+                                {{ .load.OrigenDireccion.Pais }}
+                                {{ if .load.OrigenDireccion.CodigoPostal }} · CP {{ .load.OrigenDireccion.CodigoPostal }}{{ end }}
+                            </dd>
+                        </div>
+                        {{ end }}
+
+                        {{ if and .load.OrigenDireccion .load.OrigenDireccion.Latitud .load.OrigenDireccion.Longitud }}
+                        <div class="tf-info-list__row tf-info-list__row--full">
+                            <dt><i class="bi bi-crosshair"></i> Coordenadas</dt>
+                            <dd class="tf-tabular">
+                                {{ .load.OrigenDireccion.Latitud }}, {{ .load.OrigenDireccion.Longitud }}
+                            </dd>
+                        </div>
+                        {{ end }}
+
+                        <div class="tf-info-list__row tf-info-list__row--full">
+                            <dt><i class="bi bi-clock"></i> Fecha / Hora</dt>
+                            <dd class="tf-tabular">
+                                {{ .load.FechaRecogida.Format "02/01/2006 15:04" }}
+                            </dd>
+                        </div>
+                    </dl>
+                </div>
+
+                <div class="tf-route__connector" aria-hidden="true">
+                    <i class="bi bi-arrow-right"></i>
+                </div>
+
+                <!-- Punto B · Entrega -->
+                <div class="tf-route__point tf-route__point--dropoff">
+                    <header class="tf-route__point-head">
+                        <span class="tf-route__dot tf-route__dot--dropoff"></span>
+                        <h3>Entrega</h3>
+                    </header>
+
+                    <dl class="tf-info-list">
+                        <div class="tf-info-list__row tf-info-list__row--full">
+                            <dt><i class="bi bi-geo-alt"></i> Lugar</dt>
+                            <dd>
+                                {{ if .load.DestinoDireccion }}
+                                    {{ .load.DestinoDireccion.Ciudad }}, {{ .load.DestinoDireccion.EstadoProvincia }}
+                                {{ else }}
+                                    <span class="empty-value">Sin dirección</span>
+                                {{ end }}
+                            </dd>
+                        </div>
+
+                        {{ if .load.DestinoDireccion }}
+                        <div class="tf-info-list__row tf-info-list__row--full">
+                            <dt><i class="bi bi-map"></i> Ubicación</dt>
+                            <dd>
+                                {{ if .load.DestinoDireccion.Calle }}{{ .load.DestinoDireccion.Calle }} · {{ end }}
+                                {{ .load.DestinoDireccion.Pais }}
+                                {{ if .load.DestinoDireccion.CodigoPostal }} · CP {{ .load.DestinoDireccion.CodigoPostal }}{{ end }}
+                            </dd>
+                        </div>
+                        {{ end }}
+
+                        {{ if and .load.DestinoDireccion .load.DestinoDireccion.Latitud .load.DestinoDireccion.Longitud }}
+                        <div class="tf-info-list__row tf-info-list__row--full">
+                            <dt><i class="bi bi-crosshair"></i> Coordenadas</dt>
+                            <dd class="tf-tabular">
+                                {{ .load.DestinoDireccion.Latitud }}, {{ .load.DestinoDireccion.Longitud }}
+                            </dd>
+                        </div>
+                        {{ end }}
+
+                        {{ if .load.FechaEntrega }}
+                        <div class="tf-info-list__row tf-info-list__row--full">
+                            <dt><i class="bi bi-clock"></i> Fecha / Hora</dt>
+                            <dd class="tf-tabular">
+                                {{ .load.FechaEntrega.Format "02/01/2006 15:04" }}
+                            </dd>
+                        </div>
+                        {{ end }}
+                    </dl>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- ══════════ GRID: CARGA + ESTIMACIONES ══════════ -->
+    <div class="tf-profile__grid">
+
+        <section class="tf-info-block">
+            <header class="tf-info-block__head">
+                <i class="bi bi-box-seam-fill tf-info-block__icon"></i>
+                <div class="tf-info-block__text">
+                    <h2>Datos de la carga</h2>
+                    <p>Especificaciones físicas y económicas</p>
+                </div>
+            </header>
+            <div class="tf-info-block__body">
+                <dl class="tf-info-list">
+                    <div class="tf-info-list__row">
+                        <dt><i class="bi bi-speedometer2"></i> Peso</dt>
+                        <dd>
+                            {{ if .load.PesoKg }}
+                            <span class="tf-value-unit"><strong>{{ .load.PesoKg }}</strong><em>kg</em></span>
+                            {{ else }}<span class="empty-value">—</span>{{ end }}
+                        </dd>
+                    </div>
+                    <div class="tf-info-list__row">
+                        <dt><i class="bi bi-truck-front"></i> Equipo</dt>
+                        <dd><span class="tf-chip">{{ .load.TipoEquipo }}</span></dd>
+                    </div>
+                    <div class="tf-info-list__row">
+                        <dt><i class="bi bi-box"></i> Tipo</dt>
+                        <dd><span class="tf-chip">{{ .load.TipoCarga }}</span></dd>
+                    </div>
+                    <div class="tf-info-list__row">
+                        <dt><i class="bi bi-currency-dollar"></i> Tarifa total</dt>
+                        <dd>
+                            {{ if .load.TarifaTotal }}
+                            <span class="rate-amount">{{ .load.TarifaTotal }} {{ .load.Moneda }}</span>
+                            {{ else }}<span class="empty-value">—</span>{{ end }}
+                        </dd>
+                    </div>
+                    <div class="tf-info-list__row">
+                        <dt><i class="bi bi-graph-up"></i> Tarifa / km</dt>
+                        <dd>
+                            {{ if .load.TarifaPorKm }}
+                            <span class="rate-amount">{{ .load.TarifaPorKm }} {{ .load.Moneda }}/km</span>
+                            {{ else }}<span class="empty-value">—</span>{{ end }}
+                        </dd>
+                    </div>
+                </dl>
+            </div>
+        </section>
+
+        <section class="tf-info-block">
+            <header class="tf-info-block__head">
+                <i class="bi bi-rulers tf-info-block__icon"></i>
+                <div class="tf-info-block__text">
+                    <h2>Estimaciones</h2>
+                    <p>Distancia y trazabilidad</p>
+                </div>
+            </header>
+            <div class="tf-info-block__body">
+                <dl class="tf-info-list">
+                    <div class="tf-info-list__row">
+                        <dt><i class="bi bi-signpost-2"></i> Distancia</dt>
+                        <dd>
+                            <span class="tf-value-unit"><strong>{{ .load.DistanciaKm }}</strong><em>km</em></span>
+                        </dd>
+                    </div>
+                    {{ if .load.DistanciaRealKm }}
+                    <div class="tf-info-list__row">
+                        <dt><i class="bi bi-signpost-2-fill"></i> Distancia real</dt>
+                        <dd>
+                            <span class="tf-value-unit"><strong>{{ .load.DistanciaRealKm }}</strong><em>km</em></span>
+                        </dd>
+                    </div>
+                    {{ end }}
+                    <div class="tf-info-list__row">
+                        <dt><i class="bi bi-calendar-plus"></i> Creada</dt>
+                        <dd class="tf-tabular">{{ .load.CreatedAt.Format "02/01/2006 15:04" }}</dd>
+                    </div>
+                    {{ if .load.UpdatedAt }}
+                    <div class="tf-info-list__row">
+                        <dt><i class="bi bi-calendar-check"></i> Actualizada</dt>
+                        <dd class="tf-tabular">{{ .load.UpdatedAt.Format "02/01/2006 15:04" }}</dd>
+                    </div>
+                    {{ end }}
+                </dl>
+            </div>
+        </section>
+
+    </div>
+
+    <!-- ══════════ MAPA ══════════ -->
+    <section class="tf-info-block tf-info-block--map">
+        <header class="tf-info-block__head">
+            <i class="bi bi-map-fill tf-info-block__icon"></i>
+            <div class="tf-info-block__text">
+                <h2>Trayectoria</h2>
+                <p>Ruta geográfica entre origen y destino</p>
+            </div>
+
+            {{ if .hasMap }}
+            <button type="button" class="btn btn-secondary btn-sm" data-map-recenter>
+                <i class="bi bi-crosshair"></i> Recentrar
+            </button>
+            {{ end }}
+        </header>
+
+        <div class="tf-info-block__body tf-info-block__body--map">
+            {{ if .hasMap }}
+            <div id="route-map"
+                 data-pickup-lat="{{ .load.OrigenDireccion.Latitud }}"
+                 data-pickup-lng="{{ .load.OrigenDireccion.Longitud }}"
+                 data-pickup-city="{{ .load.OrigenDireccion.Ciudad }}"
+                 data-dropoff-lat="{{ .load.DestinoDireccion.Latitud }}"
+                 data-dropoff-lng="{{ .load.DestinoDireccion.Longitud }}"
+                 data-dropoff-city="{{ .load.DestinoDireccion.Ciudad }}"></div>
+            {{ else }}
+            <div class="tf-map-empty">
+                <i class="bi bi-geo-alt"></i>
+                <h4>Sin coordenadas disponibles</h4>
+                <p>Este viaje no tiene coordenadas GPS registradas.</p>
+                {{ if or (eq .role "admin") (eq .role "publicador") }}
+                <a href="/loads/{{ .load.ID }}/edit" class="btn btn-primary btn-sm">
+                    <i class="bi bi-pencil"></i> Añadir coordenadas
+                </a>
+                {{ end }}
+            </div>
+            {{ end }}
+        </div>
+    </section>
+
+    <!-- ══════════ FOOTER DE ACCIONES ══════════ -->
+    <footer class="tf-profile__footer">
+        <a href="/loads" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Volver al listado
+        </a>
+
+        <div class="tf-flex">
+            {{ if or (eq .role "admin") (eq .role "publicador") }}
+            <form action="/loads/{{ .load.ID }}/delete" method="POST"
+                  onsubmit="return confirm('¿Eliminar esta carga?')" style="display:inline">
+                <input type="hidden" name="_csrf" value="{{ .csrfToken }}">
+                <button type="submit" class="btn btn-outline-danger">
+                    <i class="bi bi-trash"></i> Eliminar
+                </button>
+            </form>
+
+            <a href="/loads/{{ .load.ID }}/edit" class="btn btn-primary">
+                <i class="bi bi-pencil"></i> Editar carga
+            </a>
+            {{ else if eq .role "chofer" }}
+            {{ if eq .load.Estado "publicada" }}
+            <form action="/loads/{{ .load.ID }}/accept" method="POST" style="display:inline"
+                  onsubmit="return confirm('¿Aceptar esta carga?')">
+                <input type="hidden" name="_csrf" value="{{ .csrfToken }}">
+                <button type="submit" class="btn btn-success">
+                    <i class="bi bi-check2-circle"></i> Aceptar carga
+                </button>
+            </form>
+            {{ else }}
+            <span class="tf-detail-note">
+                <i class="bi bi-info-circle"></i>
+                Esta carga no está disponible para aceptar.
+            </span>
+            {{ end }}
+            {{ end }}
+        </div>
+    </footer>
+
+</div>
+
+<script>
+(function () {
+    const el = document.getElementById('route-map');
+    if (!el) return;
+
+    const pickupLat  = parseFloat(el.dataset.pickupLat);
+    const pickupLng  = parseFloat(el.dataset.pickupLng);
+    const dropoffLat = parseFloat(el.dataset.dropoffLat);
+    const dropoffLng = parseFloat(el.dataset.dropoffLng);
+
+    if ([pickupLat, pickupLng, dropoffLat, dropoffLng].some(v => isNaN(v) || v === 0)) {
+        el.outerHTML = '<div class="tf-map-empty"><i class="bi bi-geo-alt"></i>' +
+                       '<h4>Coordenadas inválidas</h4></div>';
+        return;
+    }
+
+    const pickup  = [pickupLat, pickupLng];
+    const dropoff = [dropoffLat, dropoffLng];
+
+    const map = L.map(el, {
+        center: [21.5218, -77.7812],
+        zoom: 7,
+        scrollWheelZoom: true,
+        zoomControl: true,
+    });
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap',
+        maxZoom: 19,
+    }).addTo(map);
+
+    function makeIcon(kind) {
+        const symbol = kind === 'pickup' ? 'box-seam-fill' : 'flag-fill';
+        return L.divIcon({
+            className: '',
+            html: `<div class="tf-map-pin tf-map-pin--${kind}"><i class="bi bi-${symbol}"></i></div>`,
+            iconSize: [34, 34],
+            iconAnchor: [17, 34],
+            popupAnchor: [0, -34],
+        });
+    }
+
+    L.marker(pickup, { icon: makeIcon('pickup') })
+        .addTo(map)
+        .bindPopup(`<strong>Recogida</strong><small>${escapeHtml(el.dataset.pickupCity || '')}</small>`);
+
+    L.marker(dropoff, { icon: makeIcon('dropoff') })
+        .addTo(map)
+        .bindPopup(`<strong>Entrega</strong><small>${escapeHtml(el.dataset.dropoffCity || '')}</small>`);
+
+    if (typeof L.Geodesic !== 'undefined') {
+        new L.Geodesic([pickup, dropoff], {
+            className: 'tf-route-line',
+            color: '#D5001C',
+            weight: 4,
+            opacity: 0.85,
+            steps: 60,
+        }).addTo(map);
+    } else {
+        L.polyline([pickup, dropoff], {
+            color: '#D5001C',
+            weight: 4,
+            opacity: 0.85,
+            dashArray: '10, 6',
+        }).addTo(map);
+    }
+
+    const bounds = L.latLngBounds([pickup, dropoff]);
+    map.fitBounds(bounds, { padding: [50, 50], maxZoom: 12 });
+
+    document.querySelector('[data-map-recenter]')?.addEventListener('click', () => {
+        map.fitBounds(bounds, { padding: [50, 50], maxZoom: 12 });
+    });
+
+    setTimeout(() => map.invalidateSize(), 250);
+    window.addEventListener('resize', () => map.invalidateSize());
+
+    function escapeHtml(s) {
+        return String(s)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
+})();
+</script>

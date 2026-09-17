@@ -1,0 +1,223 @@
+<div class="tf-loads-page">
+
+    <!-- ══════════════ PAGE HEADER ══════════════ -->
+    <header class="tf-loads-header">
+        <div class="tf-loads-header__left">
+            <div class="tf-loads-header__icon">
+                <i class="bi bi-building"></i>
+            </div>
+            <div>
+                <h1>Empresas</h1>
+                <p>Brokers, transportistas, shippers y factorings del sistema</p>
+            </div>
+        </div>
+
+        {{ if or (eq .role "publicador") (eq .role "chofer") (eq .role "admin") }}
+        <a href="/empresas/create" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Nueva Empresa
+        </a>
+        {{ end }}
+    </header>
+
+    <!-- ══════════════ FILTROS ══════════════ -->
+    <section class="tf-filters" id="tfFilters">
+        <div class="tf-filters__header" onclick="document.getElementById('tfFilters').classList.toggle('is-collapsed')">
+            <h3 class="tf-filters__title"><i class="bi bi-funnel"></i> Filtros de búsqueda</h3>
+            <button type="button" class="tf-filters__toggle" aria-label="Colapsar">
+                <i class="bi bi-chevron-down"></i>
+            </button>
+        </div>
+
+        <div class="tf-filters__body">
+            <form method="GET" action="/empresas">
+                <div class="tf-filters__grid">
+                    <div class="tf-field">
+                        <label class="form-label">Tipo</label>
+                        <select name="tipo" class="form-select form-select-sm">
+                            <option value="">Todos</option>
+                            <option value="broker"    {{ if eq .filters.tipo "broker" }}selected{{ end }}>Broker</option>
+                            <option value="carrier"   {{ if eq .filters.tipo "carrier" }}selected{{ end }}>Carrier</option>
+                            <option value="shipper"   {{ if eq .filters.tipo "shipper" }}selected{{ end }}>Shipper</option>
+                            <option value="factoring" {{ if eq .filters.tipo "factoring" }}selected{{ end }}>Factoring</option>
+                            <option value="mixto"     {{ if eq .filters.tipo "mixto" }}selected{{ end }}>Mixto</option>
+                        </select>
+                    </div>
+
+                    <div class="tf-field">
+                        <label class="form-label">Estado</label>
+                        <select name="estado" class="form-select form-select-sm">
+                            <option value="">Todos</option>
+                            <option value="activo"     {{ if eq .filters.estado "activo" }}selected{{ end }}>Activo</option>
+                            <option value="inactivo"   {{ if eq .filters.estado "inactivo" }}selected{{ end }}>Inactivo</option>
+                            <option value="suspendido" {{ if eq .filters.estado "suspendido" }}selected{{ end }}>Suspendido</option>
+                        </select>
+                    </div>
+
+                    <div class="tf-field">
+                        <label class="form-label">Buscar</label>
+                        <input type="text" name="q" class="form-control form-control-sm"
+                               placeholder="Nombre legal, comercial, MC, DOT…"
+                               value="{{ .filters.q }}">
+                    </div>
+                </div>
+
+                <div class="tf-filters__actions">
+                    <button type="submit" class="btn btn-primary btn-sm">
+                        <i class="bi bi-funnel"></i> Aplicar filtros
+                    </button>
+                    <a href="/empresas" class="btn btn-secondary btn-sm">
+                        <i class="bi bi-arrow-counterclockwise"></i> Limpiar
+                    </a>
+                </div>
+            </form>
+        </div>
+    </section>
+
+    <!-- ══════════════ TABLA ══════════════ -->
+    <section class="tf-table-card">
+
+        <header class="tf-table-card__header">
+            <h3 class="tf-table-card__title">
+                <i class="bi bi-list-ul"></i> Resultados
+            </h3>
+            <span class="tf-table-card__count">
+                {{ if .total }}{{ .total }}{{ else }}0{{ end }}
+                {{ if eq .total 1 }}empresa{{ else }}empresas{{ end }}
+            </span>
+        </header>
+
+        <div class="table-responsive">
+            <table class="tf-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Tipo</th>
+                        <th>Nombre</th>
+                        <th>MC / DOT</th>
+                        <th>Ubicación</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{ if .empresas }}
+                        {{ range .empresas }}
+                        <tr>
+                            <td class="tf-cell-id">#{{ .ID }}</td>
+
+                            <td>
+                                {{ if eq (printf "%v" .Tipo) "broker" }}
+                                    <span class="badge bg-primary"><i class="bi bi-briefcase"></i> Broker</span>
+                                {{ else if eq (printf "%v" .Tipo) "carrier" }}
+                                    <span class="badge bg-success"><i class="bi bi-truck"></i> Carrier</span>
+                                {{ else if eq (printf "%v" .Tipo) "shipper" }}
+                                    <span class="badge bg-info">Shipper</span>
+                                {{ else if eq (printf "%v" .Tipo) "factoring" }}
+                                    <span class="badge bg-warning">Factoring</span>
+                                {{ else }}
+                                    <span class="badge bg-secondary">{{ .Tipo }}</span>
+                                {{ end }}
+                            </td>
+
+                            <td class="tf-cell-title">
+                                {{ .NombreLegal }}
+                                {{ if .NombreComercial }}
+                                <small class="tf-cell-subtitle">{{ .NombreComercial }}</small>
+                                {{ end }}
+                            </td>
+
+                            <td class="tf-cell-num">
+                                {{ if .MCNumber }}<div><strong>MC:</strong> {{ .MCNumber }}</div>{{ end }}
+                                {{ if .DOTNumber }}<div><strong>DOT:</strong> {{ .DOTNumber }}</div>{{ end }}
+                                {{ if and (not .MCNumber) (not .DOTNumber) }}
+                                <span class="empty-value">—</span>
+                                {{ end }}
+                            </td>
+
+                            <td class="tf-cell-address">
+                                {{ if .Direccion }}
+                                {{ .Direccion.Ciudad }}, {{ .Direccion.EstadoProvincia }}
+                                <small>{{ .Direccion.Pais }}</small>
+                                {{ else }}
+                                <span class="empty-value">—</span>
+                                {{ end }}
+                            </td>
+
+                            <td>
+                                {{ if eq (printf "%v" .Estado) "activo" }}
+                                    <span class="badge bg-success">Activo</span>
+                                {{ else if eq (printf "%v" .Estado) "inactivo" }}
+                                    <span class="badge bg-secondary">Inactivo</span>
+                                {{ else if eq (printf "%v" .Estado) "suspendido" }}
+                                    <span class="badge bg-danger">Suspendido</span>
+                                {{ end }}
+                            </td>
+
+                            <td class="tf-cell-actions">
+                                <div class="tf-action-group">
+                                    <a href="/empresas/{{ .ID }}"
+                                       class="btn btn-outline-primary" title="Ver detalle">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    {{ if or (eq $.role "admin") (and $.userID $.ownerID) }}
+                                    {{ end }}
+                                    <a href="/empresas/{{ .ID }}/edit"
+                                       class="btn btn-outline-secondary" title="Editar">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {{ end }}
+                    {{ else }}
+                        <tr>
+                            <td colspan="7">
+                                <div class="tf-empty">
+                                    <div class="tf-empty__icon">
+                                        <i class="bi bi-building"></i>
+                                    </div>
+                                    <h4>No hay empresas</h4>
+                                    <p>No se encontraron empresas que coincidan con los filtros aplicados.</p>
+                                    {{ if or (eq .role "publicador") (eq .role "chofer") (eq .role "admin") }}
+                                    <a href="/empresas/create" class="btn btn-primary">
+                                        <i class="bi bi-plus-circle"></i> Crear la primera
+                                    </a>
+                                    {{ end }}
+                                </div>
+                            </td>
+                        </tr>
+                    {{ end }}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Paginación -->
+        {{ if gt .total .perPage }}
+        <div class="tf-pagination-wrap">
+            <nav>
+                <ul class="tf-pagination">
+                    {{ if gt .page 1 }}
+                    <li class="page-item">
+                        <a class="page-link"
+                           href="?page={{ .page 1 }}&tipo={{ .filters.tipo }}&estado={{ .filters.estado }}&q={{ .filters.q }}">
+                            <i class="bi bi-chevron-left"></i>
+                        </a>
+                    </li>
+                    {{ end }}
+
+                    <li class="page-item active">
+                        <span class="page-link">{{ .page }}</span>
+                    </li>
+
+                    <li class="page-item">
+                        <a class="page-link"
+                           href="?page={{  .page 1 }}&tipo={{ .filters.tipo }}&estado={{ .filters.estado }}&q={{ .filters.q }}">
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+        {{ end }}
+    </section>
+</div>

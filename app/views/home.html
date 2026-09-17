@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ .title }} · BUFALO</title>
+    <link rel="icon" href="data:,">
+
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+
+    <script>
+      (function () {
+        try {
+          var saved = localStorage.getItem('tf-theme') || 'light';
+          document.documentElement.setAttribute('data-theme', saved);
+        } catch (e) {}
+      })();
+    </script>
+</head>
+
+<body class="bf-app">
+
+<!-- ══════════════════════════════════════════════════════════
+     TOPBAR: perfil (izq) · nav (centro) · logo + tema (der)
+     ══════════════════════════════════════════════════════════ -->
+
+
+<!-- ══════════════════════════════════════════════════════════
+     BODY: Sidebar (operaciones) + Main (contenido)
+     ══════════════════════════════════════════════════════════ -->
+<div class="bf-body">
+
+    <!-- ─────────── SIDEBAR: OPERACIONES ─────────── -->
+    <aside class="bf-sidebar" aria-label="Operaciones">
+        <div class="bf-sidebar__header">
+            <span class="bf-sidebar__title">Operaciones</span>
+        </div>
+
+        <nav class="bf-sidebar__nav">
+
+            {{ if or .isPublicador .isAdmin }}
+            <a href="/loads" class="bf-sidebar__link">
+                <span class="bf-sidebar__icon"><i class="bi bi-truck"></i></span>
+                <span class="bf-sidebar__label">Gestionar cargas</span>
+            </a>
+            <a href="/loads/create" class="bf-sidebar__link">
+                <span class="bf-sidebar__icon"><i class="bi bi-plus-circle"></i></span>
+                <span class="bf-sidebar__label">Publicar carga</span>
+            </a>
+            {{ end }}
+
+            {{ if .isChofer }}
+            <a href="/loads" class="bf-sidebar__link">
+                <span class="bf-sidebar__icon"><i class="bi bi-box-seam"></i></span>
+                <span class="bf-sidebar__label">Cargas disponibles</span>
+            </a>
+            {{ end }}
+
+            {{ if or .isPublicador .isChofer .isAdmin }}
+            <a href="/empresas" class="bf-sidebar__link">
+                <span class="bf-sidebar__icon"><i class="bi bi-building"></i></span>
+                <span class="bf-sidebar__label">Empresas</span>
+            </a>
+            <a href="/direcciones" class="bf-sidebar__link">
+                <span class="bf-sidebar__icon"><i class="bi bi-geo-alt"></i></span>
+                <span class="bf-sidebar__label">Direcciones</span>
+            </a>
+            <a href="/choferes" class="bf-sidebar__link">
+                <span class="bf-sidebar__icon"><i class="bi bi-person-badge"></i></span>
+                <span class="bf-sidebar__label">Choferes</span>
+            </a>
+            {{ end }}
+
+            {{ if .isAdmin }}
+            <a href="/admin/users" class="bf-sidebar__link">
+                <span class="bf-sidebar__icon"><i class="bi bi-people"></i></span>
+                <span class="bf-sidebar__label">Usuarios</span>
+            </a>
+            {{ end }}
+
+            <hr class="bf-sidebar__divider">
+
+            <a href="/profile" class="bf-sidebar__link">
+                <span class="bf-sidebar__icon"><i class="bi bi-person"></i></span>
+                <span class="bf-sidebar__label">Mi perfil</span>
+            </a>
+            <a href="/config" class="bf-sidebar__link">
+                <span class="bf-sidebar__icon"><i class="bi bi-sliders"></i></span>
+                <span class="bf-sidebar__label">Configuración</span>
+            </a>
+        </nav>
+    </aside>
+
+    <!-- ─────────── MAIN: CONTENIDO ─────────── -->
+    <main class="bf-main">
+
+        <!-- Welcome header -->
+        <header class="bf-main__header">
+            <div>
+                <h1 class="bf-main__title">Hola, {{ .user.Name }}</h1>
+                <p class="bf-main__subtitle">Este es tu panel de operaciones en BUFALO</p>
+            </div>
+            <span class="tf-role-tag tf-role-tag--{{ if .isAdmin }}admin{{ else if .isPublicador }}broker{{ else }}carrier{{ end }}">
+                <i class="bi {{ if .isAdmin }}bi-shield-check{{ else if .isPublicador }}bi-briefcase{{ else }}bi-truck{{ end }}"></i>
+                {{ if .isAdmin }}Administrador{{ else if .isPublicador }}Publicador{{ else }}Chofer{{ end }}
+            </span>
+        </header>
+
+        <!-- ═══════ SECCIÓN: Resumen (admin/publicador) ═══════ -->
+        {{ if or .isPublicador .isAdmin }}
+        <section class="bf-section">
+            <h2 class="bf-section__title">
+                <i class="bi bi-graph-up-arrow"></i> Resumen del sistema
+            </h2>
+
+            <div class="tf-home-stats">
+                <div class="tf-home-stat">
+                    <span class="tf-home-stat__icon tf-home-stat__icon--primary">
+                        <i class="bi bi-truck"></i>
+                    </span>
+                    <div class="tf-home-stat__body">
+                        <span class="tf-home-stat__label">Cargas totales</span>
+                        <p class="tf-home-stat__value">{{ .totalCargas }}</p>
+                    </div>
+                </div>
+                <div class="tf-home-stat">
+                    <span class="tf-home-stat__icon tf-home-stat__icon--success">
+                        <i class="bi bi-check-circle"></i>
+                    </span>
+                    <div class="tf-home-stat__body">
+                        <span class="tf-home-stat__label">Publicadas</span>
+                        <p class="tf-home-stat__value">{{ .cargasPublicadas }}</p>
+                    </div>
+                </div>
+                <div class="tf-home-stat">
+                    <span class="tf-home-stat__icon tf-home-stat__icon--warning">
+                        <i class="bi bi-person-check"></i>
+                    </span>
+                    <div class="tf-home-stat__body">
+                        <span class="tf-home-stat__label">Asignadas</span>
+                        <p class="tf-home-stat__value">{{ len .cargasAsignadas }}</p>
+                    </div>
+                </div>
+                <div class="tf-home-stat">
+                    <span class="tf-home-stat__icon tf-home-stat__icon--info">
+                        <i class="bi bi-flag"></i>
+                    </span>
+                    <div class="tf-home-stat__body">
+                        <span class="tf-home-stat__label">Entregadas</span>
+                        <p class="tf-home-stat__value">{{ len .cargasEntregadas }}</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        {{ end }}
+
+        <!-- ═══════ SECCIÓN: Actividad (chofer) ═══════ -->
+        {{ if .isChofer }}
+        <section class="bf-section">
+            <h2 class="bf-section__title">
+                <i class="bi bi-activity"></i> Tu actividad
+            </h2>
+
+            <div class="tf-home-stats tf-home-stats--3">
+                <div class="tf-home-stat">
+                    <span class="tf-home-stat__icon tf-home-stat__icon--success">
+                        <i class="bi bi-box-seam"></i>
+                    </span>
+                    <div class="tf-home-stat__body">
+                        <span class="tf-home-stat__label">Disponibles</span>
+                        <p class="tf-home-stat__value">{{ len .cargasDisponibles }}</p>
+                    </div>
+                </div>
+                <div class="tf-home-stat">
+                    <span class="tf-home-stat__icon tf-home-stat__icon--warning">
+                        <i class="bi bi-person-check"></i>
+                    </span>
+                    <div class="tf-home-stat__body">
+                        <span class="tf-home-stat__label">Asignadas</span>
+                        <p class="tf-home-stat__value">{{ len .cargasAsignadas }}</p>
+                    </div>
+                </div>
+                <div class="tf-home-stat">
+                    <span class="tf-home-stat__icon tf-home-stat__icon--info">
+                        <i class="bi bi-flag"></i>
+                    </span>
+                    <div class="tf-home-stat__body">
+                        <span class="tf-home-stat__label">Entregadas</span>
+                        <p class="tf-home-stat__value">{{ len .cargasEntregadas }}</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        {{ end }}
+
+        <!-- ═══════ SECCIÓN: Cargas disponibles ═══════ -->
+        <section class="bf-section">
+            <h2 class="bf-section__title">
+                <i class="bi bi-box-seam"></i>
+                Cargas disponibles
+                {{ if .cargasDisponibles }}
+                <span class="tf-table-card__count" style="margin-left:auto">
+                    {{ len .cargasDisponibles }}
+                </span>
+                {{ end }}
+            </h2>
+
+            {{ if .cargasDisponibles }}
+            <div class="bf-loads-grid">
+                {{ range .cargasDisponibles }}
+                <article class="tf-load-mini bf-load-card">
+                    <div class="tf-load-mini__top">
+                        <h4 class="tf-load-mini__title">{{ .NumeroReferencia }}</h4>
+                        <span class="tf-load-mini__id">#{{ .ID }}</span>
+                    </div>
+
+                    <div class="tf-load-mini__route">
+                        <span>
+                            <i class="bi bi-geo-alt-fill" style="color: var(--tf-success);"></i>
+                            {{ if .OrigenDireccion }}{{ .OrigenDireccion.Ciudad }}{{ end }}
+                        </span>
+                        <span>
+                            <i class="bi bi-geo-alt-fill" style="color: var(--tf-red-500);"></i>
+                            {{ if .DestinoDireccion }}{{ .DestinoDireccion.Ciudad }}{{ end }}
+                        </span>
+                        <span>
+                            <i class="bi bi-clock"></i>
+                            {{ .FechaRecogida.Format "02/01/2006 15:04" }}
+                        </span>
+                    </div>
+
+                    <div class="tf-load-mini__footer">
+                        <div class="tf-load-mini__meta">
+                            {{ if .PesoKg }}<span><strong>{{ .PesoKg }}</strong> kg</span>{{ end }}
+                            <span><i class="bi bi-truck"></i> {{ .TipoEquipo }}</span>
+                            <span><i class="bi bi-signpost-2"></i> {{ .DistanciaKm }} km</span>
+                        </div>
+                        <span class="tf-load-mini__rate">
+                            {{ if .TarifaTotal }}{{ .TarifaTotal }} {{ .Moneda }}{{ end }}
+                        </span>
+                    </div>
+
+                    {{ if or $.isChofer $.isAdmin }}
+                    <form action="/loads/{{ .ID }}/accept" method="POST"
+                          onsubmit="return confirm('¿Aceptar esta carga?')">
+                        <input type="hidden" name="_csrf" value="{{ $.csrfToken }}">
+                        <button type="submit" class="btn btn-success btn-sm tf-w-full">
+                            <i class="bi bi-check2-circle"></i> Aceptar carga
+                        </button>
+                    </form>
+                    {{ end }}
+
+                    {{ if and (eq .Estado "publicada") (or $.isChofer $.isAdmin) }}
+                    <details class="tf-load-mini__interest">
+                        <summary><i class="bi bi-hand-thumbs-up"></i> Me interesa esta carga</summary>
+                        <form action="/loads/{{ .ID }}/interest" method="POST"
+                              onsubmit="return confirm('¿Notificar al publicador?')">
+                            <input type="hidden" name="_csrf" value="{{ $.csrfToken }}">
+                            <textarea name="mgs" rows="2" class="form-control form-control-sm"
+                                      placeholder="Mensaje opcional…"></textarea>
+                            <button type="submit" class="btn btn-outline-primary btn-sm tf-w-full">
+                                <i class="bi bi-send"></i> Enviar interés
+                            </button>
+                        </form>
+                    </details>
+                    {{ end }}
+                </article>
+                {{ end }}
+            </div>
+            {{ else }}
+            <div class="tf-empty">
+                <div class="tf-empty__icon"><i class="bi bi-inbox"></i></div>
+                <h4>No hay cargas disponibles</h4>
+                <p>Vuelve a revisar más tarde. Las nuevas cargas aparecerán aquí automáticamente.</p>
+            </div>
+            {{ end }}
+        </section>
+
+        <!-- ═══════ SECCIÓN: Acciones principales ═══════ -->
+        <section class="bf-section">
+            <h2 class="bf-section__title">
+                <i class="bi bi-lightning-charge-fill"></i> Acciones principales
+            </h2>
+
+            <div class="tf-home-actions">
+                {{ if or .isPublicador .isAdmin }}
+                <a href="/loads" class="tf-action-tile tf-action-tile--primary">
+                    <span class="tf-action-tile__icon"><i class="bi bi-truck"></i></span>
+                    <span class="tf-action-tile__body">
+                        <strong>Gestionar cargas</strong>
+                        <small>Ver, editar y administrar</small>
+                    </span>
+                    <span class="tf-action-tile__arrow"><i class="bi bi-arrow-right"></i></span>
+                </a>
+                <a href="/loads/create" class="tf-action-tile">
+                    <span class="tf-action-tile__icon"><i class="bi bi-plus-circle"></i></span>
+                    <span class="tf-action-tile__body">
+                        <strong>Publicar carga</strong>
+                        <small>Crear nuevo envío</small>
+                    </span>
+                    <span class="tf-action-tile__arrow"><i class="bi bi-arrow-right"></i></span>
+                </a>
+                {{ end }}
+
+                {{ if .isChofer }}
+                <a href="/loads" class="tf-action-tile tf-action-tile--primary">
+                    <span class="tf-action-tile__icon"><i class="bi bi-box-seam"></i></span>
+                    <span class="tf-action-tile__body">
+                        <strong>Ver cargas</strong>
+                        <small>Explora todas las publicadas</small>
+                    </span>
+                    <span class="tf-action-tile__arrow"><i class="bi bi-arrow-right"></i></span>
+                </a>
+                {{ end }}
+
+                <a href="/empresas" class="tf-action-tile">
+                    <span class="tf-action-tile__icon"><i class="bi bi-building"></i></span>
+                    <span class="tf-action-tile__body">
+                        <strong>Empresas</strong>
+                        <small>Brokers, carriers, shippers</small>
+                    </span>
+                    <span class="tf-action-tile__arrow"><i class="bi bi-arrow-right"></i></span>
+                </a>
+
+                <a href="/profile" class="tf-action-tile">
+                    <span class="tf-action-tile__icon"><i class="bi bi-person-gear"></i></span>
+                    <span class="tf-action-tile__body">
+                        <strong>Mi perfil</strong>
+                        <small>Actualiza tus datos</small>
+                    </span>
+                    <span class="tf-action-tile__arrow"><i class="bi bi-arrow-right"></i></span>
+                </a>
+            </div>
+        </section>
+
+    </main>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     SCRIPTS
+     ══════════════════════════════════════════════════════════ -->
+
+
+</body>
+</html>

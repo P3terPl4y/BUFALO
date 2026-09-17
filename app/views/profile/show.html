@@ -1,0 +1,271 @@
+<html
+    data-theme="light">
+
+<body lang="es" >
+    <div class="tf-profile">
+
+        <!-- ═══════════════════════════════════════════════════════════
+         HEADER — breadcrumb + acciones
+         ═══════════════════════════════════════════════════════════ -->
+        <header class="tf-profile__header">
+            <div class="tf-profile__breadcrumb">
+                <a href="/home" class="tf-breadcrumb__link">
+                    <i class="bi bi-house"></i> Inicio
+                </a>
+                <i class="bi bi-chevron-right tf-breadcrumb__sep"></i>
+                <span class="tf-breadcrumb__current">Mi perfil</span>
+            </div>
+
+            <div class="tf-profile__actions">
+                <a href="/profile/edit" class="btn btn-primary">
+                    <i class="bi bi-pencil-square"></i> Editar perfil
+                </a>
+            </div>
+        </header>
+
+        {{ if .flash_success }}<div class="alert alert-success tf-mb-4">{{ .flash_success }}</div>{{ end }}
+        {{ if .flash_error }}<div class="alert alert-danger tf-mb-4">{{ .flash_error }}</div>{{ end }}
+
+        <!-- ═══════════════════════════════════════════════════════════
+         HERO — User card con avatar grande
+         ═══════════════════════════════════════════════════════════ -->
+        <section class="tf-profile__hero">
+            <div class="tf-profile__avatar">
+                <i class="bi bi-person-fill"></i>
+                <span class="tf-profile__avatar-status" aria-hidden="true"></span>
+            </div>
+
+            <div class="tf-profile__identity">
+                <h1>{{ .user.Name }}</h1>
+                <p class="tf-profile__email">
+                    <i class="bi bi-envelope"></i> {{ .user.Email }}
+                </p>
+                <span class="tf-role-tag tf-role-tag--{{ if eq .user.Role " admin" }}admin{{ else if eq
+                    .user.Role "broker" }}broker{{ else }}carrier{{ end }}">
+                    <i class="bi {{ if eq .user.Role " admin" }}bi-shield-check{{ else if eq .user.Role "broker"
+                        }}bi-briefcase{{ else }}bi-truck{{ end }}"></i>
+                    {{ if eq .user.Role "admin" }}Administrador{{ else if eq .user.Role "publicador" }}Publicador{{ else
+                    }}Transportista{{ end }}
+                </span>
+            </div>
+
+            <div class="tf-profile__id">
+                <small>ID de usuario</small>
+                <strong>#{{ .user.ID }}</strong>
+            </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════════════════════════
+         GRID DE BLOQUES
+         ═══════════════════════════════════════════════════════════ -->
+        <div class="tf-profile__grid">
+
+            <!-- ───────── 01 · DATOS BÁSICOS ───────── -->
+            <section class="tf-info-block" data-block="basics">
+                <header class="tf-info-block__head">
+                    <i class="bi bi-person-vcard tf-info-block__icon"></i>
+                    <div class="tf-info-block__text">
+                        <h2>Datos básicos</h2>
+                        <p>Identidad y credenciales de acceso</p>
+                    </div>
+                </header>
+
+                <div class="tf-info-block__body">
+                    <dl class="tf-info-list">
+                        <div class="tf-info-list__row">
+                            <dt><i class="bi bi-person"></i> Nombre completo</dt>
+                            <dd>{{ if .user.Name }}{{ .user.Name }}{{ else }}<span class="empty-value">—</span>{{ end }}
+                            </dd>
+                        </div>
+                        <div class="tf-info-list__row">
+                            <dt><i class="bi bi-envelope"></i> Correo electrónico</dt>
+                            <dd>{{ if .user.Email }}{{ .user.Email }}{{ else }}<span class="empty-value">—</span>{{ end
+                                }}
+                            </dd>
+                        </div>
+                        <div class="tf-info-list__row">
+                            <dt><i class="bi bi-person-badge"></i> Rol asignado</dt>
+                            <dd>
+                                <span class="badge {{ if eq .user.Role " admin" }}bg-primary{{ else if eq
+                                    .user.Role "broker" }}bg-warning{{ else }}bg-success{{ end }}">
+                                    {{ .user.Role }}
+                                </span>
+                            </dd>
+                        </div>
+                    </dl>
+                </div>
+            </section>
+
+            <!-- ───────── 02 · UBICACIÓN ───────── -->
+            <section class="tf-info-block" data-block="location">
+                <header class="tf-info-block__head">
+                    <i class="bi bi-geo-alt-fill tf-info-block__icon"></i>
+                    <div class="tf-info-block__text">
+                        <h2>Ubicación</h2>
+                        <p>Dirección base y radio de operación</p>
+                    </div>
+                </header>
+
+                <div class="tf-info-block__body">
+                    <dl class="tf-info-list">
+                        <div class="tf-info-list__row tf-info-list__row--full">
+                            <dt><i class="bi bi-house"></i> Dirección</dt>
+                            <dd>{{ if .user.Address }}{{ .user.Address }}{{ else }}<span class="empty-value">—</span>{{
+                                end
+                                }}</dd>
+                        </div>
+                        <div class="tf-info-list__row">
+                            <dt><i class="bi bi-buildings"></i> Ciudad</dt>
+                            <dd>{{ if .user.City }}{{ .user.City }}{{ else }}<span class="empty-value">—</span>{{ end }}
+                            </dd>
+                        </div>
+                        <div class="tf-info-list__row">
+                            <dt><i class="bi bi-map"></i> Estado</dt>
+                            <dd>{{ if .user.State }}{{ .user.State }}{{ else }}<span class="empty-value">—</span>{{ end
+                                }}
+                            </dd>
+                        </div>
+                        <div class="tf-info-list__row">
+                            <dt><i class="bi bi-globe-americas"></i> País</dt>
+                            <dd>{{ if .user.Country }}{{ .user.Country }}{{ else }}<span class="empty-value">—</span>{{
+                                end
+                                }}</dd>
+                        </div>
+                        <div class="tf-info-list__row">
+                            <dt><i class="bi bi-mailbox"></i> Código postal</dt>
+                            <dd>{{ if .user.PostalCode }}{{ .user.PostalCode }}{{ else }}<span
+                                    class="empty-value">—</span>{{ end }}</dd>
+                        </div>
+                        <div class="tf-info-list__row">
+                            <dt><i class="bi bi-crosshair"></i> Latitud</dt>
+                            <dd class="tf-tabular">{{ if .user.Latitude }}{{ .user.Latitude }}{{ else }}<span
+                                    class="empty-value">—</span>{{ end }}</dd>
+                        </div>
+                        <div class="tf-info-list__row">
+                            <dt><i class="bi bi-crosshair"></i> Longitud</dt>
+                            <dd class="tf-tabular">{{ if .user.Longitude }}{{ .user.Longitude }}{{ else }}<span
+                                    class="empty-value">—</span>{{ end }}</dd>
+                        </div>
+                        <div class="tf-info-list__row">
+                            <dt><i class="bi bi-broadcast"></i> Radio de operación</dt>
+                            <dd>
+                                {{ if .user.Radius }}
+                                <span class="tf-value-unit"><strong>{{ .user.Radius }}</strong><em>km</em></span>
+                                {{ else }}<span class="empty-value">—</span>{{ end }}
+                            </dd>
+                        </div>
+                    </dl>
+                </div>
+            </section>
+
+            {{ if eq .user.Role "carrier" }}
+            <!-- ───────── 03 · PREFERENCIAS DE CARGA ───────── -->
+
+            <section class="tf-info-block" data-block="preferences">
+                <header class="tf-info-block__head">
+                    <i class="bi bi-sliders tf-info-block__icon"></i>
+                    <div class="tf-info-block__text">
+                        <h2>Preferencias de carga</h2>
+                        <p>Tipos de envíos que aceptas y sus límites</p>
+                    </div>
+                </header>
+
+                <div class="tf-info-block__body">
+                    <dl class="tf-info-list">
+                        <div class="tf-info-list__row tf-info-list__row--full">
+                            <dt><i class="bi bi-truck"></i> Equipos preferidos</dt>
+                            <dd>
+                                {{ if .user.PreferredEquipmentTypes }}
+                                <span class="tf-chip-list">
+                                    <span class="tf-chip">{{ .user.PreferredEquipmentTypes }}</span>
+                                </span>
+                                {{ else }}<span class="empty-value">—</span>{{ end }}
+                            </dd>
+                        </div>
+                        <div class="tf-info-list__row tf-info-list__row--full">
+                            <dt><i class="bi bi-box-seam"></i> Tipos de carga</dt>
+                            <dd>
+                                {{ if .user.PreferredCargoTypes }}
+                                <span class="tf-chip-list">
+                                    <span class="tf-chip">{{ .user.PreferredCargoTypes }}</span>
+                                </span>
+                                {{ else }}<span class="empty-value">—</span>{{ end }}
+                            </dd>
+                        </div>
+                        <div class="tf-info-list__row">
+                            <dt><i class="bi bi-speedometer2"></i> Peso máximo</dt>
+                            <dd>
+                                {{ if .user.MaxWeight }}
+                                <span class="tf-value-unit"><strong>{{ .user.MaxWeight }}</strong><em>kg</em></span>
+                                {{ else }}<span class="empty-value">—</span>{{ end }}
+                            </dd>
+                        </div>
+                        <div class="tf-info-list__row">
+                            <dt><i class="bi bi-signpost-2"></i> Distancia máxima</dt>
+                            <dd>
+                                {{ if .user.MaxDistance }}
+                                <span class="tf-value-unit"><strong>{{ .user.MaxDistance }}</strong><em>km</em></span>
+                                {{ else }}<span class="empty-value">—</span>{{ end }}
+                            </dd>
+                        </div>
+                    </dl>
+                </div>
+            </section>
+
+            <!-- ───────── 04 · DISPONIBILIDAD ───────── -->
+            <section class="tf-info-block" data-block="availability">
+                <header class="tf-info-block__head">
+                    <i class="bi bi-calendar-week-fill tf-info-block__icon"></i>
+                    <div class="tf-info-block__text">
+                        <h2>Disponibilidad</h2>
+                        <p>Ventana activa y notas adicionales</p>
+                    </div>
+                </header>
+
+                <div class="tf-info-block__body">
+                    <dl class="tf-info-list">
+                        <div class="tf-info-list__row">
+                            <dt><i class="bi bi-calendar-check"></i> Disponible desde</dt>
+                            <dd>
+                                {{ if .user.AvailableFrom }}
+                                <span class="tf-tabular">{{ .user.AvailableFrom.Format "02/01/2006 15:04" }}</span>
+                                {{ else }}<span class="empty-value">—</span>{{ end }}
+                            </dd>
+                        </div>
+                        <div class="tf-info-list__row">
+                            <dt><i class="bi bi-calendar-x"></i> Disponible hasta</dt>
+                            <dd>
+                                {{ if .user.AvailableTo }}
+                                <span class="tf-tabular">{{ .user.AvailableTo.Format "02/01/2006 15:04" }}</span>
+                                {{ else }}<span class="empty-value">—</span>{{ end }}
+                            </dd>
+                        </div>
+                        <div class="tf-info-list__row tf-info-list__row--full">
+                            <dt><i class="bi bi-sticky"></i> Notas</dt>
+                            <dd>{{ if .user.Notes }}{{ .user.Notes }}{{ else }}<span class="empty-value">—</span>{{ end
+                                }}
+                            </dd>
+                        </div>
+                    </dl>
+                </div>
+            </section>
+            {{ end }}
+
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════
+         ACCIONES FINALES
+         ═══════════════════════════════════════════════════════════ -->
+        <footer class="tf-profile__footer">
+            <a href="/home" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Volver al inicio
+            </a>
+            <a href="/profile/edit" class="btn btn-primary">
+                <i class="bi bi-pencil-square"></i> Editar perfil
+            </a>
+        </footer>
+
+    </div>
+</body>
+
+</html>

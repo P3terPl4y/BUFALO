@@ -1,0 +1,51 @@
+body { background: linear-gradient(135deg, #1F242B 0%, #333941 35%, #6B1017 75%, #8E0012 100%); }
+
+.card {
+    border-radius: 0.35rem;
+    border: 0;
+    box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+}
+
+.card-header {
+    background-color: #f8f9fc;
+    border-bottom: 1px solid #e3e6f0;
+}
+
+.border-left-primary {
+    border-left: 0.25rem solid #4e73df !important;
+}
+.border-left-success {
+    border-left: 0.25rem solid #1cc88a !important;
+}
+.border-left-warning {
+    border-left: 0.25rem solid #f6c23e !important;
+}
+.border-left-info {
+    border-left: 0.25rem solid #36b9cc !important;
+}
+
+.text-xs {
+    font-size: 0.7rem;
+}
+.font-weight-bold {
+    font-weight: 700 !important;
+}
+
+.chart-pie {
+    position: relative;
+    height: 15rem;
+}
+
+.table td, .table th {
+    vertical-align: middle;
+}
+
+.footer {
+    margin-top: 3rem;
+    border-top: 1px solid #e3e6f0;
+}
+
+.navbar-dark .navbar-nav .nav-link.active {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+}

@@ -1,0 +1,59 @@
+
+
+<body>
+
+    <div class=" tf-login">
+        <div class="tf-login-card">
+
+            <div class="tf-text-center tf-mb-6">
+                  
+                    <img src="img/bufalo.svg" width="300vw" height="90vh">
+                
+           
+                <p class="tf-sub">Panel de administración de cargas</p>
+            </div>
+
+            {{ if .flash_error }}
+            <div class="alert alert-danger tf-mb-4">
+                <i class="bi bi-exclamation-triangle"></i>
+                {{ .flash_error }}
+            </div>
+            {{ end }}
+
+            <form action="/login" method="POST" class="tf-flex--col" style="gap:var(--tf-space-4);">
+                <input type="hidden" name="_csrf" value="{{ .csrfToken }}">
+                <div class="tf-field">
+                    <label for="email" class="form-label">Correo electrónico</label>
+                    <input type="email" id="email" name="email" class="form-control" placeholder="tu@empresa.com"
+                        required autofocus>
+                </div>
+
+                <div class="tf-field">
+                    <label for="password" class="form-label">Contraseña</label>
+                    <input type="password" id="password" name="password" class="form-control" placeholder="••••••••"
+                        required>
+                </div>
+
+                <div class="tf-flex--between" style="font-size:var(--tf-fs-sm);">
+                    <label class="tf-flex" style="gap:var(--tf-space-1); cursor:pointer; color:var(--tf-text-muted);">
+                        <input type="checkbox" name="remember"> Recordarme
+                    </label>
+                    <a href="/forgot-password">¿Olvidaste tu contraseña?</a>
+                </div>
+
+                <button type="submit" class="btn btn-primary tf-w-full">
+                    <i class="bi bi-box-arrow-in-right"></i>
+                    Iniciar sesión
+                </button>
+
+            </form>
+
+            <p class="tf-text-center tf-text-sm tf-mt-6" style="color:var(--tf-text-muted);">
+                ¿No tienes cuenta?
+                <a href="/register" class="tf-fw-semibold">Solicitar acceso</a>
+            </p>
+
+        </div>
+    </div>
+
+</body>

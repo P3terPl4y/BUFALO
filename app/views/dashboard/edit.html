@@ -1,0 +1,319 @@
+<div class="tf-page-header">
+    <div>
+        <h1><i class="bi bi-pencil-square"></i> Editar Carga <span class="tf-page-header__id">#{{ .load.ID }}</span>
+        </h1>
+        <p>Actualiza los datos y guarda los cambios</p>
+    </div>
+    <a href="/loads/{{ .load.ID }}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Volver al detalle
+    </a>
+</div>
+
+{{ if .flash_success }}<div class="alert alert-success tf-mb-4">{{ .flash_success }}</div>{{ end }}
+{{ if .flash_error }}<div class="alert alert-danger tf-mb-4">{{ .flash_error }}</div>{{ end }}
+
+<form action="/loads/{{ .load.ID }}" method="POST" class="tf-form-page" id="loadEditForm">
+    <input type="hidden" name="_csrf" value="{{ .csrfToken }}">
+
+   <!-- ESTADO -->
+<section class="tf-form-block tf-form-block--status" data-block="status">
+    <header class="tf-form-block__head">
+        <i class="bi bi-toggle-on tf-form-block__icon"></i>
+        <div class="tf-form-block__text">
+            <h2>Estado de la carga</h2>
+            <p>Modifica el estado actual del envío en el flujo operativo.</p>
+        </div>
+    </header>
+
+    <div class="tf-form-block__body">
+        <div class="tf-status-selector" role="radiogroup" aria-label="Estado de la carga">
+            <label class="tf-status-option" data-status="publicada">
+                <input type="radio" name="estado" value="publicada" {{ if eq .load.Estado "publicada" }}checked{{ end }}>
+                <span class="tf-status-option__dot" style="--dot: var(--tf-success);"></span>
+                <span class="tf-status-option__body">
+                    <strong>Publicada</strong>
+                    <small>Disponible para transportistas</small>
+                </span>
+            </label>
+
+            <label class="tf-status-option" data-status="negociando">
+                <input type="radio" name="estado" value="negociando" {{ if eq .load.Estado "negociando" }}checked{{ end }}>
+                <span class="tf-status-option__dot" style="--dot: var(--tf-info);"></span>
+                <span class="tf-status-option__body">
+                    <strong>Negociando</strong>
+                    <small>En conversación con un carrier</small>
+                </span>
+            </label>
+
+            <label class="tf-status-option" data-status="asignada">
+                <input type="radio" name="estado" value="asignada" {{ if eq .load.Estado "asignada" }}checked{{ end }}>
+                <span class="tf-status-option__dot" style="--dot: var(--tf-warning);"></span>
+                <span class="tf-status-option__body">
+                    <strong>Asignada</strong>
+                    <small>Un chofer la ha tomado</small>
+                </span>
+            </label>
+
+            <label class="tf-status-option" data-status="en_transito">
+                <input type="radio" name="estado" value="en_transito" {{ if eq .load.Estado "en_transito" }}checked{{ end }}>
+                <span class="tf-status-option__dot" style="--dot: var(--tf-info);"></span>
+                <span class="tf-status-option__body">
+                    <strong>En tránsito</strong>
+                    <small>Circulando hacia el destino</small>
+                </span>
+            </label>
+
+            <label class="tf-status-option" data-status="entregada">
+                <input type="radio" name="estado" value="entregada" {{ if eq .load.Estado "entregada" }}checked{{ end }}>
+                <span class="tf-status-option__dot" style="--dot: var(--tf-red-500);"></span>
+                <span class="tf-status-option__body">
+                    <strong>Entregada</strong>
+                    <small>Completada con éxito</small>
+                </span>
+            </label>
+
+            <label class="tf-status-option" data-status="cancelada">
+                <input type="radio" name="estado" value="cancelada" {{ if eq .load.Estado "cancelada" }}checked{{ end }}>
+                <span class="tf-status-option__dot" style="--dot: var(--tf-gray-500);"></span>
+                <span class="tf-status-option__body">
+                    <strong>Cancelada</strong>
+                    <small>Ya no se realizará</small>
+                </span>
+            </label>
+        </div>
+    </div>
+</section>
+
+    <!-- IDENTIFICACIÓN -->
+    <section class="tf-form-block" data-block="identity">
+        <header class="tf-form-block__head">
+            <i class="bi bi-tag-fill tf-form-block__icon"></i>
+            <div class="tf-form-block__text"><h2>Identificación</h2></div>
+        </header>
+        <div class="tf-form-block__body">
+            <div class="tf-form-row">
+                <div class="tf-col-6 tf-field">
+                    <label for="numero_referencia" class="form-label">Referencia <span class="req">*</span></label>
+                    <input type="text" class="form-control" id="numero_referencia" name="numero_referencia"
+                           value="{{ .load.NumeroReferencia }}" required>
+                </div>
+                <div class="tf-col-6 tf-field">
+                    <label for="tipo_carga" class="form-label">Tipo de carga <span class="req">*</span></label>
+                    <select class="form-select" id="tipo_carga" name="tipo_carga" required>
+                        <option value="FTL" {{ if eq .load.TipoCarga "FTL" }}selected{{ end }}>FTL</option>
+                        <option value="LTL" {{ if eq .load.TipoCarga "LTL" }}selected{{ end }}>LTL</option>
+                    </select>
+                </div>
+                <div class="tf-col-12 tf-field">
+                    <label for="commodity" class="form-label">Mercancía</label>
+                    <input type="text" class="form-control" id="commodity" name="commodity"
+                           value="{{ if .load.Commodity }}{{ .load.Commodity }}{{ end }}">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- RUTA -->
+    <section class="tf-form-block" data-block="route">
+        <header class="tf-form-block__head">
+            <i class="bi bi-signpost-split-fill tf-form-block__icon"></i>
+            <div class="tf-form-block__text"><h2>Ruta</h2></div>
+        </header>
+        <div class="tf-form-block__body">
+            <div class="tf-form-row">
+                <div class="tf-col-6 tf-field">
+                    <label for="origen_direccion_id" class="form-label">Origen <span class="req">*</span></label>
+                    <select class="form-select" id="origen_direccion_id" name="origen_direccion_id" required>
+                        {{ range .destinations }}
+                        <option value="{{ .ID }}" {{ if eq $.load.OrigenDireccionID .ID }}selected{{ end }}>
+                            {{ .Ciudad }} — {{ .EstadoProvincia }}
+                        </option>
+                        {{ end }}
+                    </select>
+                </div>
+                <div class="tf-col-6 tf-field">
+                    <label for="fecha_recogida" class="form-label">Fecha recogida <span class="req">*</span></label>
+                    <input type="datetime-local" class="form-control" id="fecha_recogida" name="fecha_recogida"
+                           value="{{ .load.FechaRecogida.Format "2006-01-02T15:04" }}" required>
+                </div>
+                <div class="tf-col-6 tf-field">
+                    <label for="destino_direccion_id" class="form-label">Destino <span class="req">*</span></label>
+                    <select class="form-select" id="destino_direccion_id" name="destino_direccion_id" required>
+                        {{ range .destinations }}
+                        <option value="{{ .ID }}" {{ if eq $.load.DestinoDireccionID .ID }}selected{{ end }}>
+                            {{ .Ciudad }} — {{ .EstadoProvincia }}
+                        </option>
+                        {{ end }}
+                    </select>
+                </div>
+                <div class="tf-col-6 tf-field">
+                    <label for="fecha_entrega" class="form-label">Fecha entrega</label>
+                    <input type="datetime-local" class="form-control" id="fecha_entrega" name="fecha_entrega"
+                           value="{{ if .load.FechaEntrega }}{{ .load.FechaEntrega.Format "2006-01-02T15:04" }}{{ end }}">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CARGA Y TARIFA -->
+    <section class="tf-form-block tf-form-block--last" data-block="cargo">
+        <header class="tf-form-block__head">
+            <i class="bi bi-box-seam-fill tf-form-block__icon"></i>
+            <div class="tf-form-block__text"><h2>Carga y tarifa</h2></div>
+        </header>
+        <div class="tf-form-block__body">
+            <div class="tf-form-row">
+                <div class="tf-col-4 tf-field">
+                    <label for="peso_kg" class="form-label">Peso <span class="req">*</span></label>
+                    <div class="tf-input-unit">
+                        <input type="number" step="0.01" class="form-control" id="peso_kg" name="peso_kg"
+                               value="{{ if .load.PesoKg }}{{ .load.PesoKg }}{{ end }}" required>
+                        <span class="tf-input-unit__suffix">kg</span>
+                    </div>
+                </div>
+                <div class="tf-col-4 tf-field">
+                    <label for="distancia_km" class="form-label">Distancia <span class="req">*</span></label>
+                    <div class="tf-input-unit">
+                        <input type="number" step="0.1" class="form-control" id="distancia_km" name="distancia_km"
+                               value="{{ .load.DistanciaKm }}" required>
+                        <span class="tf-input-unit__suffix">km</span>
+                    </div>
+                </div>
+                <div class="tf-col-4 tf-field">
+                    <label for="tipo_equipo" class="form-label">Equipo <span class="req">*</span></label>
+                    <select class="form-select" id="tipo_equipo" name="tipo_equipo" required>
+                        <option value="dry_van" {{ if eq .load.TipoEquipo "dry_van" }}selected{{ end }}>Dry Van</option>
+                        <option value="flatbed" {{ if eq .load.TipoEquipo "flatbed" }}selected{{ end }}>Flatbed</option>
+                        <option value="reefer" {{ if eq .load.TipoEquipo "reefer" }}selected{{ end }}>Reefer</option>
+                        <option value="step_deck" {{ if eq .load.TipoEquipo "step_deck" }}selected{{ end }}>Step Deck</option>
+                        <option value="double_drop" {{ if eq .load.TipoEquipo "double_drop" }}selected{{ end }}>Double Drop</option>
+                        <option value="lowboy" {{ if eq .load.TipoEquipo "lowboy" }}selected{{ end }}>Lowboy</option>
+                        <option value="cargo_van" {{ if eq .load.TipoEquipo "cargo_van" }}selected{{ end }}>Cargo Van</option>
+                        <option value="box_truck" {{ if eq .load.TipoEquipo "box_truck" }}selected{{ end }}>Box Truck</option>
+                        <option value="power_only" {{ if eq .load.TipoEquipo "power_only" }}selected{{ end }}>Power Only</option>
+                    </select>
+                </div>
+                <div class="tf-col-4 tf-field">
+                    <label for="tarifa_total" class="form-label">Tarifa total <span class="req">*</span></label>
+                    <div class="tf-input-unit tf-input-unit--money">
+                        <span class="tf-input-unit__prefix">$</span>
+                        <input type="number" step="0.01" class="form-control" id="tarifa_total" name="tarifa_total"
+                               value="{{ if .load.TarifaTotal }}{{ .load.TarifaTotal }}{{ end }}" required>
+                    </div>
+                </div>
+                <div class="tf-col-4 tf-field">
+                    <label for="moneda" class="form-label">Moneda <span class="req">*</span></label>
+                    <select class="form-select" id="moneda" name="moneda" required>
+                        <option value="CUP" {{ if eq .load.Moneda "CUP" }}selected{{ end }}>CUP</option>
+                        <option value="MLC" {{ if eq .load.Moneda "MLC" }}selected{{ end }}>MLC</option>
+                        <option value="USD" {{ if eq .load.Moneda "USD" }}selected{{ end }}>USD</option>
+                        <option value="EUR" {{ if eq .load.Moneda "EUR" }}selected{{ end }}>EUR</option>
+                    </select>
+                </div>
+                <div class="tf-col-4 tf-field">
+                    <label for="tarifa_por_km" class="form-label">Tarifa por km</label>
+                    <div class="tf-input-unit tf-input-unit--money">
+                        <span class="tf-input-unit__prefix">$</span>
+                        <input type="number" step="0.0001" class="form-control" id="tarifa_por_km" name="tarifa_por_km"
+                               value="{{ if .load.TarifaPorKm }}{{ .load.TarifaPorKm }}{{ end }}">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</form>
+
+<script>
+    (function () {
+        const form = document.getElementById('loadEditForm');
+        if (!form) return;
+
+        /* ─────── Preview en vivo ─────── */
+        const preview = {
+            title: form.querySelector('[data-preview="title"]'),
+            pickup: form.querySelector('[data-preview="pickup"]'),
+            dropoff: form.querySelector('[data-preview="dropoff"]'),
+            weight: form.querySelector('[data-preview="weight"]'),
+            rate: form.querySelector('[data-preview="rate"]')
+        };
+
+        const statusDot = form.querySelector('[data-status-dot]');
+        const statusLabel = form.querySelector('[data-status-label]');
+
+        const statusMeta = {
+            open: { color: 'var(--tf-success)', label: 'Abierta' },
+            assigned: { color: 'var(--tf-warning)', label: 'Asignada' },
+            in_transit: { color: 'var(--tf-info)', label: 'En tránsito' },
+            delivered: { color: 'var(--tf-red-500)', label: 'Entregada' },
+            cancelled: { color: 'var(--tf-gray-500)', label: 'Cancelada' }
+        };
+
+        // Devuelve la ciudad de la opción seleccionada (data-city) o el nombre
+        function selectedCity(id) {
+            const el = document.getElementById(id);
+            if (!el || !el.value) return '—';
+            const opt = el.options[el.selectedIndex];
+            return opt?.dataset.city || opt?.text?.split('—')[0].trim() || '—';
+        }
+
+        function updatePreview() {
+            preview.title.textContent = document.getElementById('title').value.trim() || 'Sin título';
+            preview.pickup.textContent = selectedCity('pickup_destination_id');
+            preview.dropoff.textContent = selectedCity('dropoff_destination_id');
+
+            const w = document.getElementById('weight').value;
+            preview.weight.textContent = w ? `${w} kg` : '— kg';
+
+            const r = document.getElementById('rate').value;
+            const c = document.getElementById('rate_currency').value;
+            preview.rate.textContent = r ? `$${r} ${c}` : `$— ${c}`;
+
+            const status = form.querySelector('input[name="status"]:checked')?.value;
+            if (status && statusMeta[status]) {
+                statusDot.style.background = statusMeta[status].color;
+                statusLabel.textContent = statusMeta[status].label;
+            }
+        }
+
+        form.addEventListener('input', updatePreview);
+        form.addEventListener('change', updatePreview);
+        updatePreview();
+
+        /* ─────── Estado del selector de status ─────── */
+        form.querySelectorAll('.tf-status-option').forEach(opt => {
+            const radio = opt.querySelector('input[type="radio"]');
+            const sync = () => opt.classList.toggle('is-selected', radio.checked);
+            radio.addEventListener('change', () => {
+                form.querySelectorAll('.tf-status-option').forEach(o => o.classList.remove('is-selected'));
+                sync();
+            });
+            sync();
+        });
+
+        /* ─────── Progreso dinámico ─────── */
+        const blocks = ['status', 'identity', 'route', 'cargo', 'extras'];
+        const stepEls = {};
+        blocks.forEach(id => {
+            stepEls[id] = document.querySelector(`.tf-progress__step[data-step="${id}"]`);
+        });
+
+        function updateProgress() {
+            blocks.forEach(id => {
+                const block = document.querySelector(`[data-block="${id}"]`);
+                if (!block) return;
+                const inputs = block.querySelectorAll('input:not([type="radio"]), textarea, select');
+                const total = inputs.length;
+                const filled = Array.from(inputs).filter(el => el.value.trim() !== '').length;
+                const complete = total === 0 || (filled / total) >= 0.7;
+                stepEls[id]?.classList.toggle('is-complete', complete);
+            });
+
+            const firstIncomplete = blocks.find(id => !stepEls[id]?.classList.contains('is-complete'));
+            blocks.forEach(id => stepEls[id]?.classList.remove('is-current'));
+            if (firstIncomplete) stepEls[firstIncomplete].classList.add('is-current');
+        }
+
+        form.addEventListener('input', updateProgress);
+        updateProgress();
+    })();
+</script>

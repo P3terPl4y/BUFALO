@@ -1,0 +1,478 @@
+<div class="tf-page-header">
+    <div>
+        <h1><i class="bi bi-plus-circle"></i> Nueva Dirección</h1>
+        <p>Registra un punto de recogida o entrega en el sistema</p>
+    </div>
+    <a href="/direcciones" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Volver
+    </a>
+</div>
+
+{{ if .flash_error }}<div class="alert alert-danger tf-mb-4">{{ .flash_error }}</div>{{ end }}
+
+<form action="/direcciones" method="POST" class="tf-form-page" id="direccionForm">
+    <input type="hidden" name="_csrf" value="{{ .csrfToken }}">
+
+    <div class="tf-form-page__main">
+        <div class="tf-form-card">
+
+            <!-- ───────── 01 · UBICACIÓN ───────── -->
+            <section class="tf-form-block" data-block="location">
+                <header class="tf-form-block__head">
+                    <i class="bi bi-geo-alt-fill tf-form-block__icon"></i>
+                    <div class="tf-form-block__text">
+                        <h2>Ubicación</h2>
+                        <p>Dirección física y datos administrativos</p>
+                    </div>
+                </header>
+
+                <div class="tf-form-block__body">
+                    <div class="tf-form-row">
+                        <div class="tf-col-12 tf-field">
+                            <label for="calle" class="form-label">
+                                Calle y número <span class="opt">opcional</span>
+                            </label>
+                            <input type="text" class="form-control" id="calle" name="calle"
+                                   value="{{ if .old }}{{ .old.Calle }}{{ end }}"
+                                   placeholder="Ej: Calle 23 #456, Vedado" maxlength="255">
+                            {{ if .errors.calle }}<small class="tf-field-error">{{ .errors.calle }}</small>{{ end }}
+                        </div>
+
+                        <div class="tf-col-6 tf-field">
+                            <label for="ciudad" class="form-label">
+                                Ciudad <span class="req">*</span>
+                            </label>
+                            <input type="text" class="form-control" id="ciudad" name="ciudad"
+                                   value="{{ if .old }}{{ .old.Ciudad }}{{ end }}" required>
+                            {{ if .errors.ciudad }}<small class="tf-field-error">{{ .errors.ciudad }}</small>{{ end }}
+                        </div>
+
+                        <div class="tf-col-6 tf-field">
+                            <label for="estado_provincia" class="form-label">
+                                Provincia <span class="req">*</span>
+                            </label>
+                            <input type="text" class="form-control" id="estado_provincia" name="estado_provincia"
+                                   value="{{ if .old }}{{ .old.EstadoProvincia }}{{ end }}" required>
+                            {{ if .errors.estado_provincia }}<small class="tf-field-error">{{ .errors.estado_provincia }}</small>{{ end }}
+                        </div>
+
+                        <div class="tf-col-6 tf-field">
+                            <label for="pais" class="form-label">
+                                País <span class="req">*</span>
+                            </label>
+                            <input type="text" class="form-control" id="pais" name="pais"
+                                   value="{{ if .old }}{{ .old.Pais }}{{ else }}Cuba{{ end }}" required>
+                            {{ if .errors.pais }}<small class="tf-field-error">{{ .errors.pais }}</small>{{ end }}
+                        </div>
+
+                        <div class="tf-col-6 tf-field">
+                            <label for="codigo_postal" class="form-label">
+                                Código postal <span class="opt">opcional</span>
+                            </label>
+                            <input type="text" class="form-control" id="codigo_postal" name="codigo_postal"
+                                   value="{{ if .old }}{{ .old.CodigoPostal }}{{ end }}" maxlength="20">
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ───────── 02 · COORDENADAS ───────── -->
+            <section class="tf-form-block tf-form-block--last" data-block="coordinates">
+                <header class="tf-form-block__head">
+                    <i class="bi bi-crosshair tf-form-block__icon"></i>
+                    <div class="tf-form-block__text">
+                        <h2>Coordenadas</h2>
+                        <p>Busca la dirección o haz clic en el mapa para ubicar el punto</p>
+                    </div>
+                </header>
+
+                <div class="tf-form-block__body">
+
+                    <div class="tf-map-picker"
+                         data-map-picker
+                         data-initial-lat="{{ if .old }}{{ .old.Latitud }}{{ end }}"
+                         data-initial-lng="{{ if .old }}{{ .old.Longitud }}{{ end }}">
+
+                        <div class="tf-map-picker__search">
+                            <i class="bi bi-search"></i>
+                            <input type="text"
+                                   class="tf-map-picker__search-input"
+                                   placeholder="Buscar dirección, ciudad o lugar…"
+                                   autocomplete="off">
+                            <div class="tf-map-picker__results" hidden></div>
+                        </div>
+
+                        <div class="tf-map-picker__map" data-map></div>
+
+                        <div class="tf-map-picker__footer">
+                            <span class="tf-map-picker__coords" data-coords data-empty="true">
+                                <i class="bi bi-crosshair"></i>
+                                Arrastra el marcador o haz clic en el mapa
+                            </span>
+                            <span class="tf-map-picker__hint">
+                                <i class="bi bi-info-circle"></i>
+                                <span data-address-hint>Sin ubicación seleccionada</span>
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="tf-form-row" style="margin-top: var(--tf-space-4);">
+                        <div class="tf-col-6 tf-field">
+                            <label for="latitud" class="form-label">
+                                Latitud <span class="opt">opcional</span>
+                            </label>
+                            <div class="tf-input-icon-wrap">
+                                <i class="bi bi-crosshair"></i>
+                                <input type="number" step="any" class="form-control"
+                                       id="latitud" name="latitud"
+                                       value="{{ if .old }}{{ .old.Latitud }}{{ end }}"
+                                       placeholder="23.113592">
+                            </div>
+                            {{ if .errors.latitud }}<small class="tf-field-error">{{ .errors.latitud }}</small>{{ end }}
+                        </div>
+
+                        <div class="tf-col-6 tf-field">
+                            <label for="longitud" class="form-label">
+                                Longitud <span class="opt">opcional</span>
+                            </label>
+                            <div class="tf-input-icon-wrap">
+                                <i class="bi bi-crosshair"></i>
+                                <input type="number" step="any" class="form-control"
+                                       id="longitud" name="longitud"
+                                       value="{{ if .old }}{{ .old.Longitud }}{{ end }}"
+                                       placeholder="-82.366592">
+                            </div>
+                            {{ if .errors.longitud }}<small class="tf-field-error">{{ .errors.longitud }}</small>{{ end }}
+                        </div>
+
+                        <div class="tf-col-12">
+                            <div class="tf-detail-note">
+                                <i class="bi bi-lightbulb"></i>
+                                <span>Al hacer clic o arrastrar el marcador, la ciudad, provincia, país y código postal se autocompletan si están vacíos.</span>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+
+        </div>
+    </div>
+
+    <aside class="tf-form-page__aside">
+        <div class="tf-rail-card">
+            <header class="tf-rail-card__head">
+                <i class="bi bi-clipboard-check"></i>
+                <span>Resumen</span>
+            </header>
+            <dl class="tf-summary">
+                <div class="tf-summary__row">
+                    <dt>Ciudad</dt>
+                    <dd data-preview="ciudad">—</dd>
+                </div>
+                <div class="tf-summary__row">
+                    <dt>Provincia</dt>
+                    <dd data-preview="provincia">—</dd>
+                </div>
+                <div class="tf-summary__row">
+                    <dt>País</dt>
+                    <dd data-preview="pais">—</dd>
+                </div>
+                <div class="tf-summary__row tf-summary__row--highlight">
+                    <dt>Coordenadas</dt>
+                    <dd data-preview="coords">—</dd>
+                </div>
+            </dl>
+            <p class="tf-rail-card__hint">
+                Los campos marcados con <span class="req">*</span> son obligatorios.
+            </p>
+        </div>
+
+        <div class="tf-rail-card">
+            <header class="tf-rail-card__head">
+                <i class="bi bi-lightbulb"></i>
+                <span>Buenas prácticas</span>
+            </header>
+            <ul class="tf-rail-tips">
+                <li>Verifica la ciudad y la provincia para evitar duplicados.</li>
+                <li>Las coordenadas mejoran la precisión de las rutas.</li>
+                <li>El código postal es opcional, pero ayuda a afinar la ubicación.</li>
+            </ul>
+        </div>
+
+        <div class="tf-rail-card tf-rail-card--actions">
+            <header class="tf-rail-card__head">
+                <i class="bi bi-plus-circle"></i>
+                <span>Crear dirección</span>
+            </header>
+            <button type="submit" class="btn btn-primary btn-lg tf-w-full">
+                <i class="bi bi-check-circle"></i> Crear Dirección
+            </button>
+            <a href="/direcciones" class="btn btn-secondary tf-w-full">
+                <i class="bi bi-x-circle"></i> Cancelar
+            </a>
+        </div>
+    </aside>
+</form>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     SCRIPT 1 — Resumen en vivo
+     ═══════════════════════════════════════════════════════════════════ -->
+<script>
+(function () {
+    const form = document.querySelector('.tf-form-page');
+    if (!form) return;
+
+    const preview = {
+        ciudad:    document.querySelector('[data-preview="ciudad"]'),
+        provincia: document.querySelector('[data-preview="provincia"]'),
+        pais:      document.querySelector('[data-preview="pais"]'),
+        coords:    document.querySelector('[data-preview="coords"]')
+    };
+
+    const els = {
+        ciudad:    document.getElementById('ciudad'),
+        provincia: document.getElementById('estado_provincia'),
+        pais:      document.getElementById('pais'),
+        lat:       document.getElementById('latitud'),
+        lng:       document.getElementById('longitud')
+    };
+
+    function update() {
+        if (preview.ciudad)    preview.ciudad.textContent    = els.ciudad.value.trim()    || '—';
+        if (preview.provincia) preview.provincia.textContent = els.provincia.value.trim() || '—';
+        if (preview.pais)      preview.pais.textContent      = els.pais.value.trim()      || '—';
+        const lat = els.lat.value.trim();
+        const lng = els.lng.value.trim();
+        if (preview.coords) {
+            preview.coords.textContent = (lat || lng) ? `${lat || '?'}, ${lng || '?'}` : '—';
+        }
+    }
+
+    form.addEventListener('input', update);
+    update();
+})();
+</script>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     SCRIPT 2 — MAP PICKER
+     ═══════════════════════════════════════════════════════════════════ -->
+<script>
+(function () {
+    const NOMINATIM_SEARCH  = 'https://nominatim.openstreetmap.org/search';
+    const NOMINATIM_REVERSE = 'https://nominatim.openstreetmap.org/reverse';
+    const COUNTRY_CODES     = 'cu';
+
+    const CUBA_CENTER = [21.5218, -77.7812];
+    const CUBA_ZOOM   = 7;
+
+    const root = document.querySelector('[data-map-picker]');
+    if (!root || typeof L === 'undefined') return;
+
+    const searchInput  = root.querySelector('.tf-map-picker__search-input');
+    const resultsBox   = root.querySelector('.tf-map-picker__results');
+    const mapEl        = root.querySelector('[data-map]');
+    const coordsEl     = root.querySelector('[data-coords]');
+    const hintEl       = root.querySelector('[data-address-hint]');
+
+    const latInput     = document.getElementById('latitud');
+    const lngInput     = document.getElementById('longitud');
+    const cityInput    = document.getElementById('ciudad');
+    const stateInput   = document.getElementById('estado_provincia');
+    const countryInput = document.getElementById('pais');
+    const postalInput  = document.getElementById('codigo_postal');
+    const calleInput   = document.getElementById('calle');
+
+    const map = L.map(mapEl, {
+        center: CUBA_CENTER,
+        zoom: CUBA_ZOOM,
+        scrollWheelZoom: true,
+        zoomControl: true,
+    });
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap',
+        maxZoom: 18,
+    }).addTo(map);
+
+    let marker = null;
+
+    function makeIcon() {
+        return L.divIcon({
+            className: '',
+            html: '<div class="tf-map-pin tf-map-pin--pickup"><i class="bi bi-geo-alt-fill"></i></div>',
+            iconSize: [32, 32],
+            iconAnchor: [16, 32],
+        });
+    }
+
+    function setMarker(lat, lng, opts) {
+        opts = opts || {};
+        if (marker) {
+            marker.setLatLng([lat, lng]);
+        } else {
+            marker = L.marker([lat, lng], { icon: makeIcon(), draggable: true }).addTo(map);
+            marker.on('dragend', function () {
+                const pos = marker.getLatLng();
+                setMarker(pos.lat, pos.lng);
+            });
+        }
+
+        if (opts.pan !== false) map.panTo([lat, lng], { animate: true });
+
+        if (latInput) latInput.value = lat.toFixed(8);
+        if (lngInput) lngInput.value = lng.toFixed(8);
+
+        if (coordsEl) {
+            coordsEl.dataset.empty = 'false';
+            coordsEl.innerHTML = '<i class="bi bi-crosshair"></i> ' + lat.toFixed(5) + ', ' + lng.toFixed(5);
+        }
+
+        if (!opts.skipReverse) reverseGeocode(lat, lng);
+    }
+
+    let reverseTimer = null;
+    function reverseGeocode(lat, lng) {
+        clearTimeout(reverseTimer);
+        if (hintEl) hintEl.textContent = 'Obteniendo dirección…';
+
+        reverseTimer = setTimeout(function () {
+            const url = NOMINATIM_REVERSE + '?format=json&lat=' + lat + '&lon=' + lng + '&zoom=18&addressdetails=1&accept-language=es';
+            fetch(url, { headers: { Accept: 'application/json' } })
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    const a = data.address || {};
+
+                    if (calleInput && !calleInput.value.trim()) {
+                        calleInput.value = a.road
+                            ? (a.road + (a.house_number ? ' #' + a.house_number : ''))
+                            : (a.neighbourhood || a.suburb || '');
+                    }
+                    if (cityInput && !cityInput.value.trim()) {
+                        cityInput.value = a.city || a.town || a.village || a.municipality || '';
+                    }
+                    if (stateInput && !stateInput.value.trim()) {
+                        stateInput.value = a.state || a.province || a.region || '';
+                    }
+                    if (countryInput && (!countryInput.value.trim() || countryInput.value === 'US')) {
+                        countryInput.value = (a.country_code || '').toUpperCase() || 'CU';
+                    }
+                    if (postalInput && !postalInput.value.trim()) {
+                        postalInput.value = a.postcode || '';
+                    }
+
+                    if (hintEl) hintEl.textContent = data.display_name || 'Ubicación seleccionada';
+                })
+                .catch(function () {
+                    if (hintEl) hintEl.textContent = 'No se pudo obtener la dirección';
+                });
+        }, 400);
+    }
+
+    let searchTimer = null;
+    if (searchInput) {
+        searchInput.addEventListener('input', function () {
+            clearTimeout(searchTimer);
+            const q = searchInput.value.trim();
+            if (q.length < 3) { resultsBox.hidden = true; return; }
+            searchTimer = setTimeout(function () { runSearch(q); }, 450);
+        });
+    }
+
+    function runSearch(q) {
+        const url = NOMINATIM_SEARCH + '?format=json&q=' + encodeURIComponent(q)
+                  + '&countrycodes=' + COUNTRY_CODES + '&limit=6&addressdetails=1&accept-language=es';
+        fetch(url, { headers: { Accept: 'application/json' } })
+            .then(function (r) { return r.json(); })
+            .then(renderResults)
+            .catch(function () {
+                resultsBox.innerHTML = '<div class="tf-map-picker__empty">Error de búsqueda</div>';
+                resultsBox.hidden = false;
+            });
+    }
+
+    function renderResults(items) {
+        if (!items || !items.length) {
+            resultsBox.innerHTML = '<div class="tf-map-picker__empty">Sin resultados</div>';
+            resultsBox.hidden = false;
+            return;
+        }
+        resultsBox.innerHTML = items.map(function (it, idx) {
+            return '<button type="button" class="tf-map-picker__result" data-idx="' + idx + '">'
+                 + '<i class="bi bi-geo-alt-fill"></i>'
+                 + '<span>' + escapeHtml(it.display_name)
+                 + '<small>' + escapeHtml((it.type || '')) + '</small></span></button>';
+        }).join('');
+        resultsBox.hidden = false;
+        resultsBox._items = items;
+
+        resultsBox.querySelectorAll('.tf-map-picker__result').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                const it = resultsBox._items[Number(btn.dataset.idx)];
+                if (!it) return;
+                const lat = parseFloat(it.lat);
+                const lng = parseFloat(it.lon);
+                map.setView([lat, lng], 15);
+                setMarker(lat, lng, { skipReverse: true, pan: false });
+                if (hintEl) hintEl.textContent = it.display_name;
+
+                const a = it.address || {};
+                if (calleInput && !calleInput.value.trim() && (a.road || a.neighbourhood || a.suburb)) {
+                    calleInput.value = a.road
+                        ? a.road + (a.house_number ? ' #' + a.house_number : '')
+                        : (a.neighbourhood || a.suburb);
+                }
+                if (cityInput && !cityInput.value.trim()) {
+                    cityInput.value = a.city || a.town || a.village || a.municipality || '';
+                }
+                if (stateInput && !stateInput.value.trim()) {
+                    stateInput.value = a.state || a.province || a.region || '';
+                }
+                if (countryInput && (!countryInput.value.trim() || countryInput.value === 'US')) {
+                    countryInput.value = (a.country_code || '').toUpperCase() || 'CU';
+                }
+                if (postalInput && !postalInput.value.trim()) {
+                    postalInput.value = a.postcode || '';
+                }
+                searchInput.value = it.display_name;
+                resultsBox.hidden = true;
+            });
+        });
+    }
+
+    document.addEventListener('click', function (e) {
+        if (!root.contains(e.target)) resultsBox.hidden = true;
+    });
+
+    [latInput, lngInput].forEach(function (inp) {
+        if (!inp) return;
+        inp.addEventListener('change', function () {
+            const lat = parseFloat(latInput && latInput.value);
+            const lng = parseFloat(lngInput && lngInput.value);
+            if (!isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0) {
+                setMarker(lat, lng);
+            }
+        });
+    });
+
+    const initLat = parseFloat(root.dataset.initialLat);
+    const initLng = parseFloat(root.dataset.initialLng);
+    if (!isNaN(initLat) && !isNaN(initLng) && initLat !== 0 && initLng !== 0) {
+        map.setView([initLat, initLng], 14);
+        setMarker(initLat, initLng, { skipReverse: true, pan: false });
+    }
+
+    map.on('click', function (e) {
+        setMarker(e.latlng.lat, e.latlng.lng);
+    });
+
+    setTimeout(function () { map.invalidateSize(); }, 200);
+    window.addEventListener('resize', function () { map.invalidateSize(); });
+
+    function escapeHtml(s) {
+        return String(s)
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+})();
+</script>

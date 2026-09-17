@@ -1,0 +1,265 @@
+<div class="tf-page-header">
+    <div>
+        <h1>
+            <i class="bi bi-building"></i>
+            {{ .empresa.NombreLegal }}
+        </h1>
+        <p>
+            {{ if .empresa.NombreComercial }}{{ .empresa.NombreComercial }}{{ else }}Empresa del marketplace{{ end }}
+        </p>
+    </div>
+    <div class="tf-page-header__actions">
+        <a href="/empresas" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Volver
+        </a>
+        {{ if or (eq .role "admin") (and .empresa.OwnerID (eq (printf "%v" .empresa.OwnerID) (printf "%v" $.userID))) }}
+        <a href="/empresas/{{ .empresa.ID }}/edit" class="btn btn-primary">
+            <i class="bi bi-pencil"></i> Editar
+        </a>
+        {{ end }}
+    </div>
+</div>
+
+{{ if .flash_success }}<div class="alert alert-success tf-mb-4">{{ .flash_success }}</div>{{ end }}
+{{ if .flash_error }}<div class="alert alert-danger tf-mb-4">{{ .flash_error }}</div>{{ end }}
+
+<!-- ─────────── HERO ─────────── -->
+<section class="tf-empresa-hero">
+    <div class="tf-empresa-hero__badge tf-empresa-hero__badge--{{ .empresa.Tipo }}">
+        {{ if eq (printf "%v" .empresa.Tipo) "broker" }}
+            <i class="bi bi-briefcase"></i>
+        {{ else if eq (printf "%v" .empresa.Tipo) "carrier" }}
+            <i class="bi bi-truck"></i>
+        {{ else if eq (printf "%v" .empresa.Tipo) "shipper" }}
+            <i class="bi bi-box-seam"></i>
+        {{ else if eq (printf "%v" .empresa.Tipo) "factoring" }}
+            <i class="bi bi-cash-coin"></i>
+        {{ else }}
+            <i class="bi bi-building"></i>
+        {{ end }}
+    </div>
+
+    <div class="tf-empresa-hero__info">
+        <h1>{{ .empresa.NombreLegal }}</h1>
+        <div class="tf-empresa-hero__meta">
+            <span class="badge bg-secondary">{{ .empresa.Tipo }}</span>
+            {{ if eq (printf "%v" .empresa.Estado) "activo" }}
+                <span class="badge bg-success">Activo</span>
+            {{ else if eq (printf "%v" .empresa.Estado) "inactivo" }}
+                <span class="badge bg-secondary">Inactivo</span>
+            {{ else if eq (printf "%v" .empresa.Estado) "suspendido" }}
+                <span class="badge bg-danger">Suspendido</span>
+            {{ end }}
+        </div>
+    </div>
+
+    <div class="tf-empresa-hero__id">
+        <small>ID</small>
+        <strong>#{{ .empresa.ID }}</strong>
+    </div>
+</section>
+
+<!-- ─────────── GRID DE BLOQUES ─────────── -->
+<div class="tf-profile__grid">
+
+    <!-- DATOS LEGALES -->
+    <section class="tf-info-block" data-block="legal">
+        <header class="tf-info-block__head">
+            <i class="bi bi-card-checklist tf-info-block__icon"></i>
+            <div class="tf-info-block__text">
+                <h2>Datos legales</h2>
+                <p>Identificación fiscal y de operación</p>
+            </div>
+        </header>
+        <div class="tf-info-block__body">
+            <dl class="tf-info-list">
+                <div class="tf-info-list__row">
+                    <dt><i class="bi bi-tag"></i> Nombre legal</dt>
+                    <dd>{{ .empresa.NombreLegal }}</dd>
+                </div>
+                <div class="tf-info-list__row">
+                    <dt><i class="bi bi-tag-fill"></i> Nombre comercial</dt>
+                    <dd>{{ if .empresa.NombreComercial }}{{ .empresa.NombreComercial }}{{ else }}<span class="empty-value">—</span>{{ end }}</dd>
+                </div>
+                <div class="tf-info-list__row">
+                    <dt><i class="bi bi-file-earmark-text"></i> Tax ID</dt>
+                    <dd>{{ if .empresa.TaxID }}{{ .empresa.TaxID }}{{ else }}<span class="empty-value">—</span>{{ end }}</dd>
+                </div>
+                <div class="tf-info-list__row">
+                    <dt><i class="bi bi-person-badge"></i> MC Number</dt>
+                    <dd>{{ if .empresa.MCNumber }}{{ .empresa.MCNumber }}{{ else }}<span class="empty-value">—</span>{{ end }}</dd>
+                </div>
+                <div class="tf-info-list__row">
+                    <dt><i class="bi bi-upc-scan"></i> DOT Number</dt>
+                    <dd>{{ if .empresa.DOTNumber }}{{ .empresa.DOTNumber }}{{ else }}<span class="empty-value">—</span>{{ end }}</dd>
+                </div>
+            </dl>
+        </div>
+    </section>
+
+    <!-- CONTACTO -->
+    <section class="tf-info-block" data-block="contact">
+        <header class="tf-info-block__head">
+            <i class="bi bi-telephone tf-info-block__icon"></i>
+            <div class="tf-info-block__text">
+                <h2>Contacto</h2>
+                <p>Datos de comunicación</p>
+            </div>
+        </header>
+        <div class="tf-info-block__body">
+            <dl class="tf-info-list">
+                <div class="tf-info-list__row">
+                    <dt><i class="bi bi-telephone"></i> Teléfono</dt>
+                    <dd>
+                        {{ if .empresa.Telefono }}
+                        <a href="tel:{{ .empresa.Telefono }}">{{ .empresa.Telefono }}</a>
+                        {{ else }}<span class="empty-value">—</span>{{ end }}
+                    </dd>
+                </div>
+                <div class="tf-info-list__row">
+                    <dt><i class="bi bi-envelope"></i> Email</dt>
+                    <dd>
+                        {{ if .empresa.Email }}
+                        <a href="mailto:{{ .empresa.Email }}">{{ .empresa.Email }}</a>
+                        {{ else }}<span class="empty-value">—</span>{{ end }}
+                    </dd>
+                </div>
+                <div class="tf-info-list__row">
+                    <dt><i class="bi bi-globe"></i> Sitio web</dt>
+                    <dd>
+                        {{ if .empresa.SitioWeb }}
+                        <a href="{{ .empresa.SitioWeb }}" target="_blank" rel="noopener">{{ .empresa.SitioWeb }}</a>
+                        {{ else }}<span class="empty-value">—</span>{{ end }}
+                    </dd>
+                </div>
+            </dl>
+        </div>
+    </section>
+
+    <!-- UBICACIÓN -->
+    <section class="tf-info-block" data-block="location">
+        <header class="tf-info-block__head">
+            <i class="bi bi-geo-alt-fill tf-info-block__icon"></i>
+            <div class="tf-info-block__text">
+                <h2>Ubicación</h2>
+                <p>Dirección fiscal registrada</p>
+            </div>
+        </header>
+        <div class="tf-info-block__body">
+            {{ if .empresa.Direccion }}
+            <dl class="tf-info-list">
+                <div class="tf-info-list__row tf-info-list__row--full">
+                    <dt><i class="bi bi-house"></i> Dirección</dt>
+                    <dd>{{ if .empresa.Direccion.Calle }}{{ .empresa.Direccion.Calle }}{{ else }}<span class="empty-value">—</span>{{ end }}</dd>
+                </div>
+                <div class="tf-info-list__row">
+                    <dt><i class="bi bi-buildings"></i> Ciudad</dt>
+                    <dd>{{ .empresa.Direccion.Ciudad }}</dd>
+                </div>
+                <div class="tf-info-list__row">
+                    <dt><i class="bi bi-map"></i> Provincia</dt>
+                    <dd>{{ .empresa.Direccion.EstadoProvincia }}</dd>
+                </div>
+                <div class="tf-info-list__row">
+                    <dt><i class="bi bi-globe-americas"></i> País</dt>
+                    <dd>{{ .empresa.Direccion.Pais }}</dd>
+                </div>
+                <div class="tf-info-list__row">
+                    <dt><i class="bi bi-mailbox"></i> Código postal</dt>
+                    <dd>{{ if .empresa.Direccion.CodigoPostal }}{{ .empresa.Direccion.CodigoPostal }}{{ else }}<span class="empty-value">—</span>{{ end }}</dd>
+                </div>
+                {{ if and .empresa.Direccion.Latitud .empresa.Direccion.Longitud }}
+                <div class="tf-info-list__row">
+                    <dt><i class="bi bi-crosshair"></i> Coordenadas</dt>
+                    <dd class="tf-tabular">
+                        {{ .empresa.Direccion.Latitud }}, {{ .empresa.Direccion.Longitud }}
+                    </dd>
+                </div>
+                {{ end }}
+            </dl>
+            {{ else }}
+            <div class="tf-empty tf-empty--sm">
+                <p>Sin dirección registrada</p>
+            </div>
+            {{ end }}
+        </div>
+    </section>
+
+    <!-- CRÉDITO (solo brokers) -->
+    {{ if or (eq (printf "%v" .empresa.Tipo) "broker") (eq (printf "%v" .empresa.Tipo) "factoring") }}
+    <section class="tf-info-block" data-block="credit">
+        <header class="tf-info-block__head">
+            <i class="bi bi-credit-card tf-info-block__icon"></i>
+            <div class="tf-info-block__text">
+                <h2>Crédito</h2>
+                <p>Información financiera</p>
+            </div>
+        </header>
+        <div class="tf-info-block__body">
+            <dl class="tf-info-list">
+                <div class="tf-info-list__row">
+                    <dt><i class="bi bi-star"></i> Credit Score</dt>
+                    <dd>
+                        {{ if .empresa.CreditScore }}
+                        <strong>{{ .empresa.CreditScore }}</strong>
+                        {{ else }}<span class="empty-value">—</span>{{ end }}
+                    </dd>
+                </div>
+                <div class="tf-info-list__row">
+                    <dt><i class="bi bi-calendar-check"></i> Days to Pay</dt>
+                    <dd>
+                        {{ if .empresa.DaysToPay }}
+                        <span class="tf-value-unit"><strong>{{ .empresa.DaysToPay }}</strong><em>días</em></span>
+                        {{ else }}<span class="empty-value">—</span>{{ end }}
+                    </dd>
+                </div>
+            </dl>
+        </div>
+    </section>
+    {{ end }}
+
+    <!-- CHOFERES (solo carriers) -->
+    {{ if and (eq (printf "%v" .empresa.Tipo) "carrier") .choferes }}
+    <section class="tf-info-block" data-block="choferes">
+        <header class="tf-info-block__head">
+            <i class="bi bi-person-badge tf-info-block__icon"></i>
+            <div class="tf-info-block__text">
+                <h2>Choferes</h2>
+                <p>{{ len .choferes }} conductores registrados</p>
+            </div>
+        </header>
+        <div class="tf-info-block__body">
+            <ul class="tf-chip-list">
+                {{ range .choferes }}
+                <li>
+                    <a href="/choferes/{{ .ID }}" class="tf-chip">
+                        <i class="bi bi-person-fill"></i>
+                        {{ if .User }}{{ .User.Name }}{{ else }}Chofer #{{ .ID }}{{ end }}
+                    </a>
+                </li>
+                {{ end }}
+            </ul>
+        </div>
+    </section>
+    {{ end }}
+
+</div>
+
+<!-- ─────────── ACCIONES FINALES ─────────── -->
+<footer class="tf-profile__footer">
+    <a href="/empresas" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Volver al listado
+    </a>
+    {{ if or (eq .role "admin") (and .empresa.OwnerID (eq (printf "%v" .empresa.OwnerID) (printf "%v" $.userID))) }}
+    <form action="/empresas/{{ .empresa.ID }}/delete" method="POST" style="display:inline"
+          onsubmit="return confirm('¿Eliminar esta empresa? Esta acción no se puede deshacer.')">
+        <input type="hidden" name="_csrf" value="{{ .csrfToken }}">
+        <button type="submit" class="btn btn-outline-danger">
+            <i class="bi bi-trash"></i> Eliminar
+        </button>
+    </form>
+    <a href="/empresas/{{ .empresa.ID }}/edit" class="btn btn-primary">
+        <i class="bi bi-pencil"></i> Editar
+    </a>
+    {{ end }}
+</footer>

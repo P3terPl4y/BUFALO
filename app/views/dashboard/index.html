@@ -1,0 +1,287 @@
+<div class="tf-loads-page">
+
+    <!-- ══════════ PAGE HEADER ══════════ -->
+    <header class="tf-loads-header">
+        <div class="tf-loads-header__left">
+            <div class="tf-loads-header__icon">
+                <i class="bi bi-truck"></i>
+            </div>
+            <div>
+                <h1>
+                    {{ if eq .role "chofer" }}Cargas Asignadas
+                    {{ else if eq .role "publicador" }}Mis Cargas Publicadas
+                    {{ else }}Todas las Cargas{{ end }}
+                </h1>
+                <p>
+                    {{ if eq .role "chofer" }}Cargas que tienes asignadas
+                    {{ else if eq .role "publicador" }}Cargas que has publicado
+                    {{ else }}Gestiona todas las cargas del sistema{{ end }}
+                </p>
+            </div>
+        </div>
+
+        {{ if or (eq .role "publicador") (eq .role "admin") }}
+        <a href="/loads/create" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Nueva Carga
+        </a>
+        {{ end }}
+    </header>
+
+    <!-- ══════════ FILTROS ══════════ -->
+    <section class="tf-filters" id="tfFilters">
+        <div class="tf-filters__header" onclick="document.getElementById('tfFilters').classList.toggle('is-collapsed')">
+            <h3 class="tf-filters__title">
+                <i class="bi bi-funnel"></i> Filtros de búsqueda
+            </h3>
+            <button type="button" class="tf-filters__toggle" aria-label="Colapsar">
+                <i class="bi bi-chevron-down"></i>
+            </button>
+        </div>
+
+        <div class="tf-filters__body">
+            <form method="GET" action="/loads">
+                <div class="tf-filters__grid">
+                    <div class="tf-field">
+                        <label class="form-label">Estado</label>
+                        <select name="status" class="form-select form-select-sm">
+                            <option value="">Todos</option>
+                            <option value="publicada"    {{ if eq .filters.status "publicada" }}selected{{ end }}>Publicada</option>
+                            <option value="negociando"   {{ if eq .filters.status "negociando" }}selected{{ end }}>Negociando</option>
+                            <option value="asignada"     {{ if eq .filters.status "asignada" }}selected{{ end }}>Asignada</option>
+                            <option value="en_transito"  {{ if eq .filters.status "en_transito" }}selected{{ end }}>En tránsito</option>
+                            <option value="entregada"    {{ if eq .filters.status "entregada" }}selected{{ end }}>Entregada</option>
+                            <option value="cancelada"    {{ if eq .filters.status "cancelada" }}selected{{ end }}>Cancelada</option>
+                        </select>
+                    </div>
+
+                    <div class="tf-field">
+                        <label class="form-label">Tipo de carga</label>
+                        <select name="tipo_carga" class="form-select form-select-sm">
+                            <option value="">Todos</option>
+                            <option value="FTL" {{ if eq .filters.tipo_carga "FTL" }}selected{{ end }}>FTL</option>
+                            <option value="LTL" {{ if eq .filters.tipo_carga "LTL" }}selected{{ end }}>LTL</option>
+                        </select>
+                    </div>
+
+                    <div class="tf-field">
+                        <label class="form-label">Equipo</label>
+                        <select name="tipo_equipo" class="form-select form-select-sm">
+                            <option value="">Todos</option>
+                            <option value="dry_van"     {{ if eq .filters.tipo_equipo "dry_van" }}selected{{ end }}>Dry Van</option>
+                            <option value="flatbed"     {{ if eq .filters.tipo_equipo "flatbed" }}selected{{ end }}>Flatbed</option>
+                            <option value="reefer"      {{ if eq .filters.tipo_equipo "reefer" }}selected{{ end }}>Reefer</option>
+                            <option value="step_deck"   {{ if eq .filters.tipo_equipo "step_deck" }}selected{{ end }}>Step Deck</option>
+                            <option value="double_drop" {{ if eq .filters.tipo_equipo "double_drop" }}selected{{ end }}>Double Drop</option>
+                            <option value="lowboy"      {{ if eq .filters.tipo_equipo "lowboy" }}selected{{ end }}>Lowboy</option>
+                            <option value="cargo_van"   {{ if eq .filters.tipo_equipo "cargo_van" }}selected{{ end }}>Cargo Van</option>
+                            <option value="box_truck"   {{ if eq .filters.tipo_equipo "box_truck" }}selected{{ end }}>Box Truck</option>
+                            <option value="power_only"  {{ if eq .filters.tipo_equipo "power_only" }}selected{{ end }}>Power Only</option>
+                        </select>
+                    </div>
+
+                    <div class="tf-field">
+                        <label class="form-label">Tarifa mínima</label>
+                        <input type="number" step="0.01" name="min_rate"
+                               class="form-control form-control-sm"
+                               placeholder="0.00" value="{{ .filters.min_rate }}">
+                    </div>
+
+                    <div class="tf-field">
+                        <label class="form-label">Tarifa máxima</label>
+                        <input type="number" step="0.01" name="max_rate"
+                               class="form-control form-control-sm"
+                               placeholder="9999.99" value="{{ .filters.max_rate }}">
+                    </div>
+
+                    <div class="tf-field">
+                        <label class="form-label">Recogida desde</label>
+                        <input type="date" name="pickup_from"
+                               class="form-control form-control-sm"
+                               value="{{ .filters.pickup_from }}">
+                    </div>
+
+                    <div class="tf-field">
+                        <label class="form-label">Recogida hasta</label>
+                        <input type="date" name="pickup_to"
+                               class="form-control form-control-sm"
+                               value="{{ .filters.pickup_to }}">
+                    </div>
+                </div>
+
+                <div class="tf-filters__actions">
+                    <button type="submit" class="btn btn-primary btn-sm">
+                        <i class="bi bi-funnel"></i> Aplicar filtros
+                    </button>
+                    <a href="/loads" class="btn btn-secondary btn-sm">
+                        <i class="bi bi-arrow-counterclockwise"></i> Limpiar
+                    </a>
+                </div>
+            </form>
+        </div>
+    </section>
+
+    <!-- ══════════ TABLA ══════════ -->
+    <section class="tf-table-card">
+        <header class="tf-table-card__header">
+            <h3 class="tf-table-card__title">
+                <i class="bi bi-list-ul"></i> Resultados
+            </h3>
+            <span class="tf-table-card__count">
+                {{ if .total }}{{ .total }}{{ else }}0{{ end }}
+                {{ if eq .total 1 }}carga{{ else }}cargas{{ end }}
+            </span>
+        </header>
+
+        <div class="table-responsive">
+            <table class="tf-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Referencia</th>
+                        <th>Publicador</th>
+                        <th>Chofer</th>
+                        <th>Recogida</th>
+                        <th>Entrega</th>
+                        <th>Peso</th>
+                        <th>Tarifa</th>
+                        <th>Estado</th>
+                        {{ if or (eq .role "publicador") (eq .role "admin") }}
+                        <th>Acciones</th>
+                        {{ end }}
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {{ if .loads }}
+                        {{ range .loads }}
+                        <tr>
+                            <td class="tf-cell-id">#{{ .ID }}</td>
+
+                            <td class="tf-cell-title">{{ .NumeroReferencia }}</td>
+
+                            <td class="tf-cell-num">
+                                {{ if .Publicador }}
+                                    {{ if .Publicador.User }}{{ .Publicador.User.Name }}{{ else }}#{{ .PublicadorID }}{{ end }}
+                                {{ else }}<span class="empty-value">—</span>{{ end }}
+                            </td>
+
+                            <td class="tf-cell-num">
+                                {{ if .Chofer }}
+                                    {{ if .Chofer.User }}{{ .Chofer.User.Name }}{{ else }}#{{ .ChoferID }}{{ end }}
+                                {{ else }}
+                                    <span class="empty-value">No asignado</span>
+                                {{ end }}
+                            </td>
+
+                            <td class="tf-cell-address">
+                                {{ if .OrigenDireccion }}
+                                    {{ .OrigenDireccion.Ciudad }}, {{ .OrigenDireccion.EstadoProvincia }}
+                                {{ else }}
+                                    <span class="empty-value">—</span>
+                                {{ end }}
+                                <small>{{ .FechaRecogida.Format "02/01/2006 15:04" }}</small>
+                            </td>
+
+                            <td class="tf-cell-address">
+                                {{ if .DestinoDireccion }}
+                                    {{ .DestinoDireccion.Ciudad }}, {{ .DestinoDireccion.EstadoProvincia }}
+                                {{ else }}
+                                    <span class="empty-value">—</span>
+                                {{ end }}
+                                {{ if .FechaEntrega }}<small>{{ .FechaEntrega.Format "02/01/2006 15:04" }}</small>{{ end }}
+                            </td>
+
+                            <td class="tf-cell-num">
+                                {{ if .PesoKg }}<strong>{{ .PesoKg }}</strong> kg{{ else }}<span class="empty-value">—</span>{{ end }}
+                            </td>
+
+                            <td class="tf-cell-num">
+                                <span class="rate-amount">
+                                    {{ if .TarifaTotal }}{{ .TarifaTotal }} {{ .Moneda }}{{ end }}
+                                </span>
+                            </td>
+
+                            <td>
+                                {{ if eq .Estado "publicada" }}<span class="badge bg-success"><i class="bi bi-check-circle"></i> Publicada</span>{{ end }}
+                                {{ if eq .Estado "negociando" }}<span class="badge bg-info"><i class="bi bi-chat-dots"></i> Negociando</span>{{ end }}
+                                {{ if eq .Estado "asignada" }}<span class="badge bg-warning"><i class="bi bi-person-check"></i> Asignada</span>{{ end }}
+                                {{ if eq .Estado "en_transito" }}<span class="badge bg-info"><i class="bi bi-truck"></i> En tránsito</span>{{ end }}
+                                {{ if eq .Estado "entregada" }}<span class="badge bg-primary"><i class="bi bi-flag"></i> Entregada</span>{{ end }}
+                                {{ if eq .Estado "cancelada" }}<span class="badge bg-danger"><i class="bi bi-x-circle"></i> Cancelada</span>{{ end }}
+                            </td>
+
+                            <td class="tf-cell-actions">
+                                <div class="tf-action-group">
+                                    <a href="/loads/{{ .ID }}"
+                                       class="btn btn-outline-primary" title="Ver detalle">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    {{ if or (eq $.role "publicador") (eq $.role "admin") }}
+                                    <a href="/loads/{{ .ID }}/edit"
+                                       class="btn btn-outline-secondary" title="Editar">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <form action="/loads/{{ .ID }}/delete"
+                                          method="POST"
+                                          onsubmit="return confirm('¿Eliminar esta carga?')"
+                                          style="display:inline">
+                                        <input type="hidden" name="_csrf" value="{{ $.csrfToken }}">
+                                        <button type="submit"
+                                                class="btn btn-outline-danger" title="Eliminar">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                    {{ end }}
+                                </div>
+                            </td>
+                        </tr>
+                        {{ end }}
+                    {{ else }}
+                        <tr>
+                            <td colspan="10">
+                                <div class="tf-empty">
+                                    <div class="tf-empty__icon">
+                                        <i class="bi bi-inbox"></i>
+                                    </div>
+                                    <h4>No hay cargas</h4>
+                                    <p>No se encontraron cargas que coincidan con los filtros aplicados.</p>
+                                </div>
+                            </td>
+                        </tr>
+                    {{ end }}
+                </tbody>
+            </table>
+        </div>
+
+        {{ if gt .total .perPage }}
+        <div class="tf-pagination-wrap">
+            <nav>
+                <ul class="tf-pagination">
+                    {{ if gt .page 1 }}
+                    <li class="page-item">
+                        <a class="page-link"
+                           href="?page={{ .page }}&status={{ .filters.status }}&tipo_carga={{ .filters.tipo_carga }}&tipo_equipo={{ .filters.tipo_equipo }}&min_rate={{ .filters.min_rate }}&max_rate={{ .filters.max_rate }}&pickup_from={{ .filters.pickup_from }}&pickup_to={{ .filters.pickup_to }}"
+                           aria-label="Anterior">
+                            <i class="bi bi-chevron-left"></i>
+                        </a>
+                    </li>
+                    {{ end }}
+
+                    <li class="page-item active">
+                        <span class="page-link">{{ .page }}</span>
+                    </li>
+
+                    <li class="page-item">
+                        <a class="page-link"
+                           href="?page={{ .page }}&status={{ .filters.status }}&tipo_carga={{ .filters.tipo_carga }}&tipo_equipo={{ .filters.tipo_equipo }}&min_rate={{ .filters.min_rate }}&max_rate={{ .filters.max_rate }}&pickup_from={{ .filters.pickup_from }}&pickup_to={{ .filters.pickup_to }}"
+                           aria-label="Siguiente">
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+        {{ end }}
+    </section>
+
+</div>
