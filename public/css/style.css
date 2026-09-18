@@ -1427,6 +1427,8 @@ input[type="number"],input[type="datetime-local"]{font-variant-numeric:tabular-n
 .bf-user-btn{height:44px!important;min-height:44px!important;box-sizing:border-box;display:inline-flex!important;align-items:center!important}
 .bf-user-btn__avatar{width:32px!important;height:32px!important}
 @media (max-width:900px){.bf-topbar{grid-template-columns:1fr auto!important}.bf-topnav{display:none!important}.bf-topbar__right{grid-column:2!important;padding-right:190px!important}.bf-topbar__left .bf-brand{width:130px!important;min-width:130px!important}}
+.bf-topbar__left .bf-brand{width:188px!important;min-width:188px!important;height:60px!important;padding:2px 4px!important;border:0!important;background:transparent!important}
+.bf-topbar__left .bf-brand img{width:174px!important;height:52px!important;max-height:52px!important;object-fit:contain!important;object-position:left center!important;filter:drop-shadow(0 3px 4px rgba(21,33,38,.16))}
 
 /* Profundidad visual, movimiento sutil y carga de marca. */
 .bf-app,.bf-public-page{position:relative;isolation:isolate;overflow-x:hidden}
