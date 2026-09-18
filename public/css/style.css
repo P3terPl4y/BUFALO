@@ -1408,6 +1408,14 @@ input[type="number"],input[type="datetime-local"]{font-variant-numeric:tabular-n
 .tf-cell-email{color:var(--tf-text-muted);font-size:.86rem;white-space:nowrap}
 @media (max-width:700px){.tf-users-table{min-width:900px}}
 
+/* Profundidad visual, movimiento sutil y carga de marca. */
+.bf-app,.bf-public-page{position:relative;isolation:isolate;overflow-x:hidden}
+.bf-app::before,.bf-public-page::before{content:"";position:fixed;inset:0;z-index:-2;pointer-events:none;background:radial-gradient(circle at 85% 12%,rgba(245,158,11,.12),transparent 30%),radial-gradient(circle at 8% 90%,rgba(47,115,143,.1),transparent 28%),linear-gradient(135deg,rgba(255,255,255,.25),transparent 42%);background-attachment:fixed}
+.bf-app::after,.bf-public-page::after{content:"";position:fixed;inset:-20%;z-index:-1;pointer-events:none;opacity:.22;background-image:linear-gradient(115deg,transparent 0 48%,rgba(245,158,11,.08) 49%,transparent 50%),linear-gradient(25deg,transparent 0 48%,rgba(21,33,38,.06) 49%,transparent 50%);background-size:180px 180px;transform:rotate(-8deg);animation:bf-drift 24s linear infinite}
+.bf-loader{position:fixed;inset:0;z-index:9999;display:grid;place-items:center;background:#eef1f3;color:#152126;transition:opacity .4s ease,visibility .4s ease}.bf-loader.is-done{opacity:0;visibility:hidden}.bf-loader__mark{position:relative;display:grid;place-items:center;width:112px;height:112px}.bf-loader__mark img{width:92px;height:auto;animation:bf-pulse 1.5s ease-in-out infinite}.bf-loader__mark span{position:absolute;inset:0;border:2px solid #f59e0b;border-top-color:transparent;border-radius:50%;animation:bf-spin 1s linear infinite}.bf-loader p{position:absolute;margin-top:170px;font-size:.78rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#687780}.bf-login-logo{animation:bf-float 4s ease-in-out infinite;filter:drop-shadow(0 12px 18px rgba(21,33,38,.14))}
+@keyframes bf-spin{to{transform:rotate(360deg)}}@keyframes bf-pulse{50%{transform:scale(1.05)}}@keyframes bf-float{50%{transform:translateY(-5px)}}@keyframes bf-drift{to{transform:rotate(-8deg) translate3d(28px,18px,0)}}
+@media (prefers-reduced-motion:reduce){.bf-app::after,.bf-loader__mark img,.bf-loader__mark span,.bf-login-logo{animation:none}}
+
 /* Shell refinado: marca a la izquierda, contexto centrado y sesión a la derecha. */
 .bf-topbar{grid-template-columns:1fr auto 1fr;min-height:58px;padding:.45rem 1.15rem}
 .bf-topbar__left{grid-column:1;grid-row:1;z-index:2}
