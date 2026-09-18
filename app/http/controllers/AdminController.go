@@ -39,7 +39,7 @@ func (c *AdminController) Index(ctx fiber.Ctx) error {
 		"status": ctx.Query("status"),
 	}
 	page, _ := strconv.Atoi(ctx.Query("page", "1"))
-	perPage, _ := strconv.Atoi(ctx.Query("per_page", "15"))
+	perPage, _ := strconv.Atoi(ctx.Query("per_page", "10"))
 
 	users, total, err := c.userService.GetAllWithFilters(filters, page, perPage)
 	if err != nil {
@@ -221,15 +221,15 @@ func (c *AdminController) Store(ctx fiber.Ctx) error {
 	var empresa *models.Empresa
 	switch req.EmpresaMode {
 	case "existing":
-    if req.EmpresaID == 0 {
-        return renderErr("Debes seleccionar una empresa", nil)
-    }
-    var found models.Empresa
-    err := facades.Orm().Query().
-        Where("id = ?", req.EmpresaID).
-        Where("tipo = ?", req.Role).
-        Where("estado = ?", "activo").
-        First(&found)
+		if req.EmpresaID == 0 {
+			return renderErr("Debes seleccionar una empresa", nil)
+		}
+		var found models.Empresa
+		err := facades.Orm().Query().
+			Where("id = ?", req.EmpresaID).
+			Where("tipo = ?", req.Role).
+			Where("estado = ?", "activo").
+			First(&found)
 		if err != nil || found.ID == 0 {
 			return renderErr("La empresa seleccionada no es válida para el rol", nil)
 		}

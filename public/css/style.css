@@ -1900,3 +1900,4 @@ input[type="number"],input[type="datetime-local"]{font-variant-numeric:tabular-n
   .bf-main__title{font-size:var(--tf-fs-xl)}
   .bf-loads-grid{grid-template-columns:1fr}
 }
+.bf-sidebar__icon{color:#f59e0b!important}.bf-sidebar__link[aria-current="page"] .bf-sidebar__icon{color:#d97706!important}
