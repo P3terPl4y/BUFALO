@@ -164,7 +164,7 @@ func main() {
 			"style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; " +
 			"img-src 'self' data: blob: https://*.tile.openstreetmap.org https://tile.openstreetmap.org; " +
 			"font-src 'self' https://cdn.jsdelivr.net; " +
-			"connect-src 'self' https://nominatim.openstreetmap.org; " + // ← NUEVO
+			"connect-src 'self' https://cdn.jsdelivr.net https://nominatim.openstreetmap.org; " +
 			"frame-ancestors 'none';",
 		HSTSMaxAge:                31536000,
 		HSTSPreloadEnabled:        true,

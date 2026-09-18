@@ -24,7 +24,7 @@
     </script>
 </head>
 
-<body>
+<body class="bf-app">
 <header class="bf-topbar">
 
     <!-- LEFT: Perfil de usuario -->
@@ -89,7 +89,33 @@
     </div>
 
 </header>
-    <main class="container" id="main-content">
+    <div class="bf-body">
+    <aside class="bf-sidebar" aria-label="Navegación de BUFALO">
+        <div class="bf-sidebar__header">
+            <span class="bf-sidebar__eyebrow">Operaciones</span>
+            <strong class="bf-sidebar__title">Centro de control</strong>
+        </div>
+        <nav class="bf-sidebar__nav">
+            <a href="/home" class="bf-sidebar__link"><span class="bf-sidebar__icon"><i class="bi bi-grid-1x2"></i></span><span class="bf-sidebar__label">Inicio</span></a>
+            {{ if or .isPublicador .isAdmin }}
+            <a href="/loads" class="bf-sidebar__link"><span class="bf-sidebar__icon"><i class="bi bi-truck"></i></span><span class="bf-sidebar__label">Gestionar cargas</span></a>
+            <a href="/loads/create" class="bf-sidebar__link"><span class="bf-sidebar__icon"><i class="bi bi-plus-circle"></i></span><span class="bf-sidebar__label">Publicar carga</span></a>
+            {{ else if .isChofer }}
+            <a href="/loads" class="bf-sidebar__link"><span class="bf-sidebar__icon"><i class="bi bi-box-seam"></i></span><span class="bf-sidebar__label">Cargas disponibles</span></a>
+            {{ end }}
+            {{ if or .isPublicador .isChofer .isAdmin }}
+            <a href="/empresas" class="bf-sidebar__link"><span class="bf-sidebar__icon"><i class="bi bi-building"></i></span><span class="bf-sidebar__label">Empresas</span></a>
+            <a href="/direcciones" class="bf-sidebar__link"><span class="bf-sidebar__icon"><i class="bi bi-geo-alt"></i></span><span class="bf-sidebar__label">Direcciones</span></a>
+            <a href="/choferes" class="bf-sidebar__link"><span class="bf-sidebar__icon"><i class="bi bi-person-badge"></i></span><span class="bf-sidebar__label">Choferes</span></a>
+            {{ end }}
+            {{ if .isAdmin }}<a href="/admin/users" class="bf-sidebar__link"><span class="bf-sidebar__icon"><i class="bi bi-people"></i></span><span class="bf-sidebar__label">Usuarios</span></a>{{ end }}
+            <hr class="bf-sidebar__divider">
+            <a href="/profile" class="bf-sidebar__link"><span class="bf-sidebar__icon"><i class="bi bi-person"></i></span><span class="bf-sidebar__label">Mi perfil</span></a>
+        </nav>
+        <div class="bf-sidebar__status"><span class="bf-status-dot"></span><span>Entorno local</span></div>
+    </aside>
+    <main class="bf-main" id="main-content">
+    <div class="container">
         {{ if .flash_success }}
         <div class="alert alert-success alert-dismissible fade show" role="alert">
             <i class="bi bi-check-circle-fill me-2"></i> {{ .flash_success }}
@@ -103,7 +129,10 @@
         </div>
         {{ end }}
         {{ embed }}
+    </div>
     </main>
+    </div>
+    <footer class="bf-footer"><span>BUFALO</span><span>Gestión logística para equipos que avanzan.</span><span>© 2026</span></footer>
     <script>
 (function () {
     var root = document.documentElement;
