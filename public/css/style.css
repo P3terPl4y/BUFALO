@@ -1403,6 +1403,10 @@ input[type="number"],input[type="datetime-local"]{font-variant-numeric:tabular-n
 .bf-user-btn__info{display:flex!important}
 .tf-empty .btn{width:auto!important;height:auto!important;min-width:0!important;padding:.65rem 1rem!important;display:inline-flex;align-items:center;justify-content:center;gap:.45rem;white-space:nowrap}
 .tf-table td[colspan] .tf-empty{width:100%}
+.tf-users-table{table-layout:auto}
+.tf-users-table th:nth-child(1){min-width:180px}.tf-users-table th:nth-child(2){min-width:240px}
+.tf-cell-email{color:var(--tf-text-muted);font-size:.86rem;white-space:nowrap}
+@media (max-width:700px){.tf-users-table{min-width:900px}}
 
 /* Shell refinado: marca a la izquierda, contexto centrado y sesión a la derecha. */
 .bf-topbar{grid-template-columns:1fr auto 1fr;min-height:58px;padding:.45rem 1.15rem}
