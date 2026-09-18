@@ -1901,3 +1901,15 @@ input[type="number"],input[type="datetime-local"]{font-variant-numeric:tabular-n
   .bf-loads-grid{grid-template-columns:1fr}
 }
 .bf-sidebar__icon{color:#f59e0b!important}.bf-sidebar__link[aria-current="page"] .bf-sidebar__icon{color:#d97706!important}
+
+/* Dashboard imagery: local asset with a readable overlay for operational copy. */
+.bf-dashboard-hero{position:relative;min-height:220px;margin:1rem 0 1.5rem;border-radius:16px;overflow:hidden;background-image:linear-gradient(90deg,rgba(21,33,38,.96) 0%,rgba(21,33,38,.74) 45%,rgba(21,33,38,.2) 100%),url('/img/dashboard-truck.png');background-size:cover;background-position:center;display:flex;align-items:center;box-shadow:0 14px 32px rgba(21,33,38,.14)}
+.bf-dashboard-hero__content{max-width:430px;padding:2rem;color:#fff}
+.bf-dashboard-hero__eyebrow{display:inline-flex;gap:.45rem;align-items:center;color:#fbbf24;text-transform:uppercase;letter-spacing:.1em;font-size:.72rem;font-weight:800}
+.bf-dashboard-hero h2{margin:.65rem 0 .45rem;font-size:clamp(1.55rem,3vw,2.35rem);line-height:1.05}
+.bf-dashboard-hero p{margin:0;color:#d7e1e5;max-width:330px}
+@media(max-width:700px){.bf-dashboard-hero{min-height:190px}.bf-dashboard-hero__content{padding:1.25rem}}
+
+/* Keep the footer branded while giving it a subtle logistics texture. */
+.bf-footer{position:relative;overflow:hidden;background-image:linear-gradient(90deg,rgba(21,33,38,.98),rgba(21,33,38,.82)),url('/img/dashboard-truck.png');background-position:center right;background-size:cover}
+.bf-footer>*{position:relative;z-index:1}
