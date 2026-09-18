@@ -108,6 +108,7 @@ func main() {
 	}
 
 	ensureAdminUser()
+	ensureDemoData()
 
 	// ── Environment ──
 	isProd := env("APP_ENV", "local") == "production"

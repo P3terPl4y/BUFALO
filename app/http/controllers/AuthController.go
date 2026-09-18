@@ -143,7 +143,7 @@ func (a *AuthController) ShowLogin(ctx fiber.Ctx) error {
 	return ctx.Render("auth/login", fiber.Map{
 		"title":     "Iniciar Sesión",
 		"csrfToken": csrf.TokenFromContext(ctx),
-	}, "layouts/base")
+	})
 }
 
 func (a *AuthController) ShowRegister(ctx fiber.Ctx) error {
@@ -156,7 +156,7 @@ func (a *AuthController) ShowRegister(ctx fiber.Ctx) error {
 		"csrfToken":       csrf.TokenFromContext(ctx),
 		"empresasBroker":  empresasBroker,
 		"empresasCarrier": empresasCarrier,
-	}, "layouts/base")
+	})
 }
 
 func (a *AuthController) HandleLogin(ctx fiber.Ctx) error {
@@ -168,7 +168,7 @@ func (a *AuthController) HandleLogin(ctx fiber.Ctx) error {
 			"title":       "Iniciar Sesión",
 			"flash_error": "Correo y contraseña son obligatorios",
 			"csrfToken":   csrf.TokenFromContext(ctx),
-		}, "layouts/base")
+		})
 	}
 
 	var user models.User
@@ -178,7 +178,7 @@ func (a *AuthController) HandleLogin(ctx fiber.Ctx) error {
 			"title":       "Iniciar Sesión",
 			"flash_error": "Credenciales incorrectas",
 			"csrfToken":   csrf.TokenFromContext(ctx),
-		}, "layouts/base")
+		})
 	}
 
 	if !facades.Hash().Check(password, user.Password) {
@@ -187,7 +187,7 @@ func (a *AuthController) HandleLogin(ctx fiber.Ctx) error {
 			"title":       "Iniciar Sesión",
 			"flash_error": "Credenciales incorrectas",
 			"csrfToken":   csrf.TokenFromContext(ctx),
-		}, "layouts/base")
+		})
 	}
 
 	sess := session.FromContext(ctx)
@@ -425,7 +425,7 @@ func (a *AuthController) HandleRegister(ctx fiber.Ctx) error {
 		"title":         "Iniciar Sesión",
 		"flash_success": "Registro exitoso. Ya puedes iniciar sesión.",
 		"csrfToken":     csrf.TokenFromContext(ctx),
-	}, "layouts/base")
+	})
 }
 
 func (a *AuthController) renderRegister(ctx fiber.Ctx, msg string, errs map[string]string, old *requests.UserRegisterRequest) error {
@@ -446,7 +446,7 @@ func (a *AuthController) renderRegister(ctx fiber.Ctx, msg string, errs map[stri
 		"csrfToken":       csrf.TokenFromContext(ctx),
 		"empresasBroker":  empresasBroker,
 		"empresasCarrier": empresasCarrier,
-	}, "layouts/base")
+	})
 }
 func strOrNil(s string) *string {
 	if s == "" {

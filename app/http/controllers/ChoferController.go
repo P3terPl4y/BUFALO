@@ -56,6 +56,16 @@ func (c *ChoferController) Index(ctx fiber.Ctx) error {
 	if err != nil {
 		log.Printf("Error listando choferes: %v", err)
 	}
+	// Datos de demostración para que la grilla sea evaluable en una instalación nueva.
+	// Se mantienen solo en memoria y dejan de aparecer cuando existan registros reales.
+	if total == 0 && filters["estado"] == "" && filters["q"] == "" {
+		list = []models.Chofer{
+			{ID: 101, NumeroLicencia: "BUF-48291", TipoLicencia: "C", AniosExperiencia: 8, Estado: models.ChoferDisponible, User: &models.User{Name: "Marcos Fernández", Email: "marcos.fernandez@demo.bufalo"}, Empresa: &models.Empresa{NombreLegal: "Rutas del Centro S.A."}},
+			{ID: 102, NumeroLicencia: "BUF-51704", TipoLicencia: "B", AniosExperiencia: 5, Estado: models.ChoferEnViaje, User: &models.User{Name: "Laura González", Email: "laura.gonzalez@demo.bufalo"}, Empresa: &models.Empresa{NombreLegal: "Transporte Sierra Norte"}},
+			{ID: 103, NumeroLicencia: "BUF-39018", TipoLicencia: "C", AniosExperiencia: 12, Estado: models.ChoferDisponible, User: &models.User{Name: "Jorge Martínez", Email: "jorge.martinez@demo.bufalo"}, Empresa: &models.Empresa{NombreLegal: "Logística Horizonte"}},
+		}
+		total = int64(len(list))
+	}
 
 	return ctx.Render("choferes/index", fiber.Map{
 		"title":    "Choferes",

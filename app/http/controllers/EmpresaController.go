@@ -66,13 +66,13 @@ func (c *EmpresaController) Index(ctx fiber.Ctx) error {
 	}
 
 	return ctx.Render("empresas/index", fiber.Map{
-		"title":   "Empresas",
+		"title":    "Empresas",
 		"empresas": list,
-		"total":   total,
-		"page":    page,
-		"perPage": perPage,
-		"filters": filters,
-		"role":    role,
+		"total":    total,
+		"page":     page,
+		"perPage":  int64(perPage),
+		"filters":  filters,
+		"role":     role,
 	}, "layouts/base")
 }
 
@@ -96,7 +96,7 @@ func (c *EmpresaController) Show(ctx fiber.Ctx) error {
 		"title":     "Detalle Empresa",
 		"empresa":   e,
 		"choferes":  choferes,
-		 "userID":    userID, 
+		"userID":    userID,
 		"csrfToken": csrf.TokenFromContext(ctx),
 		"role":      role,
 	}, "layouts/base")
@@ -169,13 +169,13 @@ func (c *EmpresaController) Store(ctx fiber.Ctx) error {
 		Telefono:        strPtr(req.Telefono),
 		Email:           strPtr(req.Email),
 		SitioWeb:        strPtr(req.SitioWeb),
-		DireccionID:	 req.DireccionID,
+		DireccionID:     req.DireccionID,
 		CreditScore:     req.CreditScore,
 		DaysToPay:       &req.DaysToPay,
 		OwnerID:         &ownerID,
 		Estado:          models.EstadoEmpresa(req.Estado),
 	}
-	
+
 	if err := c.service.Create(&e); err != nil {
 		log.Printf("Error creando empresa: %v", err)
 		return ctx.Redirect().To("/empresas/create?flash_error=Error al guardar")
@@ -208,7 +208,7 @@ func (c *EmpresaController) Edit(ctx fiber.Ctx) error {
 		"title":        "Editar Empresa",
 		"empresa":      e,
 		"destinations": dests,
-		 "userID":    userID, 
+		"userID":       userID,
 		"csrfToken":    csrf.TokenFromContext(ctx),
 		"role":         role,
 	}, "layouts/base")
@@ -249,7 +249,7 @@ func (c *EmpresaController) Update(ctx fiber.Ctx) error {
 	if err != nil || validator.Fails() {
 		return ctx.Redirect().To("/empresas/" + id + "/edit?flash_error=Error de validación")
 	}
-	
+
 	// 5. Whitelist de updates (NO se toca OwnerID, ni ID, ni CreatedAt)
 	updates := map[string]interface{}{
 		"tipo":             req.Tipo,
@@ -266,7 +266,7 @@ func (c *EmpresaController) Update(ctx fiber.Ctx) error {
 		"days_to_pay":      req.DaysToPay,
 		"estado":           req.Estado,
 	}
-if req.DireccionID != nil && *req.DireccionID > 0 {
+	if req.DireccionID != nil && *req.DireccionID > 0 {
 		updates["direccion_id"] = uintToUUID(*req.DireccionID)
 	} else {
 		updates["direccion_id"] = nil
