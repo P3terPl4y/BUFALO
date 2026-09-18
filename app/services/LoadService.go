@@ -17,6 +17,8 @@ func NewCargaService() *CargaService {
 // ─────────────────────────────────────────────────────────────
 // Listar con filtros
 // ─────────────────────────────────────────────────────────────
+// GetAllWithFilters lista cargas visibles para el usuario según filtros y
+// paginación. La autorización de ownership se aplica antes de editar o borrar.
 func (s *CargaService) GetAllWithFilters(filters map[string]string, page, perPage int) ([]models.Carga, int64, error) {
 	query := facades.Orm().Query().
 		Model(&models.Carga{}).
@@ -119,6 +121,8 @@ func (s *CargaService) Delete(id string) error {
 // ─────────────────────────────────────────────────────────────
 // Aceptar carga — el chofer la toma
 // ─────────────────────────────────────────────────────────────
+// AcceptLoadService asigna una carga a un chofer y actualiza su estado dentro
+// de la transición operativa permitida.
 func (s *CargaService) AcceptLoadService(id string, choferID uint) error {
 	result, err := facades.Orm().Query().
 		Model(&models.Carga{}).

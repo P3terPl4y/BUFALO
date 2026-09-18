@@ -20,9 +20,12 @@ func NewUserService() *UserService {
 func (s *UserService) Create(user *models.User) error {
 	return facades.Orm().Query().Create(user)
 }
+
 // CreateWithRole crea User + (Empresa opcional) + (Chofer o Publicador) en un
 // solo flujo con rollback manual. Debe llamarse en lugar de CreateWithEmpresa
 // cuando el usuario tenga rol "chofer" o "publicador".
+// CreateWithRole crea el usuario y su perfil profesional en una operación
+// transaccional. Si falla cualquiera de las relaciones, revierte todo el alta.
 func (s *UserService) CreateWithRole(
 	user *models.User,
 	empresa *models.Empresa,
@@ -61,20 +64,20 @@ func (s *UserService) CreateWithRole(
 
 	// 2. User
 	if err := facades.Orm().Query().Create(user); err != nil {
-    	rollback()
-    	return err
+		rollback()
+		return err
 	}
 
 	// 2.1 Si acabamos de crear la empresa, el creador es el owner
 	if createdEmpresa && empresa != nil {
-    	if _, err := facades.Orm().Query().
-      	  Model(&models.Empresa{}).
-          Where("id = ?", empresa.ID).
-          Update("owner_id", user.ID); err != nil {
-          rollback()
-          return err
-        }
-    	empresa.OwnerID = &user.ID // reflejarlo en memoria también
+		if _, err := facades.Orm().Query().
+			Model(&models.Empresa{}).
+			Where("id = ?", empresa.ID).
+			Update("owner_id", user.ID); err != nil {
+			rollback()
+			return err
+		}
+		empresa.OwnerID = &user.ID // reflejarlo en memoria también
 	}
 	// 3. Perfil de rol
 	switch user.Role {
@@ -133,6 +136,7 @@ func (s *UserService) CreateWithRole(
 
 	return nil
 }
+
 // CreateWithEmpresa crea User + Empresa en una transacción.
 // Si algo falla, se revierte todo (empresa y usuario).
 // Si empresa == nil o empresa.ID != 0, solo se vincula.
@@ -278,6 +282,7 @@ func (s *UserService) Delete(id uint) error {
 		Delete(&models.User{})
 	return err
 }
+
 // EmailTaken verifica si un email ya está registrado en la tabla users.
 // Si excludeID > 0, excluye ese usuario de la verificación (útil en updates).
 func (s *UserService) EmailTaken(email string, excludeID uint) (bool, error) {
@@ -293,6 +298,7 @@ func (s *UserService) EmailTaken(email string, excludeID uint) (bool, error) {
 	}
 	return count > 0, nil
 }
+
 // EmailExists verifica si un email ya está registrado en la tabla users.
 // Si excludeID > 0, excluye ese usuario de la verificación (útil en updates).
 func (s *UserService) EmailExists(email string, excludeID uint) (bool, error) {
@@ -308,21 +314,24 @@ func (s *UserService) EmailExists(email string, excludeID uint) (bool, error) {
 	}
 	return count > 0, nil
 }
+
 // Al guardar User, exactamente uno de los dos FK debe estar seteado
+// ValidateUserRole verifica que el rol tenga exactamente el perfil asociado
+// que necesita la aplicación antes de permitir operaciones protegidas.
 func ValidateUserRole(user *models.User) error {
-    hasPublicador := user.PublicadorID != nil
-    hasChofer := user.ChoferID != nil
-    if user.Role == "admin" {
-        if hasPublicador || hasChofer {
-            return errors.New("admin no debe tener perfil de rol")
-        }
-        return nil
-    }
-    if user.Role == "publicador" && (!hasPublicador || hasChofer) {
-        return errors.New("publicador requiere PublicadorID y no ChoferID")
-    }
-    if user.Role == "chofer" && (!hasChofer || hasPublicador) {
-        return errors.New("chofer requiere ChoferID y no PublicadorID")
-    }
-    return nil
+	hasPublicador := user.PublicadorID != nil
+	hasChofer := user.ChoferID != nil
+	if user.Role == "admin" {
+		if hasPublicador || hasChofer {
+			return errors.New("admin no debe tener perfil de rol")
+		}
+		return nil
+	}
+	if user.Role == "publicador" && (!hasPublicador || hasChofer) {
+		return errors.New("publicador requiere PublicadorID y no ChoferID")
+	}
+	if user.Role == "chofer" && (!hasChofer || hasPublicador) {
+		return errors.New("chofer requiere ChoferID y no PublicadorID")
+	}
+	return nil
 }

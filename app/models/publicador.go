@@ -4,7 +4,6 @@ import "time"
 
 // EstadoPublicador representa la situación operativa del publicador.
 
-
 // Publicador es el perfil profesional de quien publica cargas (broker persona).
 // NO repite datos personales: esos viven en User.
 type Publicador struct {
@@ -12,7 +11,7 @@ type Publicador struct {
 
 	// ── Vínculos ──
 	UserID    uint `json:"user_id"    db:"user_id"    gorm:"not null;uniqueIndex"` // 1:1 con User
-	EmpresaID uint `json:"empresa_id" db:"empresa_id" gorm:"index"`      // empresa tipo "broker"
+	EmpresaID uint `json:"empresa_id" db:"empresa_id" gorm:"index"`                // empresa tipo "broker"
 
 	// ── Licencia de broker ──
 	NumeroLicenciaBroker     string     `json:"numero_licencia_broker"      db:"numero_licencia_broker"      gorm:"size:50;uniqueIndex"` // MC number, etc.
@@ -20,8 +19,8 @@ type Publicador struct {
 	FechaVencimientoLicencia *time.Time `json:"fecha_vencimiento_licencia"  db:"fecha_vencimiento_licencia"`
 
 	// ── Perfil comercial ──
-	AniosExperiencia int    `json:"anios_experiencia" db:"anios_experiencia" gorm:"default:0"`
-	Especialidad     string `json:"especialidad"      db:"especialidad"      gorm:"size:100"` // "refrigerados", "carga pesada", etc.
+	AniosExperiencia int     `json:"anios_experiencia" db:"anios_experiencia" gorm:"default:0"`
+	Especialidad     string  `json:"especialidad"      db:"especialidad"      gorm:"size:100"`                   // "refrigerados", "carga pesada", etc.
 	Comision         float64 `json:"comision"         db:"comision"          gorm:"type:numeric(5,2);default:0"` // % sobre tarifa
 
 	// ── Crédito (del publicador, distinto del de la empresa) ──

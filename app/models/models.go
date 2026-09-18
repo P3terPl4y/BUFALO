@@ -6,6 +6,8 @@ package models
 
 // ── Empresa ──
 type TipoEmpresa string
+
+// Tipos de organización que pueden participar en una operación logística.
 const (
 	TipoBroker    TipoEmpresa = "broker"
 	TipoCarrier   TipoEmpresa = "carrier"
@@ -15,6 +17,7 @@ const (
 )
 
 type EstadoEmpresa string
+
 const (
 	EmpresaActiva     EstadoEmpresa = "activo"
 	EmpresaInactiva   EstadoEmpresa = "inactivo"
@@ -26,6 +29,7 @@ const (
 
 // ── Chofer ──
 type EstadoChofer string
+
 const (
 	ChoferDisponible EstadoChofer = "disponible"
 	ChoferEnViaje    EstadoChofer = "en_viaje"
@@ -34,6 +38,7 @@ const (
 
 // ── Publicador ──
 type EstadoPublicador string
+
 const (
 	PublicadorActivo     EstadoPublicador = "activo"
 	PublicadorInactivo   EstadoPublicador = "inactivo"
@@ -42,12 +47,14 @@ const (
 
 // ── Carga ──
 type TipoCarga string
+
 const (
 	CargaFTL TipoCarga = "FTL"
 	CargaLTL TipoCarga = "LTL"
 )
 
 type TipoEquipo string
+
 const (
 	EquipoDryVan     TipoEquipo = "dry_van"
 	EquipoFlatbed    TipoEquipo = "flatbed"
@@ -61,6 +68,7 @@ const (
 )
 
 type EstadoCarga string
+
 const (
 	CargaPublicada  EstadoCarga = "publicada"
 	CargaNegociando EstadoCarga = "negociando"
@@ -71,6 +79,7 @@ const (
 )
 
 type Audiencia string
+
 const (
 	AudienciaLoadBoard    Audiencia = "load_board"
 	AudienciaRedPrivada   Audiencia = "red_privada"
@@ -78,6 +87,7 @@ const (
 )
 
 type Moneda string
+
 const (
 	MonedaCUP Moneda = "CUP"
 	MonedaMLC Moneda = "MLC"
@@ -87,10 +97,11 @@ const (
 
 // ── Factura ──
 type EstadoFactura string
+
 const (
-	FacturaBorrador EstadoFactura = "borrador"
-	FacturaEmitida  EstadoFactura = "emitida"
-	FacturaPagada   EstadoFactura = "pagada"
-	FacturaVencida  EstadoFactura = "vencida"
+	FacturaBorrador  EstadoFactura = "borrador"
+	FacturaEmitida   EstadoFactura = "emitida"
+	FacturaPagada    EstadoFactura = "pagada"
+	FacturaVencida   EstadoFactura = "vencida"
 	FacturaCancelada EstadoFactura = "cancelada"
 )

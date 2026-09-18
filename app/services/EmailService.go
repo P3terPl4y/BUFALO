@@ -31,33 +31,34 @@ var verifier = emailverifier.NewVerifier()
 // Devuelve true si el email es válido, el dominio tiene MX y el buzón
 // existe en el servidor SMTP. Devuelve false en cualquier otro caso.
 func (s *EmailService) EmailExists(email string) bool {
-	if false{
-	result, err := verifier.Verify(email)
-	if err != nil {
-		log.Println(err)
-		return false
-	}
-
-	// 1. Sintaxis válida
-	if !result.Syntax.Valid {
-		log.Println("Error en primera")
-		return false
-	}
-
-	// 2. El dominio tiene registros MX (servidor de correo)
-	if !result.HasMxRecords {
-		log.Println("Error en 2da")
-		return false
-	}
-
-	/* 3. Verificación SMTP: si el servidor respondió y el buzón existe
-	if result.SMTP != nil {
-		// Reachable puede ser "yes", "no" o "unknown"
-		// Solo aceptamos "yes" o "unknown" (algunos servidores no responden)
-		if result.SMTP.Reachable == "no" {
+	if false {
+		result, err := verifier.Verify(email)
+		if err != nil {
+			log.Println(err)
 			return false
 		}
-	}*/}
+
+		// 1. Sintaxis válida
+		if !result.Syntax.Valid {
+			log.Println("Error en primera")
+			return false
+		}
+
+		// 2. El dominio tiene registros MX (servidor de correo)
+		if !result.HasMxRecords {
+			log.Println("Error en 2da")
+			return false
+		}
+
+		/* 3. Verificación SMTP: si el servidor respondió y el buzón existe
+		if result.SMTP != nil {
+			// Reachable puede ser "yes", "no" o "unknown"
+			// Solo aceptamos "yes" o "unknown" (algunos servidores no responden)
+			if result.SMTP.Reachable == "no" {
+				return false
+			}
+		}*/
+	}
 
 	return true
 }

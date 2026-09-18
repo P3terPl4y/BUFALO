@@ -7,6 +7,9 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+// User contiene la identidad, autenticación y preferencias del usuario.
+// El perfil profesional se guarda en Publicador o Chofer y se vincula mediante
+// el identificador correspondiente.
 type User struct {
 	orm.Model
 
@@ -17,12 +20,12 @@ type User struct {
 	Role     string `gorm:"column:role;type:varchar(50);index"` // admin | publicador | chofer
 
 	// ── Contacto ──
-	Phone            *string `gorm:"column:phone;type:varchar(30)"`
-	PhoneAlt         *string `gorm:"column:phone_alt;type:varchar(30)"`
-	WhatsApp         *string `gorm:"column:whatsapp;type:varchar(30)"`
-	Telegram         *string `gorm:"column:telegram;type:varchar(60)"`
-	EmergencyName    *string `gorm:"column:emergency_name;type:varchar(100)"`
-	EmergencyPhone   *string `gorm:"column:emergency_phone;type:varchar(30)"`
+	Phone          *string `gorm:"column:phone;type:varchar(30)"`
+	PhoneAlt       *string `gorm:"column:phone_alt;type:varchar(30)"`
+	WhatsApp       *string `gorm:"column:whatsapp;type:varchar(30)"`
+	Telegram       *string `gorm:"column:telegram;type:varchar(60)"`
+	EmergencyName  *string `gorm:"column:emergency_name;type:varchar(100)"`
+	EmergencyPhone *string `gorm:"column:emergency_phone;type:varchar(30)"`
 
 	// ── Empresa a la que pertenece el usuario (opcional) ──
 	EmpresaID *uint    `gorm:"column:empresa_id;index"`
@@ -64,8 +67,12 @@ type User struct {
 	Notes         string     `gorm:"column:notes;type:text"`
 }
 
+// TableName fuerza el nombre público de la tabla para evitar ambigüedades con
+// auth.users cuando la aplicación usa Supabase como PostgreSQL administrado.
 func (User) TableName() string { return "users" }
 
+// SetPassword reemplaza la contraseña por un hash bcrypt. Nunca almacena texto
+// plano ni debe recibir un valor que ya esté hasheado.
 func (u *User) SetPassword(plain string) error {
 	hash, err := bcrypt.GenerateFromPassword([]byte(plain), bcrypt.DefaultCost)
 	if err != nil {
@@ -75,6 +82,7 @@ func (u *User) SetPassword(plain string) error {
 	return nil
 }
 
+// CheckPassword compara una contraseña recibida con el hash almacenado.
 func (u *User) CheckPassword(plain string) bool {
 	return bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(plain)) == nil
 }

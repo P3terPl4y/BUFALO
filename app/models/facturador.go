@@ -1,15 +1,17 @@
 package models
+
 // Factura documenta el cobro generado por una carga. El emisor suele ser
 import (
-"time"
-	)
+	"time"
+)
+
 // el broker o un factoring; el receptor, el carrier que transportó.
 type Factura struct {
-	ID         uint   `json:"id" db:"id" gorm:"primaryKey;autoIncrement"`
-	CargaID    uint   `json:"carga_id" db:"carga_id" gorm:"uniqueIndex;not null"`
-	EmisorID   uint   `json:"emisor_id" db:"emisor_id" gorm:"not null;index"`
-	ReceptorID uint   `json:"receptor_id" db:"receptor_id" gorm:"not null;index"`
-	ChoferID   *uint  `json:"chofer_id,omitempty" db:"chofer_id" gorm:"index"`
+	ID               uint          `json:"id" db:"id" gorm:"primaryKey;autoIncrement"`
+	CargaID          uint          `json:"carga_id" db:"carga_id" gorm:"uniqueIndex;not null"`
+	EmisorID         uint          `json:"emisor_id" db:"emisor_id" gorm:"not null;index"`
+	ReceptorID       uint          `json:"receptor_id" db:"receptor_id" gorm:"not null;index"`
+	ChoferID         *uint         `json:"chofer_id,omitempty" db:"chofer_id" gorm:"index"`
 	NumeroFactura    string        `json:"numero_factura" db:"numero_factura" gorm:"size:50;uniqueIndex;not null"`
 	FechaEmision     time.Time     `json:"fecha_emision" db:"fecha_emision" gorm:"not null"`
 	FechaVencimiento *time.Time    `json:"fecha_vencimiento,omitempty" db:"fecha_vencimiento"`

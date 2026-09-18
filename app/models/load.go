@@ -2,6 +2,8 @@ package models
 
 import "time"
 
+// Carga es la unidad principal del marketplace: relaciona publicador, empresa,
+// origen, destino, equipo, tarifa y estado operativo.
 type Carga struct {
 	ID uint `json:"id" db:"id" gorm:"primaryKey;autoIncrement"`
 
@@ -22,10 +24,10 @@ type Carga struct {
 	FechaEntrega  *time.Time `json:"fecha_entrega"  db:"fecha_entrega"`
 
 	// ── Carga ──
-	TipoCarga   TipoCarga   `json:"tipo_carga"   db:"tipo_carga"   gorm:"type:carga_tipo;not null"`
-	TipoEquipo  TipoEquipo  `json:"tipo_equipo"  db:"tipo_equipo"  gorm:"type:equipo_tipo;not null"`
-	PesoKg      *float64    `json:"peso_kg"      db:"peso_kg"      gorm:"type:numeric(10,2)"`
-	Commodity   *string     `json:"commodity"    db:"commodity"    gorm:"size:255"`
+	TipoCarga  TipoCarga  `json:"tipo_carga"   db:"tipo_carga"   gorm:"type:carga_tipo;not null"`
+	TipoEquipo TipoEquipo `json:"tipo_equipo"  db:"tipo_equipo"  gorm:"type:equipo_tipo;not null"`
+	PesoKg     *float64   `json:"peso_kg"      db:"peso_kg"      gorm:"type:numeric(10,2)"`
+	Commodity  *string    `json:"commodity"    db:"commodity"    gorm:"size:255"`
 
 	// ── Distancias ──
 	DistanciaKm     float64  `json:"distancia_km"      db:"distancia_km"      gorm:"type:numeric(10,2);not null;default:0;index"`

@@ -22,6 +22,8 @@ func (s *DireccionService) GetAll() ([]models.Direccion, error) {
 	return list, err
 }
 
+// GetPage devuelve una página 1-based y el total de direcciones para construir
+// los controles de navegación. El tamaño por defecto es 10.
 func (s *DireccionService) GetPage(page, perPage int) ([]models.Direccion, int64, error) {
 	if page < 1 {
 		page = 1
