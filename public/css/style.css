@@ -1414,6 +1414,20 @@ input[type="number"],input[type="datetime-local"]{font-variant-numeric:tabular-n
 .bf-loader__mark span{z-index:0;inset:2px;border-width:3px}
 .bf-loader p{position:static;margin:0;font-size:.72rem;text-align:center}
 
+/* Header final: una sola línea, sin desbordes ni controles flotando. */
+.bf-topbar{height:64px!important;min-height:64px!important;box-sizing:border-box;display:grid!important;grid-template-columns:220px minmax(0,1fr) 220px!important;align-items:center!important;padding:0 16px!important;gap:16px!important;overflow:visible}
+.bf-topbar__left{grid-column:1!important;grid-row:1!important;display:flex!important;align-items:center!important;height:100%!important;justify-self:start!important;min-width:0}
+.bf-topbar__left .bf-brand{width:150px!important;height:52px!important;min-width:150px!important;box-sizing:border-box;display:flex!important;align-items:center!important;justify-content:flex-start!important;padding:4px 10px!important;overflow:hidden!important}
+.bf-topbar__left .bf-brand img{width:116px!important;height:40px!important;max-height:40px!important;object-fit:contain!important;object-position:left center!important}
+.bf-topnav{grid-column:2!important;grid-row:1!important;display:flex!important;align-items:center!important;justify-content:center!important;gap:4px!important;height:100%!important;margin:0!important;padding:0 0 2px!important}
+.bf-topnav__link{display:inline-flex!important;align-items:center!important;height:38px!important;padding:0 11px!important;margin:0!important;white-space:nowrap!important;border-radius:8px!important}
+.bf-topbar__right{grid-column:3!important;grid-row:1!important;display:flex!important;align-items:center!important;justify-content:flex-end!important;gap:10px!important;height:100%!important;margin:0!important;padding:0!important}
+.bf-topbar__right .bf-theme-toggle{width:40px!important;height:40px!important;margin:0!important;display:grid!important;place-items:center!important}
+.bf-topbar__legacy-user{position:absolute!important;right:16px!important;top:0!important;display:flex!important;align-items:center!important;height:64px!important;z-index:5}
+.bf-user-btn{height:44px!important;min-height:44px!important;box-sizing:border-box;display:inline-flex!important;align-items:center!important}
+.bf-user-btn__avatar{width:32px!important;height:32px!important}
+@media (max-width:900px){.bf-topbar{grid-template-columns:1fr auto!important}.bf-topnav{display:none!important}.bf-topbar__right{grid-column:2!important;padding-right:190px!important}.bf-topbar__left .bf-brand{width:130px!important;min-width:130px!important}}
+
 /* Profundidad visual, movimiento sutil y carga de marca. */
 .bf-app,.bf-public-page{position:relative;isolation:isolate;overflow-x:hidden}
 .bf-app::before,.bf-public-page::before{content:"";position:fixed;inset:0;z-index:-2;pointer-events:none;background:radial-gradient(circle at 85% 12%,rgba(245,158,11,.12),transparent 30%),radial-gradient(circle at 8% 90%,rgba(47,115,143,.1),transparent 28%),linear-gradient(135deg,rgba(255,255,255,.25),transparent 42%);background-attachment:fixed}
