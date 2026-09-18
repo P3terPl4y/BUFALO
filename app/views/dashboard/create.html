@@ -17,7 +17,7 @@
     <!-- ═══════════════════════════════════════════════════════════
          COLUMNA PRINCIPAL
          ═══════════════════════════════════════════════════════════ -->
-    <div class="tf-form-page__main"><div class="bf-step-actions" aria-label="Pasos del formulario"><button type="button" class="btn btn-secondary" id="bfPrevStep">Anterior</button><span id="bfStepLabel">Paso 1 de 4</span><button type="button" class="btn btn-primary" id="bfNextStep">Siguiente</button></div>
+    <div class="tf-form-page__main">
         <div class="tf-form-card">
 
             <!-- ───────── 01 · IDENTIFICACIÓN ───────── -->
@@ -339,35 +339,7 @@
     <!-- ═══════════════════════════════════════════════════════════
          RAIL LATERAL — Progreso · Resumen · Acciones
          ═══════════════════════════════════════════════════════════ -->
-    <aside class="tf-form-page__aside">
-
-        <!-- Progreso -->
-        <div class="tf-rail-card">
-            <header class="tf-rail-card__head">
-                <i class="bi bi-list-check"></i>
-                <span>Progreso</span>
-            </header>
-            <ol class="tf-progress" id="tfProgress">
-                <li class="tf-progress__step is-current" data-step="identification">
-                    <span class="tf-progress__dot"></span>
-                    <span class="tf-progress__label">Identificación</span>
-                </li>
-                <li class="tf-progress__step" data-step="route">
-                    <span class="tf-progress__dot"></span>
-                    <span class="tf-progress__label">Ruta</span>
-                </li>
-                <li class="tf-progress__step" data-step="cargo">
-                    <span class="tf-progress__dot"></span>
-                    <span class="tf-progress__label">Carga y tarifa</span>
-                </li>
-                <li class="tf-progress__step" data-step="extras">
-                    <span class="tf-progress__dot"></span>
-                    <span class="tf-progress__label">Extras</span>
-                </li>
-            </ol>
-        </div>
-
-        <!-- Resumen en vivo -->
+    <aside class="tf-form-page__aside">`n        <!-- Resumen en vivo -->
         <div class="tf-rail-card">
             <header class="tf-rail-card__head">
                 <i class="bi bi-eye"></i>
@@ -534,14 +506,13 @@
     const tarifaKmInput = document.getElementById('tarifa_por_km');
     tarifaKmInput.addEventListener('input', function () {
         this.dataset.manual = 'true';
-    });
-
-    // Stepper guiado\n    var stepBlocks = Array.prototype.slice.call(form.querySelectorAll("[data-block]")); var currentStep = 0;\n    function showStep(){ stepBlocks.forEach(function(b,i){ b.classList.toggle("bf-step-hidden", i !== currentStep); }); document.getElementById("bfStepLabel").textContent = "Paso " + (currentStep + 1) + " de " + stepBlocks.length; document.getElementById("bfPrevStep").disabled = currentStep === 0; document.getElementById("bfNextStep").textContent = currentStep === stepBlocks.length - 1 ? "Publicar" : "Siguiente"; }\n    document.getElementById("bfPrevStep").addEventListener("click",function(){ if(currentStep>0){ currentStep--; showStep(); }}); document.getElementById("bfNextStep").addEventListener("click",function(){ var fields=stepBlocks[currentStep].querySelectorAll("[required]"); for(var i=0;i<fields.length;i++){ if(!fields[i].checkValidity()){ fields[i].reportValidity(); return; }} if(currentStep<stepBlocks.length-1){ currentStep++; showStep(); } else { form.requestSubmit(); }}); showStep();\n\n    // Init
+    });`n    // Init
     autoTarifaKm();
     updateSummary();
     updateProgress();
 })();
 </script>
+
 
 
 
