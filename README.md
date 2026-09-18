@@ -894,6 +894,12 @@ go run .
 
 El arranque crea el administrador y datos coherentes para revisar usuarios, empresas, publicadores, choferes, direcciones, cargas, facturas e historial. Las credenciales de las cuentas demo usan la contraseña `Admin123!`; los correos están definidos en el seeder. Para reconstruir todo desde cero:
 
+| Cuenta | Rol | Contraseña |
+|---|---|---|
+| `admin@example.com` | Administrador | `Admin123!` |
+| `demo.broker@bufalo.local` | Publicador | `Admin123!` |
+| `demo.carrier@bufalo.local` | Chofer | `Admin123!` |
+
 ```powershell
 go run . artisan migrate:fresh
 go run .
