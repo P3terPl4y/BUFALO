@@ -1395,6 +1395,15 @@ input[type="number"],input[type="datetime-local"]{font-variant-numeric:tabular-n
 .admin-users-footer{display:flex;justify-content:space-between;align-items:center;color:var(--tf-text-muted);font-size:.78rem;padding:.25rem .1rem}
 @media (max-width:700px){.admin-users-filters{grid-template-columns:1fr}.admin-users-footer{align-items:flex-start;gap:.75rem;flex-direction:column}}
 
+/* Correcciones de QA: acciones vacías y cabecera consistente en todos los módulos. */
+.bf-brand{display:inline-flex;align-items:center;min-width:112px;min-height:42px;overflow:visible;padding:.2rem .7rem;border-left-width:3px}
+.bf-brand img{display:block;width:92px;height:auto;max-width:none;object-fit:contain}
+.bf-topbar__legacy-user{display:flex;align-items:center}
+.bf-topbar__legacy-user .bf-user-btn{min-height:42px;white-space:nowrap}
+.bf-user-btn__info{display:flex!important}
+.tf-empty .btn{width:auto!important;height:auto!important;min-width:0!important;padding:.65rem 1rem!important;display:inline-flex;align-items:center;justify-content:center;gap:.45rem;white-space:nowrap}
+.tf-table td[colspan] .tf-empty{width:100%}
+
 /* Shell refinado: marca a la izquierda, contexto centrado y sesión a la derecha. */
 .bf-topbar{grid-template-columns:1fr auto 1fr;min-height:58px;padding:.45rem 1.15rem}
 .bf-topbar__left{grid-column:1;grid-row:1;z-index:2}
