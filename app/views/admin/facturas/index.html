@@ -1,0 +1,60 @@
+<div class="tf-loads-page">
+    <header class="tf-loads-header">
+        <div class="tf-loads-header__left">
+            <div class="tf-loads-header__icon"><i class="bi bi-receipt"></i></div>
+            <div><h1>Facturas</h1><p>Todas las facturas del sistema</p></div>
+        </div>
+    </header>
+
+    {{ if .flash_success }}<div class="alert alert-success tf-mb-4">{{ .flash_success }}</div>{{ end }}
+    {{ if .flash_error }}<div class="alert alert-danger tf-mb-4">{{ .flash_error }}</div>{{ end }}
+
+    <section class="tf-table-card">
+        <header class="tf-table-card__header">
+            <h3 class="tf-table-card__title"><i class="bi bi-list-ul"></i> Resultados</h3>
+            <span class="tf-table-card__count">{{ .total }} facturas</span>
+        </header>
+
+        <div class="table-responsive">
+            <table class="tf-table">
+                <thead>
+                    <tr>
+                        <th>ID</th><th>Nº</th><th>Emisor</th><th>Receptor</th>
+                        <th>Fecha</th><th>Total</th><th>Estado</th><th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{ range .facturas }}
+                    <tr>
+                        <td class="tf-cell-id">#{{ .ID }}</td>
+                        <td class="tf-cell-title">{{ .NumeroFactura }}</td>
+                        <td>{{ if .Emisor }}{{ .Emisor.NombreLegal }}{{ else }}—{{ end }}</td>
+                        <td>{{ if .Receptor }}{{ .Receptor.NombreLegal }}{{ else }}—{{ end }}</td>
+                        <td>{{ .FechaEmision.Format "02/01/2006" }}</td>
+                        <td>{{ .Total }} {{ .Moneda }}</td>
+                        <td>
+                            {{ if eq .Estado "borrador" }}<span class="badge bg-light">Borrador</span>{{ end }}
+                            {{ if eq .Estado "emitida" }}<span class="badge bg-info">Emitida</span>{{ end }}
+                            {{ if eq .Estado "pagada" }}<span class="badge bg-success">Pagada</span>{{ end }}
+                            {{ if eq .Estado "vencida" }}<span class="badge bg-danger">Vencida</span>{{ end }}
+                            {{ if eq .Estado "cancelada" }}<span class="badge bg-danger">Cancelada</span>{{ end }}
+                        </td>
+                        <td class="tf-cell-actions">
+                            <div class="tf-action-group">
+                                <a href="/admin/facturas/{{ .ID }}" class="btn btn-outline-primary"><i class="bi bi-eye"></i></a>
+                                <form action="/admin/facturas/{{ .ID }}/delete" method="POST"
+                                      onsubmit="return confirm('¿Eliminar?')" style="display:inline">
+                                    <input type="hidden" name="_csrf" value="{{ $.csrfToken }}">
+                                    <button type="submit" class="btn btn-outline-danger"><i class="bi bi-trash"></i></button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {{ else }}
+                    <tr><td colspan="8"><div class="tf-empty"><div class="tf-empty__icon"><i class="bi bi-receipt"></i></div><h4>No hay facturas</h4></div></td></tr>
+                    {{ end }}
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>

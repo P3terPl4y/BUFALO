@@ -1,0 +1,54 @@
+<div class="tf-loads-page">
+    <header class="tf-loads-header">
+        <div class="tf-loads-header__left">
+            <div class="tf-loads-header__icon"><i class="bi bi-geo-alt-fill"></i></div>
+            <div><h1>Direcciones</h1><p>Puntos geográficos registrados</p></div>
+        </div>
+    </header>
+
+    {{ if .flash_success }}<div class="alert alert-success tf-mb-4">{{ .flash_success }}</div>{{ end }}
+    {{ if .flash_error }}<div class="alert alert-danger tf-mb-4">{{ .flash_error }}</div>{{ end }}
+
+    <section class="tf-table-card">
+        <header class="tf-table-card__header">
+            <h3 class="tf-table-card__title"><i class="bi bi-list-ul"></i> Resultados</h3>
+            <span class="tf-table-card__count">{{ len .direcciones }} direcciones</span>
+        </header>
+
+        <div class="table-responsive">
+            <table class="tf-table">
+                <thead>
+                    <tr><th>ID</th><th>Calle</th><th>Ciudad</th><th>Provincia</th><th>País</th><th>CP</th><th>Coords</th><th>Acciones</th></tr>
+                </thead>
+                <tbody>
+                    {{ range .direcciones }}
+                    <tr>
+                        <td class="tf-cell-id">#{{ .ID }}</td>
+                        <td>{{ if .Calle }}{{ .Calle }}{{ else }}—{{ end }}</td>
+                        <td>{{ .Ciudad }}</td>
+                        <td>{{ .EstadoProvincia }}</td>
+                        <td>{{ .Pais }}</td>
+                        <td>{{ if .CodigoPostal }}{{ .CodigoPostal }}{{ else }}—{{ end }}</td>
+                        <td class="tf-tabular">
+                            {{ if and .Latitud .Longitud }}{{ .Latitud }}, {{ .Longitud }}{{ else }}—{{ end }}
+                        </td>
+                        <td class="tf-cell-actions">
+                            <div class="tf-action-group">
+                                <a href="/direcciones/{{ .ID }}" class="btn btn-outline-primary"><i class="bi bi-eye"></i></a>
+                                <a href="/admin/direcciones/{{ .ID }}/edit" class="btn btn-outline-secondary"><i class="bi bi-pencil"></i></a>
+                                <form action="/admin/direcciones/{{ .ID }}/delete" method="POST"
+                                      onsubmit="return confirm('¿Eliminar?')" style="display:inline">
+                                    <input type="hidden" name="_csrf" value="{{ $.csrfToken }}">
+                                    <button type="submit" class="btn btn-outline-danger"><i class="bi bi-trash"></i></button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {{ else }}
+                    <tr><td colspan="8"><div class="tf-empty"><div class="tf-empty__icon"><i class="bi bi-geo-alt"></i></div><h4>No hay direcciones</h4></div></td></tr>
+                    {{ end }}
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>

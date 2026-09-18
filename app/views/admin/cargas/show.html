@@ -1,0 +1,154 @@
+<div class="tf-profile">
+
+    <header class="tf-profile__header">
+        <div class="tf-profile__breadcrumb">
+            <a href="/admin" class="tf-breadcrumb__link"><i class="bi bi-shield-check"></i> Admin</a>
+            <i class="bi bi-chevron-right tf-breadcrumb__sep"></i>
+            <a href="/admin/cargas" class="tf-breadcrumb__link">Cargas</a>
+            <i class="bi bi-chevron-right tf-breadcrumb__sep"></i>
+            <span class="tf-breadcrumb__current">#{{ .load.ID }}</span>
+        </div>
+        <div class="tf-profile__actions">
+            <a href="/loads/{{ .load.ID }}" class="btn btn-secondary">
+                <i class="bi bi-eye"></i> Vista pública
+            </a>
+        </div>
+    </header>
+
+    <section class="tf-profile__hero">
+        <div class="tf-load-hero__id"><span>#</span><strong>{{ .load.ID }}</strong></div>
+        <div class="tf-profile__identity">
+            <h1>{{ .load.NumeroReferencia }}</h1>
+            <div class="tf-load-hero__badges">
+                <span class="badge bg-light">{{ .load.Estado }}</span>
+                <span class="badge bg-light">{{ .load.TipoCarga }}</span>
+                <span class="badge bg-light">{{ .load.TipoEquipo }}</span>
+            </div>
+        </div>
+        <div class="tf-profile__id">
+            <small>Tarifa</small>
+            <strong>{{ if .load.TarifaTotal }}{{ .load.TarifaTotal }}{{ end }}</strong>
+            <em>{{ .load.Moneda }}</em>
+        </div>
+    </section>
+
+    <div class="tf-profile__grid">
+        <section class="tf-info-block">
+            <header class="tf-info-block__head">
+                <i class="bi bi-people-fill tf-info-block__icon"></i>
+                <div class="tf-info-block__text"><h2>Actores</h2></div>
+            </header>
+            <div class="tf-info-block__body">
+                <dl class="tf-info-list">
+                    <div class="tf-info-list__row">
+                        <dt>Publicador</dt>
+                        <dd>{{ if .load.Publicador }}{{ .load.Publicador.User.Name }}{{ else }}—{{ end }}</dd>
+                    </div>
+                    <div class="tf-info-list__row">
+                        <dt>Empresa</dt>
+                        <dd>{{ if .load.Empresa }}{{ .load.Empresa.NombreLegal }}{{ else }}—{{ end }}</dd>
+                    </div>
+                    <div class="tf-info-list__row">
+                        <dt>Chofer</dt>
+                        <dd>{{ if .load.Chofer }}{{ .load.Chofer.User.Name }}{{ else }}<span class="empty-value">No asignado</span>{{ end }}</dd>
+                    </div>
+                </dl>
+            </div>
+        </section>
+
+        <section class="tf-info-block">
+            <header class="tf-info-block__head">
+                <i class="bi bi-signpost-split-fill tf-info-block__icon"></i>
+                <div class="tf-info-block__text"><h2>Ruta</h2></div>
+            </header>
+            <div class="tf-info-block__body">
+                <dl class="tf-info-list">
+                    <div class="tf-info-list__row">
+                        <dt>Origen</dt>
+                        <dd>{{ if .load.OrigenDireccion }}{{ .load.OrigenDireccion.Ciudad }}, {{ .load.OrigenDireccion.EstadoProvincia }}{{ end }}</dd>
+                    </div>
+                    <div class="tf-info-list__row">
+                        <dt>Destino</dt>
+                        <dd>{{ if .load.DestinoDireccion }}{{ .load.DestinoDireccion.Ciudad }}, {{ .load.DestinoDireccion.EstadoProvincia }}{{ end }}</dd>
+                    </div>
+                    <div class="tf-info-list__row">
+                        <dt>Recogida</dt>
+                        <dd>{{ .load.FechaRecogida.Format "02/01/2006 15:04" }}</dd>
+                    </div>
+                    {{ if .load.FechaEntrega }}
+                    <div class="tf-info-list__row">
+                        <dt>Entrega</dt>
+                        <dd>{{ .load.FechaEntrega.Format "02/01/2006 15:04" }}</dd>
+                    </div>
+                    {{ end }}
+                </dl>
+            </div>
+        </section>
+    </div>
+
+    {{ if .hasMap }}
+    <section class="tf-info-block tf-info-block--map">
+        <header class="tf-info-block__head">
+            <i class="bi bi-map-fill tf-info-block__icon"></i>
+            <div class="tf-info-block__text"><h2>Trayectoria</h2></div>
+        </header>
+        <div class="tf-info-block__body tf-info-block__body--map">
+            <div id="route-map"
+                 data-pickup-lat="{{ .load.OrigenDireccion.Latitud }}"
+                 data-pickup-lng="{{ .load.OrigenDireccion.Longitud }}"
+                 data-pickup-city="{{ .load.OrigenDireccion.Ciudad }}"
+                 data-dropoff-lat="{{ .load.DestinoDireccion.Latitud }}"
+                 data-dropoff-lng="{{ .load.DestinoDireccion.Longitud }}"
+                 data-dropoff-city="{{ .load.DestinoDireccion.Ciudad }}"></div>
+        </div>
+    </section>
+    {{ end }}
+
+    <footer class="tf-profile__footer">
+        <a href="/admin/cargas" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Volver al listado
+        </a>
+        <form action="/admin/cargas/{{ .load.ID }}/delete" method="POST"
+              onsubmit="return confirm('¿Eliminar esta carga?')" style="display:inline">
+            <input type="hidden" name="_csrf" value="{{ .csrfToken }}">
+            <button type="submit" class="btn btn-outline-danger">
+                <i class="bi bi-trash"></i> Eliminar carga
+            </button>
+        </form>
+    </footer>
+</div>
+
+{{ if .hasMap }}
+<script>
+(function () {
+    const el = document.getElementById('route-map');
+    if (!el || typeof L === 'undefined') return;
+
+    const pickup  = [parseFloat(el.dataset.pickupLat), parseFloat(el.dataset.pickupLng)];
+    const dropoff = [parseFloat(el.dataset.dropoffLat), parseFloat(el.dataset.dropoffLng)];
+
+    if ([...pickup, ...dropoff].some(v => isNaN(v) || v === 0)) return;
+
+    const map = L.map(el, { center: [21.5218, -77.7812], zoom: 7 });
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap', maxZoom: 19,
+    }).addTo(map);
+
+    const icon = (kind) => L.divIcon({
+        className: '',
+        html: `<div class="tf-map-pin tf-map-pin--${kind}"><i class="bi bi-geo-alt-fill"></i></div>`,
+        iconSize: [34, 34], iconAnchor: [17, 34],
+    });
+
+    L.marker(pickup, { icon: icon('pickup') }).addTo(map)
+        .bindPopup('<strong>Recogida</strong><small>' + (el.dataset.pickupCity || '') + '</small>');
+    L.marker(dropoff, { icon: icon('dropoff') }).addTo(map)
+        .bindPopup('<strong>Entrega</strong><small>' + (el.dataset.dropoffCity || '') + '</small>');
+
+    L.polyline([pickup, dropoff], { color: '#D5001C', weight: 4, opacity: .85 }).addTo(map);
+    map.fitBounds(L.latLngBounds([pickup, dropoff]), { padding: [50, 50], maxZoom: 12 });
+
+    setTimeout(() => map.invalidateSize(), 250);
+})();
+</script>
+{{ end }}

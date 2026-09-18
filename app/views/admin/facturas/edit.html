@@ -1,0 +1,147 @@
+<div class="tf-page-header">
+    <div>
+        <h1>
+            <i class="bi bi-receipt"></i> Editar Factura
+            <span class="tf-page-header__id">#{{ .factura.NumeroFactura }}</span>
+        </h1>
+        <p>Modifica los datos de la factura</p>
+    </div>
+    <a href="/admin/facturas" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Volver al listado
+    </a>
+</div>
+
+{{ if .flash_success }}<div class="alert alert-success tf-mb-4">{{ .flash_success }}</div>{{ end }}
+{{ if .flash_error }}<div class="alert alert-danger tf-mb-4">{{ .flash_error }}</div>{{ end }}
+
+<form action="/admin/facturas/{{ .factura.ID }}" method="POST" class="tf-form-page" id="adminFacturaEditForm">
+    <input type="hidden" name="_csrf" value="{{ .csrfToken }}">
+
+    <div class="tf-form-page__main">
+        <div class="tf-form-card">
+
+            <!-- CÁLCULOS -->
+            <section class="tf-form-block" data-block="calc">
+                <header class="tf-form-block__head">
+                    <i class="bi bi-calculator tf-form-block__icon"></i>
+                    <div class="tf-form-block__text">
+                        <h2>Cálculos</h2>
+                        <p>Distancia, tarifa y montos.</p>
+                    </div>
+                </header>
+                <div class="tf-form-block__body">
+                    <div class="tf-form-row">
+                        <div class="tf-col-6 tf-field">
+                            <label for="distancia_km" class="form-label">Distancia</label>
+                            <div class="tf-input-unit">
+                                <input type="number" step="0.1" class="form-control" id="distancia_km" name="distancia_km"
+                                       value="{{ .factura.DistanciaKm }}">
+                                <span class="tf-input-unit__suffix">km</span>
+                            </div>
+                        </div>
+                        <div class="tf-col-6 tf-field">
+                            <label for="tarifa_por_km" class="form-label">Tarifa por km</label>
+                            <div class="tf-input-unit tf-input-unit--money">
+                                <span class="tf-input-unit__prefix">$</span>
+                                <input type="number" step="0.0001" class="form-control" id="tarifa_por_km" name="tarifa_por_km"
+                                       value="{{ .factura.TarifaPorKm }}">
+                            </div>
+                        </div>
+                        <div class="tf-col-4 tf-field">
+                            <label for="subtotal" class="form-label">Subtotal</label>
+                            <input type="number" step="0.01" class="form-control" id="subtotal" name="subtotal"
+                                   value="{{ .factura.Subtotal }}">
+                        </div>
+                        <div class="tf-col-4 tf-field">
+                            <label for="impuestos" class="form-label">Impuestos</label>
+                            <input type="number" step="0.01" class="form-control" id="impuestos" name="impuestos"
+                                   value="{{ .factura.Impuestos }}">
+                        </div>
+                        <div class="tf-col-4 tf-field">
+                            <label for="total" class="form-label">Total</label>
+                            <input type="number" step="0.01" class="form-control" id="total" name="total"
+                                   value="{{ .factura.Total }}">
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- PAGO -->
+            <section class="tf-form-block tf-form-block--last" data-block="payment">
+                <header class="tf-form-block__head">
+                    <i class="bi bi-credit-card tf-form-block__icon"></i>
+                    <div class="tf-form-block__text">
+                        <h2>Pago</h2>
+                        <p>Moneda y método de pago.</p>
+                    </div>
+                </header>
+                <div class="tf-form-block__body">
+                    <div class="tf-form-row">
+                        <div class="tf-col-6 tf-field">
+                            <label for="moneda" class="form-label">Moneda</label>
+                            <select class="form-select" id="moneda" name="moneda">
+                                <option value="CUP" {{ if eq (printf "%v" .factura.Moneda) "CUP" }}selected{{ end }}>CUP</option>
+                                <option value="MLC" {{ if eq (printf "%v" .factura.Moneda) "MLC" }}selected{{ end }}>MLC</option>
+                                <option value="USD" {{ if eq (printf "%v" .factura.Moneda) "USD" }}selected{{ end }}>USD</option>
+                                <option value="EUR" {{ if eq (printf "%v" .factura.Moneda) "EUR" }}selected{{ end }}>EUR</option>
+                            </select>
+                        </div>
+                        <div class="tf-col-6 tf-field">
+                            <label for="metodo_pago" class="form-label">Método de pago</label>
+                            <input type="text" class="form-control" id="metodo_pago" name="metodo_pago"
+                                   value="{{ if .factura.MetodoPago }}{{ .factura.MetodoPago }}{{ end }}"
+                                   placeholder="transferencia, efectivo…">
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+    </div>
+
+    <aside class="tf-form-page__aside">
+        <div class="tf-rail-card tf-rail-card--load">
+            <div class="tf-load-rail">
+                <div class="tf-load-rail__id"><span>#{{ .factura.ID }}</span></div>
+                <div class="tf-load-rail__title">
+                    <strong>{{ .factura.NumeroFactura }}</strong>
+                    <small>{{ .factura.FechaEmision.Format "02/01/2006" }}</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="tf-rail-card tf-rail-card--actions">
+            <header class="tf-rail-card__head"><i class="bi bi-check2-circle"></i><span>Guardar</span></header>
+            <button type="submit" class="btn btn-primary btn-lg tf-w-full">
+                <i class="bi bi-check-circle"></i> Actualizar Factura
+            </button>
+            <a href="/admin/facturas" class="btn btn-secondary tf-w-full">
+                <i class="bi bi-x-circle"></i> Cancelar
+            </a>
+        </div>
+
+        {{ if ne (printf "%v" .factura.Estado) "pagada" }}
+        <div class="tf-rail-card">
+            <header class="tf-rail-card__head"><i class="bi bi-cash-coin"></i><span>Marcar pagada</span></header>
+            <form action="/admin/facturas/{{ .factura.ID }}/pagar" method="POST">
+                <input type="hidden" name="_csrf" value="{{ .csrfToken }}">
+                <input type="text" name="metodo_pago" class="form-control" placeholder="Método (transferencia, efectivo…)" style="margin-bottom:.5rem;">
+                <button type="submit" class="btn btn-success tf-w-full">
+                    <i class="bi bi-check2-all"></i> Marcar como pagada
+                </button>
+            </form>
+        </div>
+        {{ end }}
+
+        <div class="tf-rail-card tf-rail-card--danger" style="border-color: rgba(239,68,68,.35);">
+            <header class="tf-rail-card__head"><i class="bi bi-exclamation-triangle"></i><span>Zona de peligro</span></header>
+            <form action="/admin/facturas/{{ .factura.ID }}/delete" method="POST"
+                  onsubmit="return confirm('¿Eliminar esta factura? Esta acción no se puede deshacer.')">
+                <input type="hidden" name="_csrf" value="{{ .csrfToken }}">
+                <button type="submit" class="btn btn-outline-danger tf-w-full">
+                    <i class="bi bi-trash"></i> Eliminar Factura
+                </button>
+            </form>
+        </div>
+    </aside>
+</form>

@@ -340,6 +340,33 @@
          RAIL LATERAL — Progreso · Resumen · Acciones
          ═══════════════════════════════════════════════════════════ -->
     <aside class="tf-form-page__aside">
+
+        <!-- Progreso -->
+        <div class="tf-rail-card">
+            <header class="tf-rail-card__head">
+                <i class="bi bi-list-check"></i>
+                <span>Progreso</span>
+            </header>
+            <ol class="tf-progress" id="tfProgress">
+                <li class="tf-progress__step is-current" data-step="identification">
+                    <span class="tf-progress__dot"></span>
+                    <span class="tf-progress__label">Identificación</span>
+                </li>
+                <li class="tf-progress__step" data-step="route">
+                    <span class="tf-progress__dot"></span>
+                    <span class="tf-progress__label">Ruta</span>
+                </li>
+                <li class="tf-progress__step" data-step="cargo">
+                    <span class="tf-progress__dot"></span>
+                    <span class="tf-progress__label">Carga y tarifa</span>
+                </li>
+                <li class="tf-progress__step" data-step="extras">
+                    <span class="tf-progress__dot"></span>
+                    <span class="tf-progress__label">Extras</span>
+                </li>
+            </ol>
+        </div>
+
         <!-- Resumen en vivo -->
         <div class="tf-rail-card">
             <header class="tf-rail-card__head">
@@ -508,15 +535,10 @@
     tarifaKmInput.addEventListener('input', function () {
         this.dataset.manual = 'true';
     });
+
     // Init
     autoTarifaKm();
     updateSummary();
     updateProgress();
 })();
 </script>
-
-
-
-
-
-

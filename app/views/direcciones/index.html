@@ -23,7 +23,7 @@
     {{ if .flash_error }}<div class="alert alert-danger tf-mb-4">{{ .flash_error }}</div>{{ end }}
 
     <!-- ══════════ TABLA ══════════ -->
-    <section class="tf-table-card">
+    <section class="tf-table-card" id="direcciones-results">
         <header class="tf-table-card__header">
             <h3 class="tf-table-card__title">
                 <i class="bi bi-list-ul"></i> Resultados
@@ -119,6 +119,35 @@
                 </tbody>
             </table>
         </div>
+        {{ if .hasPagination }}<div class="tf-pagination-wrap"><nav class="tf-pagination" aria-label="Paginación de direcciones">
+            {{ if .hasPrev }}<a class="btn btn-sm btn-outline-secondary" href="?page={{ sub .page 1 }}">Anterior</a>{{ else }}<span class="btn btn-sm btn-outline-secondary is-disabled" aria-disabled="true">Anterior</span>{{ end }}
+            <span class="tf-pagination__current">Página {{ .page }} de {{ .totalPages }}</span>
+            {{ if .hasNext }}<a class="btn btn-sm btn-outline-secondary" href="?page={{ add .page 1 }}">Siguiente</a>{{ else }}<span class="btn btn-sm btn-outline-secondary is-disabled" aria-disabled="true">Siguiente</span>{{ end }}
+        </nav></div>{{ end }}
     </section>
 
 </div>
+
+<script>
+(function () {
+    document.addEventListener('click', function (event) {
+        var link = event.target.closest('.tf-pagination a');
+        if (!link) return;
+        var section = link.closest('#direcciones-results');
+        if (!section) return;
+        event.preventDefault();
+        section.classList.add('is-loading');
+        var target = new URL(link.href, window.location.href);
+        fetch(target.href, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(function (response) { if (!response.ok) throw new Error('No se pudo cargar la página'); return response.text(); })
+            .then(function (html) {
+                var doc = new DOMParser().parseFromString(html, 'text/html');
+                var next = doc.getElementById('direcciones-results');
+                if (!next) throw new Error('Respuesta de paginación inválida');
+                section.replaceWith(next);
+                window.history.pushState({}, '', target.href);
+            })
+            .catch(function () { window.location.href = target.href; });
+    });
+})();
+</script>

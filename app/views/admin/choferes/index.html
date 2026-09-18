@@ -1,0 +1,71 @@
+<div class="tf-loads-page">
+    <header class="tf-loads-header">
+        <div class="tf-loads-header__left">
+            <div class="tf-loads-header__icon"><i class="bi bi-truck"></i></div>
+            <div>
+                <h1>Choferes</h1>
+                <p>Conductores registrados</p>
+            </div>
+        </div>
+    </header>
+
+    {{ if .flash_success }}<div class="alert alert-success tf-mb-4">{{ .flash_success }}</div>{{ end }}
+    {{ if .flash_error }}<div class="alert alert-danger tf-mb-4">{{ .flash_error }}</div>{{ end }}
+
+    <section class="tf-table-card">
+        <header class="tf-table-card__header">
+            <h3 class="tf-table-card__title"><i class="bi bi-list-ul"></i> Resultados</h3>
+            <span class="tf-table-card__count">{{ .total }} choferes</span>
+        </header>
+
+        <div class="table-responsive">
+            <table class="tf-table">
+                <thead>
+                    <tr>
+                        <th>ID</th><th>Nombre</th><th>Licencia</th>
+                        <th>Empresa</th><th>Estado</th><th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{ range .choferes }}
+                    <tr>
+                        <td class="tf-cell-id">#{{ .ID }}</td>
+                        <td>{{ if .User }}{{ .User.Name }}{{ else }}—{{ end }}</td>
+                        <td>{{ .NumeroLicencia }} ({{ .TipoLicencia }})</td>
+                        <td>{{ if .Empresa }}{{ .Empresa.NombreLegal }}{{ else }}<span class="empty-value">—</span>{{ end }}</td>
+                        <td>
+                            {{ if eq .Estado "disponible" }}<span class="badge bg-success">Disponible</span>{{ end }}
+                            {{ if eq .Estado "en_viaje" }}<span class="badge bg-info">En viaje</span>{{ end }}
+                            {{ if eq .Estado "inactivo" }}<span class="badge bg-light">Inactivo</span>{{ end }}
+                        </td>
+                        <td class="tf-cell-actions">
+                            <div class="tf-action-group">
+                                <a href="/choferes/{{ .ID }}" class="btn btn-outline-primary">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a href="/admin/choferes/{{ .ID }}/edit" class="btn btn-outline-secondary">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <form action="/admin/choferes/{{ .ID }}/delete" method="POST"
+                                      onsubmit="return confirm('¿Eliminar este chofer?')" style="display:inline">
+                                    <input type="hidden" name="_csrf" value="{{ $.csrfToken }}">
+                                    <button type="submit" class="btn btn-outline-danger">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {{ else }}
+                    <tr><td colspan="6">
+                        <div class="tf-empty">
+                            <div class="tf-empty__icon"><i class="bi bi-truck"></i></div>
+                            <h4>No hay choferes</h4>
+                        </div>
+                    </td></tr>
+                    {{ end }}
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>

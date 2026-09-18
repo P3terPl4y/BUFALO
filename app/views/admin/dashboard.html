@@ -1,0 +1,250 @@
+<div class="tf-loads-page">
+
+    <header class="tf-loads-header">
+        <div class="tf-loads-header__left">
+            <div class="tf-loads-header__icon" style="background:var(--tf-gradient-danger);">
+                <i class="bi bi-shield-check"></i>
+            </div>
+            <div>
+                <h1>Panel de Administración</h1>
+                <p>Visión global del sistema BUFALO</p>
+            </div>
+        </div>
+    </header>
+
+    {{ if .flash_success }}<div class="alert alert-success tf-mb-4">{{ .flash_success }}</div>{{ end }}
+    {{ if .flash_error }}<div class="alert alert-danger tf-mb-4">{{ .flash_error }}</div>{{ end }}
+
+    <!-- STATS ENTIDADES -->
+    <section class="tf-home__section">
+        <h2 class="tf-home__section-title"><i class="bi bi-people"></i> Entidades</h2>
+        <div class="tf-home-stats">
+            <div class="tf-home-stat">
+                <span class="tf-home-stat__icon tf-home-stat__icon--primary"><i class="bi bi-person"></i></span>
+                <div class="tf-home-stat__body">
+                    <span class="tf-home-stat__label">Usuarios</span>
+                    <p class="tf-home-stat__value">{{ .totalUsers }}</p>
+                </div>
+            </div>
+            <div class="tf-home-stat">
+                <span class="tf-home-stat__icon tf-home-stat__icon--info"><i class="bi bi-building"></i></span>
+                <div class="tf-home-stat__body">
+                    <span class="tf-home-stat__label">Empresas</span>
+                    <p class="tf-home-stat__value">{{ .totalEmpresas }}</p>
+                </div>
+            </div>
+            <div class="tf-home-stat">
+                <span class="tf-home-stat__icon tf-home-stat__icon--success"><i class="bi bi-truck"></i></span>
+                <div class="tf-home-stat__body">
+                    <span class="tf-home-stat__label">Choferes</span>
+                    <p class="tf-home-stat__value">{{ .totalChoferes }}</p>
+                </div>
+            </div>
+            <div class="tf-home-stat">
+                <span class="tf-home-stat__icon tf-home-stat__icon--warning"><i class="bi bi-briefcase"></i></span>
+                <div class="tf-home-stat__body">
+                    <span class="tf-home-stat__label">Publicadores</span>
+                    <p class="tf-home-stat__value">{{ .totalPublicadores }}</p>
+                </div>
+            </div>
+            <div class="tf-home-stat">
+                <span class="tf-home-stat__icon tf-home-stat__icon--primary"><i class="bi bi-geo-alt"></i></span>
+                <div class="tf-home-stat__body">
+                    <span class="tf-home-stat__label">Direcciones</span>
+                    <p class="tf-home-stat__value">{{ .totalDirecciones }}</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- STATS CARGAS -->
+    <section class="tf-home__section">
+        <h2 class="tf-home__section-title"><i class="bi bi-truck"></i> Cargas</h2>
+        <div class="tf-home-stats">
+            <div class="tf-home-stat">
+                <span class="tf-home-stat__icon tf-home-stat__icon--primary"><i class="bi bi-box"></i></span>
+                <div class="tf-home-stat__body">
+                    <span class="tf-home-stat__label">Totales</span>
+                    <p class="tf-home-stat__value">{{ .totalCargas }}</p>
+                </div>
+            </div>
+            <div class="tf-home-stat">
+                <span class="tf-home-stat__icon tf-home-stat__icon--success"><i class="bi bi-check-circle"></i></span>
+                <div class="tf-home-stat__body">
+                    <span class="tf-home-stat__label">Publicadas</span>
+                    <p class="tf-home-stat__value">{{ .cargasPublicadas }}</p>
+                </div>
+            </div>
+            <div class="tf-home-stat">
+                <span class="tf-home-stat__icon tf-home-stat__icon--warning"><i class="bi bi-person-check"></i></span>
+                <div class="tf-home-stat__body">
+                    <span class="tf-home-stat__label">Asignadas</span>
+                    <p class="tf-home-stat__value">{{ .cargasAsignadas }}</p>
+                </div>
+            </div>
+            <div class="tf-home-stat">
+                <span class="tf-home-stat__icon tf-home-stat__icon--info"><i class="bi bi-flag"></i></span>
+                <div class="tf-home-stat__body">
+                    <span class="tf-home-stat__label">Entregadas</span>
+                    <p class="tf-home-stat__value">{{ .cargasEntregadas }}</p>
+                </div>
+            </div>
+            <div class="tf-home-stat">
+                <span class="tf-home-stat__icon tf-home-stat__icon--primary"><i class="bi bi-x-circle"></i></span>
+                <div class="tf-home-stat__body">
+                    <span class="tf-home-stat__label">Canceladas</span>
+                    <p class="tf-home-stat__value">{{ .cargasCanceladas }}</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- STATS FACTURAS -->
+    <section class="tf-home__section">
+        <h2 class="tf-home__section-title"><i class="bi bi-receipt"></i> Facturas</h2>
+        <div class="tf-home-stats tf-home-stats--3">
+            <div class="tf-home-stat">
+                <span class="tf-home-stat__icon tf-home-stat__icon--primary"><i class="bi bi-receipt"></i></span>
+                <div class="tf-home-stat__body">
+                    <span class="tf-home-stat__label">Totales</span>
+                    <p class="tf-home-stat__value">{{ .totalFacturas }}</p>
+                </div>
+            </div>
+            <div class="tf-home-stat">
+                <span class="tf-home-stat__icon tf-home-stat__icon--success"><i class="bi bi-check2-circle"></i></span>
+                <div class="tf-home-stat__body">
+                    <span class="tf-home-stat__label">Pagadas</span>
+                    <p class="tf-home-stat__value">{{ .facturasPagadas }}</p>
+                </div>
+            </div>
+            <div class="tf-home-stat">
+                <span class="tf-home-stat__icon tf-home-stat__icon--warning"><i class="bi bi-hourglass-split"></i></span>
+                <div class="tf-home-stat__body">
+                    <span class="tf-home-stat__label">Pendientes</span>
+                    <p class="tf-home-stat__value">{{ .facturasPendientes }}</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ACCESOS RÁPIDOS -->
+    <section class="tf-home__section">
+        <h2 class="tf-home__section-title"><i class="bi bi-lightning-charge-fill"></i> Administrar</h2>
+        <div class="tf-home-actions">
+            <a href="/admin/users" class="tf-action-tile tf-action-tile--primary">
+                <span class="tf-action-tile__icon"><i class="bi bi-people"></i></span>
+                <span class="tf-action-tile__body">
+                    <strong>Usuarios</strong>
+                    <small>Gestionar cuentas y roles</small>
+                </span>
+                <span class="tf-action-tile__arrow"><i class="bi bi-arrow-right"></i></span>
+            </a>
+            <a href="/admin/empresas" class="tf-action-tile">
+                <span class="tf-action-tile__icon"><i class="bi bi-building"></i></span>
+                <span class="tf-action-tile__body">
+                    <strong>Empresas</strong>
+                    <small>Brokers y carriers</small>
+                </span>
+                <span class="tf-action-tile__arrow"><i class="bi bi-arrow-right"></i></span>
+            </a>
+            <a href="/admin/choferes" class="tf-action-tile">
+                <span class="tf-action-tile__icon"><i class="bi bi-truck"></i></span>
+                <span class="tf-action-tile__body">
+                    <strong>Choferes</strong>
+                    <small>Conductores registrados</small>
+                </span>
+                <span class="tf-action-tile__arrow"><i class="bi bi-arrow-right"></i></span>
+            </a>
+            <a href="/admin/publicadores" class="tf-action-tile">
+                <span class="tf-action-tile__icon"><i class="bi bi-briefcase"></i></span>
+                <span class="tf-action-tile__body">
+                    <strong>Publicadores</strong>
+                    <small>Brokers personas</small>
+                </span>
+                <span class="tf-action-tile__arrow"><i class="bi bi-arrow-right"></i></span>
+            </a>
+            <a href="/admin/cargas" class="tf-action-tile">
+                <span class="tf-action-tile__icon"><i class="bi bi-box-seam"></i></span>
+                <span class="tf-action-tile__body">
+                    <strong>Cargas</strong>
+                    <small>Todos los envíos</small>
+                </span>
+                <span class="tf-action-tile__arrow"><i class="bi bi-arrow-right"></i></span>
+            </a>
+            <a href="/admin/direcciones" class="tf-action-tile">
+                <span class="tf-action-tile__icon"><i class="bi bi-geo-alt"></i></span>
+                <span class="tf-action-tile__body">
+                    <strong>Direcciones</strong>
+                    <small>Puntos geográficos</small>
+                </span>
+                <span class="tf-action-tile__arrow"><i class="bi bi-arrow-right"></i></span>
+            </a>
+            <a href="/admin/facturas" class="tf-action-tile">
+                <span class="tf-action-tile__icon"><i class="bi bi-receipt"></i></span>
+                <span class="tf-action-tile__body">
+                    <strong>Facturas</strong>
+                    <small>Cobros y pagos</small>
+                </span>
+                <span class="tf-action-tile__arrow"><i class="bi bi-arrow-right"></i></span>
+            </a>
+        </div>
+    </section>
+
+    <!-- ÚLTIMOS REGISTROS -->
+    <div class="tf-profile__grid">
+        <section class="tf-info-block">
+            <header class="tf-info-block__head">
+                <i class="bi bi-person-plus tf-info-block__icon"></i>
+                <div class="tf-info-block__text">
+                    <h2>Últimos usuarios</h2>
+                    <p>Registrados recientemente</p>
+                </div>
+            </header>
+            <div class="tf-info-block__body">
+                <dl class="tf-info-list">
+                    {{ range .ultimosUsers }}
+                    <div class="tf-info-list__row tf-info-list__row--full">
+                        <dt>
+                            <i class="bi bi-person"></i> {{ .Name }}
+                            <span class="badge bg-light">{{ .Role }}</span>
+                        </dt>
+                        <dd>{{ .Email }} · {{ .CreatedAt.Format "02/01/2006 15:04" }}</dd>
+                    </div>
+                    {{ else }}
+                    <div class="tf-info-list__row tf-info-list__row--full">
+                        <dd class="empty-value">Sin usuarios</dd>
+                    </div>
+                    {{ end }}
+                </dl>
+            </div>
+        </section>
+
+        <section class="tf-info-block">
+            <header class="tf-info-block__head">
+                <i class="bi bi-box-seam tf-info-block__icon"></i>
+                <div class="tf-info-block__text">
+                    <h2>Últimas cargas</h2>
+                    <p>Publicadas recientemente</p>
+                </div>
+            </header>
+            <div class="tf-info-block__body">
+                <dl class="tf-info-list">
+                    {{ range .ultimasCargas }}
+                    <div class="tf-info-list__row tf-info-list__row--full">
+                        <dt><i class="bi bi-hash"></i> {{ .NumeroReferencia }}</dt>
+                        <dd>
+                            {{ if .Estado }}{{ .Estado }}{{ end }} ·
+                            {{ .FechaRecogida.Format "02/01/2006" }}
+                        </dd>
+                    </div>
+                    {{ else }}
+                    <div class="tf-info-list__row tf-info-list__row--full">
+                        <dd class="empty-value">Sin cargas</dd>
+                    </div>
+                    {{ end }}
+                </dl>
+            </div>
+        </section>
+    </div>
+
+</div>

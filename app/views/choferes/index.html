@@ -1,0 +1,27 @@
+<div class="tf-loads-page">
+    <header class="tf-loads-header">
+        <div class="tf-loads-header__left">
+            <div class="tf-loads-header__icon"><i class="bi bi-person-badge"></i></div>
+            <div><h1>Choferes</h1><p>Conductores, licencias y disponibilidad operativa</p></div>
+        </div>
+        <span class="tf-table-card__count">{{ .total }} registros</span>
+    </header>
+
+    <section class="tf-filters">
+        <div class="tf-filters__header"><h3 class="tf-filters__title"><i class="bi bi-funnel"></i> Filtros de búsqueda</h3></div>
+        <div class="tf-filters__body"><form method="GET" action="/choferes">
+            <div class="tf-filters__grid">
+                <div class="tf-field"><label class="form-label">Estado</label><select name="estado" class="form-select form-select-sm"><option value="">Todos</option><option value="disponible">Disponible</option><option value="en_viaje">En viaje</option><option value="inactivo">Inactivo</option></select></div>
+                <div class="tf-field"><label class="form-label">Buscar</label><input name="q" value="{{ .filters.q }}" class="form-control form-control-sm" placeholder="Nombre o correo"></div>
+            </div>
+            <div class="tf-filters__actions"><button class="btn btn-primary btn-sm"><i class="bi bi-funnel"></i> Aplicar filtros</button><a href="/choferes" class="btn btn-secondary btn-sm">Limpiar</a></div>
+        </form></div>
+    </section>
+
+    <section class="tf-table-card"><header class="tf-table-card__header"><h3 class="tf-table-card__title"><i class="bi bi-list-ul"></i> Conductores</h3><span class="tf-table-card__count">{{ .total }}</span></header>
+        <div class="table-responsive"><table class="tf-table"><thead><tr><th>Nombre</th><th>Correo electrónico</th><th>Licencia</th><th>Empresa</th><th>Experiencia</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>
+        {{ if .choferes }}{{ range .choferes }}<tr><td class="tf-cell-title">{{ if .User }}{{ .User.Name }}{{ else }}Chofer #{{ .ID }}{{ end }}</td><td class="tf-cell-email">{{ if .User }}{{ .User.Email }}{{ else }}—{{ end }}</td><td><strong>{{ .NumeroLicencia }}</strong><small class="tf-cell-subtitle">Tipo {{ .TipoLicencia }}</small></td><td>{{ if .Empresa }}{{ .Empresa.NombreLegal }}{{ else }}—{{ end }}</td><td>{{ .AniosExperiencia }} años</td><td><span class="badge bg-success">{{ .Estado }}</span></td><td class="tf-cell-actions"><a href="/choferes/{{ .ID }}" class="btn btn-outline-primary" title="Ver"><i class="bi bi-eye"></i></a></td></tr>{{ end }}{{ else }}<tr><td colspan="7"><div class="tf-empty"><div class="tf-empty__icon"><i class="bi bi-person-badge"></i></div><h4>No hay choferes</h4><p>Aún no hay registros para los filtros seleccionados.</p></div></td></tr>{{ end }}
+        </tbody></table></div>
+    </section>
+</div>
+

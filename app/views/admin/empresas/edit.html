@@ -1,0 +1,209 @@
+<div class="tf-page-header">
+    <div>
+        <h1>
+            <i class="bi bi-pencil-square"></i> Editar Empresa
+            <span class="tf-page-header__id">#{{ .empresa.ID }}</span>
+        </h1>
+        <p>{{ .empresa.NombreLegal }}</p>
+    </div>
+    <a href="/admin/empresas" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Volver al listado
+    </a>
+</div>
+
+{{ if .flash_success }}<div class="alert alert-success tf-mb-4">{{ .flash_success }}</div>{{ end }}
+{{ if .flash_error }}<div class="alert alert-danger tf-mb-4">{{ .flash_error }}</div>{{ end }}
+
+<form action="/admin/empresas/{{ .empresa.ID }}" method="POST" class="tf-form-page" id="adminEmpresaEditForm">
+    <input type="hidden" name="_csrf" value="{{ .csrfToken }}">
+
+    <div class="tf-form-page__main">
+        <div class="tf-form-card">
+
+            <!-- IDENTIFICACIÓN -->
+            <section class="tf-form-block" id="block-identity" data-block="identity">
+                <header class="tf-form-block__head">
+                    <i class="bi bi-card-checklist tf-form-block__icon"></i>
+                    <div class="tf-form-block__text">
+                        <h2>Identificación</h2>
+                        <p>Datos legales y de operación.</p>
+                    </div>
+                </header>
+                <div class="tf-form-block__body">
+                    <div class="tf-form-row">
+                        <div class="tf-col-6 tf-field">
+                            <label for="tipo" class="form-label">Tipo <span class="req">*</span></label>
+                            <select class="form-select" id="tipo" name="tipo" required>
+                                <option value="broker"    {{ if eq (printf "%v" .empresa.Tipo) "broker" }}selected{{ end }}>Broker</option>
+                                <option value="carrier"   {{ if eq (printf "%v" .empresa.Tipo) "carrier" }}selected{{ end }}>Carrier</option>
+                                <option value="shipper"   {{ if eq (printf "%v" .empresa.Tipo) "shipper" }}selected{{ end }}>Shipper</option>
+                                <option value="factoring" {{ if eq (printf "%v" .empresa.Tipo) "factoring" }}selected{{ end }}>Factoring</option>
+                                <option value="mixto"     {{ if eq (printf "%v" .empresa.Tipo) "mixto" }}selected{{ end }}>Mixto</option>
+                            </select>
+                            {{ if .errors.tipo }}<small class="tf-field-error">{{ .errors.tipo }}</small>{{ end }}
+                        </div>
+
+                        <div class="tf-col-6 tf-field">
+                            <label for="estado" class="form-label">Estado <span class="req">*</span></label>
+                            <select class="form-select" id="estado" name="estado" required>
+                                <option value="activo"     {{ if eq (printf "%v" .empresa.Estado) "activo" }}selected{{ end }}>Activo</option>
+                                <option value="inactivo"   {{ if eq (printf "%v" .empresa.Estado) "inactivo" }}selected{{ end }}>Inactivo</option>
+                                <option value="suspendido" {{ if eq (printf "%v" .empresa.Estado) "suspendido" }}selected{{ end }}>Suspendido</option>
+                            </select>
+                        </div>
+
+                        <div class="tf-col-12 tf-field">
+                            <label for="nombre_legal" class="form-label">Nombre legal <span class="req">*</span></label>
+                            <input type="text" class="form-control" id="nombre_legal" name="nombre_legal"
+                                   value="{{ .empresa.NombreLegal }}" required>
+                            {{ if .errors.nombre_legal }}<small class="tf-field-error">{{ .errors.nombre_legal }}</small>{{ end }}
+                        </div>
+
+                        <div class="tf-col-12 tf-field">
+                            <label for="nombre_comercial" class="form-label">Nombre comercial</label>
+                            <input type="text" class="form-control" id="nombre_comercial" name="nombre_comercial"
+                                   value="{{ if .empresa.NombreComercial }}{{ .empresa.NombreComercial }}{{ end }}">
+                        </div>
+
+                        <div class="tf-col-6 tf-field">
+                            <label for="tax_id" class="form-label">Tax ID</label>
+                            <input type="text" class="form-control" id="tax_id" name="tax_id"
+                                   value="{{ if .empresa.TaxID }}{{ .empresa.TaxID }}{{ end }}">
+                        </div>
+
+                        <div class="tf-col-3 tf-field">
+                            <label for="mc_number" class="form-label">MC Number</label>
+                            <input type="text" class="form-control" id="mc_number" name="mc_number"
+                                   value="{{ if .empresa.MCNumber }}{{ .empresa.MCNumber }}{{ end }}">
+                        </div>
+
+                        <div class="tf-col-3 tf-field">
+                            <label for="dot_number" class="form-label">DOT Number</label>
+                            <input type="text" class="form-control" id="dot_number" name="dot_number"
+                                   value="{{ if .empresa.DOTNumber }}{{ .empresa.DOTNumber }}{{ end }}">
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- CONTACTO -->
+            <section class="tf-form-block" id="block-contact" data-block="contact">
+                <header class="tf-form-block__head">
+                    <i class="bi bi-telephone tf-form-block__icon"></i>
+                    <div class="tf-form-block__text">
+                        <h2>Contacto</h2>
+                        <p>Datos de comunicación.</p>
+                    </div>
+                </header>
+                <div class="tf-form-block__body">
+                    <div class="tf-form-row">
+                        <div class="tf-col-6 tf-field">
+                            <label for="telefono" class="form-label">Teléfono</label>
+                            <input type="text" class="form-control" id="telefono" name="telefono"
+                                   value="{{ if .empresa.Telefono }}{{ .empresa.Telefono }}{{ end }}">
+                        </div>
+                        <div class="tf-col-6 tf-field">
+                            <label for="email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="email" name="email"
+                                   value="{{ if .empresa.Email }}{{ .empresa.Email }}{{ end }}">
+                        </div>
+                        <div class="tf-col-12 tf-field">
+                            <label for="sitio_web" class="form-label">Sitio web</label>
+                            <input type="text" class="form-control" id="sitio_web" name="sitio_web"
+                                   value="{{ if .empresa.SitioWeb }}{{ .empresa.SitioWeb }}{{ end }}">
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- UBICACIÓN -->
+            <section class="tf-form-block" id="block-location" data-block="location">
+                <header class="tf-form-block__head">
+                    <i class="bi bi-geo-alt-fill tf-form-block__icon"></i>
+                    <div class="tf-form-block__text">
+                        <h2>Ubicación</h2>
+                        <p>Dirección fiscal registrada.</p>
+                    </div>
+                </header>
+                <div class="tf-form-block__body">
+                    <div class="tf-form-row">
+                        <div class="tf-col-12 tf-field">
+                            <label for="direccion_id" class="form-label">Dirección</label>
+                            <select class="form-select" id="direccion_id" name="direccion_id">
+                                <option value="">Sin dirección</option>
+                                {{ range .destinations }}
+                                <option value="{{ .ID }}"
+                                        {{ if and $.empresa.DireccionID (eq (printf "%v" (deref $.empresa.DireccionID)) (printf "%v" .ID)) }}selected{{ end }}>
+                                    {{ .Ciudad }} — {{ .EstadoProvincia }} ({{ .Pais }})
+                                </option>
+                                {{ end }}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- CRÉDITO -->
+            <section class="tf-form-block tf-form-block--last" id="block-credit" data-block="credit">
+                <header class="tf-form-block__head">
+                    <i class="bi bi-credit-card tf-form-block__icon"></i>
+                    <div class="tf-form-block__text">
+                        <h2>Crédito</h2>
+                        <p>Información financiera opcional.</p>
+                    </div>
+                </header>
+                <div class="tf-form-block__body">
+                    <div class="tf-form-row">
+                        <div class="tf-col-6 tf-field">
+                            <label for="credit_score" class="form-label">Credit Score</label>
+                            <input type="number" min="0" class="form-control" id="credit_score" name="credit_score"
+                                   value="{{ if .empresa.CreditScore }}{{ .empresa.CreditScore }}{{ end }}">
+                        </div>
+                        <div class="tf-col-6 tf-field">
+                            <label for="days_to_pay" class="form-label">Days to Pay</label>
+                            <div class="tf-input-unit">
+                                <input type="number" step="0.01" min="0" class="form-control" id="days_to_pay" name="days_to_pay"
+                                       value="{{ if .empresa.DaysToPay }}{{ .empresa.DaysToPay }}{{ end }}">
+                                <span class="tf-input-unit__suffix">días</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+    </div>
+
+    <aside class="tf-form-page__aside">
+        <div class="tf-rail-card tf-rail-card--load">
+            <div class="tf-load-rail">
+                <div class="tf-load-rail__id"><span>#{{ .empresa.ID }}</span></div>
+                <div class="tf-load-rail__title">
+                    <strong>{{ .empresa.NombreLegal }}</strong>
+                    <small>{{ .empresa.Tipo }}</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="tf-rail-card tf-rail-card--actions">
+            <header class="tf-rail-card__head"><i class="bi bi-check2-circle"></i><span>Guardar</span></header>
+            <button type="submit" class="btn btn-primary btn-lg tf-w-full">
+                <i class="bi bi-check-circle"></i> Actualizar Empresa
+            </button>
+            <a href="/admin/empresas" class="btn btn-secondary tf-w-full">
+                <i class="bi bi-x-circle"></i> Cancelar
+            </a>
+        </div>
+
+        <div class="tf-rail-card tf-rail-card--danger" style="border-color: rgba(239,68,68,.35);">
+            <header class="tf-rail-card__head"><i class="bi bi-exclamation-triangle"></i><span>Zona de peligro</span></header>
+            <form action="/admin/empresas/{{ .empresa.ID }}/delete" method="POST"
+                  onsubmit="return confirm('¿Eliminar esta empresa? Esta acción no se puede deshacer.')">
+                <input type="hidden" name="_csrf" value="{{ .csrfToken }}">
+                <button type="submit" class="btn btn-outline-danger tf-w-full">
+                    <i class="bi bi-trash"></i> Eliminar Empresa
+                </button>
+            </form>
+        </div>
+    </aside>
+</form>

@@ -1,0 +1,110 @@
+<div class="tf-loads-page">
+    <header class="tf-loads-header">
+        <div class="tf-loads-header__left">
+            <div class="tf-loads-header__icon"><i class="bi bi-building"></i></div>
+            <div>
+                <h1>Empresas</h1>
+                <p>Brokers, carriers, shippers, factorings</p>
+            </div>
+        </div>
+    </header>
+
+    {{ if .flash_success }}<div class="alert alert-success tf-mb-4">{{ .flash_success }}</div>{{ end }}
+    {{ if .flash_error }}<div class="alert alert-danger tf-mb-4">{{ .flash_error }}</div>{{ end }}
+
+    <section class="tf-filters" id="empFilters">
+        <div class="tf-filters__header" onclick="document.getElementById('empFilters').classList.toggle('is-collapsed')">
+            <h3 class="tf-filters__title"><i class="bi bi-funnel"></i> Filtros</h3>
+            <button type="button" class="tf-filters__toggle"><i class="bi bi-chevron-down"></i></button>
+        </div>
+        <div class="tf-filters__body">
+            <form method="GET" action="/admin/empresas">
+                <div class="tf-filters__grid">
+                    <div class="tf-field">
+                        <label class="form-label">Tipo</label>
+                        <select name="tipo" class="form-select form-select-sm">
+                            <option value="">Todos</option>
+                            <option value="broker" {{ if eq .filters.tipo "broker" }}selected{{ end }}>Broker</option>
+                            <option value="carrier" {{ if eq .filters.tipo "carrier" }}selected{{ end }}>Carrier</option>
+                        </select>
+                    </div>
+                    <div class="tf-field">
+                        <label class="form-label">Estado</label>
+                        <select name="estado" class="form-select form-select-sm">
+                            <option value="">Todos</option>
+                            <option value="activo" {{ if eq .filters.estado "activo" }}selected{{ end }}>Activo</option>
+                            <option value="inactivo" {{ if eq .filters.estado "inactivo" }}selected{{ end }}>Inactivo</option>
+                            <option value="suspendido" {{ if eq .filters.estado "suspendido" }}selected{{ end }}>Suspendido</option>
+                        </select>
+                    </div>
+                    <div class="tf-field">
+                        <label class="form-label">Buscar</label>
+                        <input type="text" name="q" class="form-control form-control-sm" value="{{ .filters.q }}">
+                    </div>
+                </div>
+                <div class="tf-filters__actions">
+                    <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-funnel"></i> Aplicar</button>
+                    <a href="/admin/empresas" class="btn btn-secondary btn-sm"><i class="bi bi-arrow-counterclockwise"></i> Limpiar</a>
+                </div>
+            </form>
+        </div>
+    </section>
+
+    <section class="tf-table-card">
+        <header class="tf-table-card__header">
+            <h3 class="tf-table-card__title"><i class="bi bi-list-ul"></i> Resultados</h3>
+            <span class="tf-table-card__count">{{ .total }} empresas</span>
+        </header>
+
+        <div class="table-responsive">
+            <table class="tf-table">
+                <thead>
+                    <tr>
+                        <th>ID</th><th>Tipo</th><th>Nombre legal</th>
+                        <th>Owner</th><th>Ubicación</th><th>Estado</th><th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{ range .empresas }}
+                    <tr>
+                        <td class="tf-cell-id">#{{ .ID }}</td>
+                        <td><span class="badge bg-light">{{ .Tipo }}</span></td>
+                        <td class="tf-cell-title">{{ .NombreLegal }}</td>
+                        <td>{{ if .Owner }}{{ .Owner.Name }}{{ else }}—{{ end }}</td>
+                        <td>{{ if .Direccion }}{{ .Direccion.Ciudad }}, {{ .Direccion.EstadoProvincia }}{{ else }}—{{ end }}</td>
+                        <td>
+                            {{ if eq .Estado "activo" }}<span class="badge bg-success">Activo</span>{{ end }}
+                            {{ if eq .Estado "inactivo" }}<span class="badge bg-light">Inactivo</span>{{ end }}
+                            {{ if eq .Estado "suspendido" }}<span class="badge bg-danger">Suspendido</span>{{ end }}
+                        </td>
+                        <td class="tf-cell-actions">
+                            <div class="tf-action-group">
+                                <a href="/empresas/{{ .ID }}" class="btn btn-outline-primary" title="Ver">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a href="/admin/empresas/{{ .ID }}/edit" class="btn btn-outline-secondary" title="Editar">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <form action="/admin/empresas/{{ .ID }}/delete" method="POST"
+                                      onsubmit="return confirm('¿Eliminar esta empresa?')" style="display:inline">
+                                    <input type="hidden" name="_csrf" value="{{ $.csrfToken }}">
+                                    <button type="submit" class="btn btn-outline-danger" title="Eliminar">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {{ else }}
+                    <tr><td colspan="7">
+                        <div class="tf-empty">
+                            <div class="tf-empty__icon"><i class="bi bi-building"></i></div>
+                            <h4>No hay empresas</h4>
+                        </div>
+                    </td></tr>
+                    {{ end }}
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>

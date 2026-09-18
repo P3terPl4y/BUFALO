@@ -1,0 +1,131 @@
+<div class="tf-page-header">
+    <div>
+        <h1>
+            <i class="bi bi-geo-alt-fill"></i> Editar Dirección
+            <span class="tf-page-header__id">#{{ .direccion.ID }}</span>
+        </h1>
+        <p>{{ .direccion.Ciudad }}, {{ .direccion.EstadoProvincia }}</p>
+    </div>
+    <a href="/admin/direcciones" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Volver al listado
+    </a>
+</div>
+
+{{ if .flash_success }}<div class="alert alert-success tf-mb-4">{{ .flash_success }}</div>{{ end }}
+{{ if .flash_error }}<div class="alert alert-danger tf-mb-4">{{ .flash_error }}</div>{{ end }}
+
+<form action="/admin/direcciones/{{ .direccion.ID }}" method="POST" class="tf-form-page" id="adminDireccionEditForm">
+    <input type="hidden" name="_csrf" value="{{ .csrfToken }}">
+
+    <div class="tf-form-page__main">
+        <div class="tf-form-card">
+
+            <!-- UBICACIÓN -->
+            <section class="tf-form-block" data-block="location">
+                <header class="tf-form-block__head">
+                    <i class="bi bi-geo-alt-fill tf-form-block__icon"></i>
+                    <div class="tf-form-block__text">
+                        <h2>Ubicación</h2>
+                        <p>Dirección física completa.</p>
+                    </div>
+                </header>
+                <div class="tf-form-block__body">
+                    <div class="tf-form-row">
+                        <div class="tf-col-12 tf-field">
+                            <label for="calle" class="form-label">Calle y número <span class="opt">opcional</span></label>
+                            <input type="text" class="form-control" id="calle" name="calle"
+                                   value="{{ if .direccion.Calle }}{{ .direccion.Calle }}{{ end }}"
+                                   maxlength="255">
+                        </div>
+                        <div class="tf-col-6 tf-field">
+                            <label for="ciudad" class="form-label">Ciudad <span class="req">*</span></label>
+                            <input type="text" class="form-control" id="ciudad" name="ciudad"
+                                   value="{{ .direccion.Ciudad }}" required>
+                        </div>
+                        <div class="tf-col-6 tf-field">
+                            <label for="estado_provincia" class="form-label">Provincia <span class="req">*</span></label>
+                            <input type="text" class="form-control" id="estado_provincia" name="estado_provincia"
+                                   value="{{ .direccion.EstadoProvincia }}" required>
+                        </div>
+                        <div class="tf-col-6 tf-field">
+                            <label for="pais" class="form-label">País <span class="req">*</span></label>
+                            <input type="text" class="form-control" id="pais" name="pais"
+                                   value="{{ .direccion.Pais }}" required>
+                        </div>
+                        <div class="tf-col-6 tf-field">
+                            <label for="codigo_postal" class="form-label">Código postal</label>
+                            <input type="text" class="form-control" id="codigo_postal" name="codigo_postal"
+                                   value="{{ if .direccion.CodigoPostal }}{{ .direccion.CodigoPostal }}{{ end }}"
+                                   maxlength="20">
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- COORDENADAS -->
+            <section class="tf-form-block tf-form-block--last" data-block="coordinates">
+                <header class="tf-form-block__head">
+                    <i class="bi bi-crosshair tf-form-block__icon"></i>
+                    <div class="tf-form-block__text">
+                        <h2>Coordenadas</h2>
+                        <p>Ubicación geográfica precisa.</p>
+                    </div>
+                </header>
+                <div class="tf-form-block__body">
+                    <div class="tf-form-row">
+                        <div class="tf-col-6 tf-field">
+                            <label for="latitud" class="form-label">Latitud</label>
+                            <div class="tf-input-icon-wrap">
+                                <i class="bi bi-crosshair"></i>
+                                <input type="number" step="any" class="form-control" id="latitud" name="latitud"
+                                       value="{{ if .direccion.Latitud }}{{ .direccion.Latitud }}{{ end }}">
+                            </div>
+                        </div>
+                        <div class="tf-col-6 tf-field">
+                            <label for="longitud" class="form-label">Longitud</label>
+                            <div class="tf-input-icon-wrap">
+                                <i class="bi bi-crosshair"></i>
+                                <input type="number" step="any" class="form-control" id="longitud" name="longitud"
+                                       value="{{ if .direccion.Longitud }}{{ .direccion.Longitud }}{{ end }}">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+    </div>
+
+    <aside class="tf-form-page__aside">
+        <div class="tf-rail-card tf-rail-card--load">
+            <div class="tf-load-rail">
+                <div class="tf-load-rail__id"><span>#{{ .direccion.ID }}</span></div>
+                <div class="tf-load-rail__title">
+                    <strong>{{ .direccion.Ciudad }}</strong>
+                    <small>{{ .direccion.EstadoProvincia }}</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="tf-rail-card tf-rail-card--actions">
+            <header class="tf-rail-card__head"><i class="bi bi-check2-circle"></i><span>Guardar</span></header>
+            <button type="submit" class="btn btn-primary btn-lg tf-w-full">
+                <i class="bi bi-check-circle"></i> Actualizar Dirección
+            </button>
+            <a href="/admin/direcciones" class="btn btn-secondary tf-w-full">
+                <i class="bi bi-x-circle"></i> Cancelar
+            </a>
+        </div>
+
+        <div class="tf-rail-card tf-rail-card--danger" style="border-color: rgba(239,68,68,.35);">
+            <header class="tf-rail-card__head"><i class="bi bi-exclamation-triangle"></i><span>Zona de peligro</span></header>
+            <form action="/admin/direcciones/{{ .direccion.ID }}/delete" method="POST"
+                  onsubmit="return confirm('¿Eliminar esta dirección? Esta acción no se puede deshacer.')">
+                <input type="hidden" name="_csrf" value="{{ .csrfToken }}">
+                <button type="submit" class="btn btn-outline-danger tf-w-full">
+                    <i class="bi bi-trash"></i> Eliminar Dirección
+                </button>
+            </form>
+        </div>
+    </aside>
+</form>

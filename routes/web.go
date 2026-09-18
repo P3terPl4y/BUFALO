@@ -38,9 +38,9 @@ func SetupWebRoutes(app *fiber.App) {
 	chof := middleware.ChoferAuth()
 	both := middleware.RoleAuth("publicador", "chofer", "admin")
 	adm  := middleware.AdminAuth()
-
+	is_active:=middleware.IsActiveUserHandler()
 	// Atajo para no repetir: todas las rutas cuelgan de un solo Use
-	protected := app.Group("", auth)
+	protected := app.Group("", auth,is_active)
 
 	// ── Generales ──
 	protected.Get("/home", authCtrl.ShowHome)
@@ -74,7 +74,7 @@ func SetupWebRoutes(app *fiber.App) {
 	// CARGAS — escritura (publicador + admin)
 	// ═══════════════════════════════════════════════════════════
 	protected.Get("/loads/create", pub, cargaCtrl.Create)
-	protected.Post("/loads", pub, cargaCtrl.Store)
+	protected.Post("/loads", pub, is_active,cargaCtrl.Store)
 	protected.Get("/loads/:id<int>/edit", pub, cargaCtrl.Edit)
 	protected.Put("/loads/:id<int>", pub, cargaCtrl.Update)
 	protected.Delete("/loads/:id<int>", pub, cargaCtrl.Delete)
@@ -140,15 +140,56 @@ func SetupWebRoutes(app *fiber.App) {
 	protected.Post("/facturas/:id<int>/delete", pub, facturaCtrl.Delete)
 	protected.Post("/facturas/:id<int>/pagar", pub, facturaCtrl.MarcarPagada)
 
-	// ═══════════════════════════════════════════════════════════
-	// ADMIN
+		// ═══════════════════════════════════════════════════════════
+	// ADMIN — todo el panel
 	// ═══════════════════════════════════════════════════════════
 	admin := app.Group("/admin", auth, adm)
-	admin.Get("/users", adminCtrl.Index)
-	admin.Get("/users/create", adminCtrl.Create)
-	admin.Post("/users", adminCtrl.Store)
-	admin.Get("/users/:id<int>/edit", adminCtrl.Edit)
-	admin.Post("/users/:id<int>", adminCtrl.Update)
-	admin.Post("/users/:id<int>/delete", adminCtrl.Delete)
-	admin.Post("/users/:id<int>/toggle", adminCtrl.ToggleActive)
+
+	// Dashboard
+	admin.Get("/", adminCtrl.Dashboard)
+
+	// ── Users ──
+	admin.Get("/users", adminCtrl.UsersIndex)
+	admin.Get("/users/create", adminCtrl.UsersCreate)
+	admin.Post("/users", adminCtrl.UsersStore)
+	admin.Get("/users/:id<int>/edit", adminCtrl.UsersEdit)
+	admin.Post("/users/:id<int>", adminCtrl.UsersUpdate)
+	admin.Post("/users/:id<int>/delete", adminCtrl.UsersDelete)
+	admin.Post("/users/:id<int>/toggle", adminCtrl.UsersToggleActive)
+
+	// ── Empresas ──
+	admin.Get("/empresas", adminCtrl.EmpresasIndex)
+	admin.Get("/empresas/:id<int>/edit", adminCtrl.EmpresasEdit)
+	admin.Post("/empresas/:id<int>", adminCtrl.EmpresasUpdate)
+	admin.Post("/empresas/:id<int>/delete", adminCtrl.EmpresasDelete)
+
+	// ── Choferes ──
+	admin.Get("/choferes", adminCtrl.ChoferesIndex)
+	admin.Get("/choferes/:id<int>/edit", adminCtrl.ChoferesEdit)
+	admin.Post("/choferes/:id<int>", adminCtrl.ChoferesUpdate)
+	admin.Post("/choferes/:id<int>/delete", adminCtrl.ChoferesDelete)
+
+	// ── Publicadores ──
+	admin.Get("/publicadores", adminCtrl.PublicadoresIndex)
+	admin.Get("/publicadores/:id<int>/edit", adminCtrl.PublicadoresEdit)
+	admin.Post("/publicadores/:id<int>", adminCtrl.PublicadoresUpdate)
+	admin.Post("/publicadores/:id<int>/delete", adminCtrl.PublicadoresDelete)
+
+	// ── Cargas ──
+	admin.Get("/cargas", adminCtrl.CargasIndex)
+	admin.Get("/cargas/:id<int>", adminCtrl.CargasShow)
+	admin.Post("/cargas/:id<int>/delete", adminCtrl.CargasDelete)
+
+	// ── Direcciones ──
+	admin.Get("/direcciones", adminCtrl.DireccionesIndex)
+	admin.Get("/direcciones/:id<int>/edit", adminCtrl.DireccionesEdit)
+	admin.Post("/direcciones/:id<int>", adminCtrl.DireccionesUpdate)
+	admin.Post("/direcciones/:id<int>/delete", adminCtrl.DireccionesDelete)
+
+	// ── Facturas ──
+	admin.Get("/facturas", adminCtrl.FacturasIndex)
+	admin.Get("/facturas/:id<int>", adminCtrl.FacturasShow)
+	admin.Post("/facturas/:id<int>", adminCtrl.FacturasUpdate)
+	admin.Post("/facturas/:id<int>/delete", adminCtrl.FacturasDelete)
+	admin.Post("/facturas/:id<int>/pagar", adminCtrl.FacturasPagar)
 }

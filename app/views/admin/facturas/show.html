@@ -1,0 +1,71 @@
+<div class="tf-profile">
+
+    <header class="tf-profile__header">
+        <div class="tf-profile__breadcrumb">
+            <a href="/admin" class="tf-breadcrumb__link"><i class="bi bi-shield-check"></i> Admin</a>
+            <i class="bi bi-chevron-right tf-breadcrumb__sep"></i>
+            <a href="/admin/facturas" class="tf-breadcrumb__link">Facturas</a>
+            <i class="bi bi-chevron-right tf-breadcrumb__sep"></i>
+            <span class="tf-breadcrumb__current">{{ .factura.NumeroFactura }}</span>
+        </div>
+        <div class="tf-profile__actions">
+            <a href="/admin/facturas/{{ .factura.ID }}/edit" class="btn btn-primary">
+                <i class="bi bi-pencil-square"></i> Editar
+            </a>
+        </div>
+    </header>
+
+    <section class="tf-profile__hero">
+        <div class="tf-load-hero__id"><span>#</span><strong>{{ .factura.ID }}</strong></div>
+        <div class="tf-profile__identity">
+            <h1>{{ .factura.NumeroFactura }}</h1>
+            <div class="tf-load-hero__badges">
+                <span class="badge bg-light">{{ .factura.Estado }}</span>
+            </div>
+        </div>
+        <div class="tf-profile__id">
+            <small>Total</small>
+            <strong>{{ .factura.Total }}</strong>
+            <em>{{ .factura.Moneda }}</em>
+        </div>
+    </section>
+
+    <div class="tf-profile__grid">
+        <section class="tf-info-block">
+            <header class="tf-info-block__head">
+                <i class="bi bi-receipt tf-info-block__icon"></i>
+                <div class="tf-info-block__text"><h2>Datos</h2></div>
+            </header>
+            <div class="tf-info-block__body">
+                <dl class="tf-info-list">
+                    <div class="tf-info-list__row"><dt>Emisor</dt><dd>{{ if .factura.Emisor }}{{ .factura.Emisor.NombreLegal }}{{ else }}—{{ end }}</dd></div>
+                    <div class="tf-info-list__row"><dt>Receptor</dt><dd>{{ if .factura.Receptor }}{{ .factura.Receptor.NombreLegal }}{{ else }}—{{ end }}</dd></div>
+                    <div class="tf-info-list__row"><dt>Emisión</dt><dd>{{ .factura.FechaEmision.Format "02/01/2006" }}</dd></div>
+                    <div class="tf-info-list__row"><dt>Subtotal</dt><dd>{{ .factura.Subtotal }}</dd></div>
+                    <div class="tf-info-list__row"><dt>Impuestos</dt><dd>{{ .factura.Impuestos }}</dd></div>
+                    <div class="tf-info-list__row tf-summary__row--highlight"><dt>Total</dt><dd>{{ .factura.Total }} {{ .factura.Moneda }}</dd></div>
+                </dl>
+            </div>
+        </section>
+    </div>
+
+    <footer class="tf-profile__footer">
+        <a href="/admin/facturas" class="btn btn-secondary"><i class="bi bi-arrow-left"></i> Volver</a>
+        <div class="tf-flex">
+            {{ if ne (printf "%v" .factura.Estado) "pagada" }}
+            <form action="/admin/facturas/{{ .factura.ID }}/pagar" method="POST" style="display:inline">
+                <input type="hidden" name="_csrf" value="{{ .csrfToken }}">
+                <input type="hidden" name="metodo_pago" value="transferencia">
+                <button type="submit" class="btn btn-success">
+                    <i class="bi bi-check2-all"></i> Marcar pagada
+                </button>
+            </form>
+            {{ end }}
+            <form action="/admin/facturas/{{ .factura.ID }}/delete" method="POST"
+                  onsubmit="return confirm('¿Eliminar?')" style="display:inline">
+                <input type="hidden" name="_csrf" value="{{ .csrfToken }}">
+                <button type="submit" class="btn btn-outline-danger"><i class="bi bi-trash"></i> Eliminar</button>
+            </form>
+        </div>
+    </footer>
+</div>

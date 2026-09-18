@@ -1,0 +1,64 @@
+<div class="tf-loads-page">
+    <header class="tf-loads-header">
+        <div class="tf-loads-header__left">
+            <div class="tf-loads-header__icon"><i class="bi bi-box-seam"></i></div>
+            <div><h1>Cargas</h1><p>Todos los envíos del sistema</p></div>
+        </div>
+    </header>
+
+    {{ if .flash_success }}<div class="alert alert-success tf-mb-4">{{ .flash_success }}</div>{{ end }}
+    {{ if .flash_error }}<div class="alert alert-danger tf-mb-4">{{ .flash_error }}</div>{{ end }}
+
+    <section class="tf-table-card">
+        <header class="tf-table-card__header">
+            <h3 class="tf-table-card__title"><i class="bi bi-list-ul"></i> Resultados</h3>
+            <span class="tf-table-card__count">{{ .total }} cargas</span>
+        </header>
+
+        <div class="table-responsive">
+            <table class="tf-table">
+                <thead>
+                    <tr>
+                        <th>ID</th><th>Referencia</th><th>Publicador</th>
+                        <th>Chofer</th><th>Origen → Destino</th><th>Tarifa</th>
+                        <th>Estado</th><th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{ range .loads }}
+                    <tr>
+                        <td class="tf-cell-id">#{{ .ID }}</td>
+                        <td class="tf-cell-title">{{ .NumeroReferencia }}</td>
+                        <td>{{ if .Publicador }}{{ .Publicador.User.Name }}{{ else }}—{{ end }}</td>
+                        <td>{{ if .Chofer }}{{ .Chofer.User.Name }}{{ else }}<span class="empty-value">—</span>{{ end }}</td>
+                        <td>
+                            {{ if .OrigenDireccion }}{{ .OrigenDireccion.Ciudad }}{{ end }} →
+                            {{ if .DestinoDireccion }}{{ .DestinoDireccion.Ciudad }}{{ end }}
+                        </td>
+                        <td>{{ if .TarifaTotal }}{{ .TarifaTotal }} {{ .Moneda }}{{ end }}</td>
+                        <td>
+                            {{ if eq .Estado "publicada" }}<span class="badge bg-success">Publicada</span>{{ end }}
+                            {{ if eq .Estado "asignada" }}<span class="badge bg-warning">Asignada</span>{{ end }}
+                            {{ if eq .Estado "en_transito" }}<span class="badge bg-info">En tránsito</span>{{ end }}
+                            {{ if eq .Estado "entregada" }}<span class="badge bg-primary">Entregada</span>{{ end }}
+                            {{ if eq .Estado "cancelada" }}<span class="badge bg-danger">Cancelada</span>{{ end }}
+                        </td>
+                        <td class="tf-cell-actions">
+                            <div class="tf-action-group">
+                                <a href="/admin/cargas/{{ .ID }}" class="btn btn-outline-primary"><i class="bi bi-eye"></i></a>
+                                <form action="/admin/cargas/{{ .ID }}/delete" method="POST"
+                                      onsubmit="return confirm('¿Eliminar esta carga?')" style="display:inline">
+                                    <input type="hidden" name="_csrf" value="{{ $.csrfToken }}">
+                                    <button type="submit" class="btn btn-outline-danger"><i class="bi bi-trash"></i></button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {{ else }}
+                    <tr><td colspan="8"><div class="tf-empty"><div class="tf-empty__icon"><i class="bi bi-box-seam"></i></div><h4>No hay cargas</h4></div></td></tr>
+                    {{ end }}
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>

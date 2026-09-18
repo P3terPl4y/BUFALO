@@ -1,0 +1,293 @@
+{{/* choferes/show.html · Detalle del chofer */}}
+<div class="tf-profile">
+
+    <!-- ══════════ BREADCRUMB + ACCIONES ══════════ -->
+    <header class="tf-profile__header">
+        <div class="tf-profile__breadcrumb">
+            <a href="/home" class="tf-breadcrumb__link">
+                <i class="bi bi-house"></i> Inicio
+            </a>
+            <i class="bi bi-chevron-right tf-breadcrumb__sep"></i>
+            <a href="/choferes" class="tf-breadcrumb__link">Choferes</a>
+            <i class="bi bi-chevron-right tf-breadcrumb__sep"></i>
+            <span class="tf-breadcrumb__current">#{{ .chofer.ID }}</span>
+        </div>
+
+        <div class="tf-profile__actions">
+            {{ if or (eq .role "admin") }}
+            <a href="/choferes/{{ .chofer.ID }}/edit" class="btn btn-primary">
+                <i class="bi bi-pencil-square"></i> Editar
+            </a>
+            {{ end }}
+        </div>
+    </header>
+
+    <!-- ══════════ HERO ══════════ -->
+    <section class="tf-profile__hero">
+        <div class="tf-profile__avatar">
+            <i class="bi bi-person-badge"></i>
+            <span class="tf-profile__avatar-status"></span>
+        </div>
+
+        <div class="tf-profile__identity">
+            <h1>
+                {{ if .chofer.User }}{{ .chofer.User.Name }}{{ else }}Chofer #{{ .chofer.ID }}{{ end }}
+            </h1>
+            <p class="tf-profile__email">
+                <i class="bi bi-envelope"></i>
+                {{ if .chofer.User }}{{ .chofer.User.Email }}{{ else }}—{{ end }}
+            </p>
+
+            <div class="tf-load-hero__badges">
+                {{ if eq .chofer.Estado "disponible" }}
+                    <span class="badge bg-success"><i class="bi bi-check-circle"></i> Disponible</span>
+                {{ else if eq .chofer.Estado "ocupado" }}
+                    <span class="badge bg-warning"><i class="bi bi-truck"></i> Ocupado</span>
+                {{ else if eq .chofer.Estado "inactivo" }}
+                    <span class="badge bg-danger"><i class="bi bi-x-circle"></i> Inactivo</span>
+                {{ else }}
+                    <span class="badge bg-light"><i class="bi bi-circle"></i> {{ .chofer.Estado }}</span>
+                {{ end }}
+
+                <span class="badge bg-light">
+                    <i class="bi bi-card-text"></i> Licencia {{ .chofer.TipoLicencia }}
+                </span>
+            </div>
+        </div>
+
+        <div class="tf-profile__id">
+            <small>Experiencia</small>
+            <strong>{{ .chofer.AniosExperiencia }}</strong>
+            <em>años</em>
+        </div>
+    </section>
+
+    <!-- ══════════ DATOS PERSONALES (User vinculado) ══════════ -->
+    {{ if .chofer.User }}
+    <section class="tf-info-block">
+        <header class="tf-info-block__head">
+            <i class="bi bi-person-vcard tf-info-block__icon"></i>
+            <div class="tf-info-block__text">
+                <h2>Datos personales</h2>
+                <p>Información de la cuenta vinculada</p>
+            </div>
+        </header>
+        <div class="tf-info-block__body">
+            <dl class="tf-info-list">
+                <div class="tf-info-list__row">
+                    <dt><i class="bi bi-person"></i> Nombre</dt>
+                    <dd>{{ .chofer.User.Name }}</dd>
+                </div>
+                <div class="tf-info-list__row">
+                    <dt><i class="bi bi-envelope"></i> Email</dt>
+                    <dd>{{ .chofer.User.Email }}</dd>
+                </div>
+                <div class="tf-info-list__row">
+                    <dt><i class="bi bi-hash"></i> ID de usuario</dt>
+                    <dd class="tf-tabular">#{{ .chofer.UserID }}</dd>
+                </div>
+            </dl>
+        </div>
+    </section>
+    {{ end }}
+
+    <!-- ══════════ LICENCIA DE CONDUCCIÓN ══════════ -->
+    <section class="tf-info-block">
+        <header class="tf-info-block__head">
+            <i class="bi bi-card-text tf-info-block__icon"></i>
+            <div class="tf-info-block__text">
+                <h2>Licencia de conducción</h2>
+                <p>Datos oficiales del permiso</p>
+            </div>
+        </header>
+        <div class="tf-info-block__body">
+            <dl class="tf-info-list">
+                <div class="tf-info-list__row">
+                    <dt><i class="bi bi-hash"></i> Número</dt>
+                    <dd class="tf-tabular">{{ .chofer.NumeroLicencia }}</dd>
+                </div>
+                <div class="tf-info-list__row">
+                    <dt><i class="bi bi-bookmark"></i> Tipo</dt>
+                    <dd><span class="tf-chip">{{ .chofer.TipoLicencia }}</span></dd>
+                </div>
+                <div class="tf-info-list__row">
+                    <dt><i class="bi bi-globe-americas"></i> País de emisión</dt>
+                    <dd>
+                        {{ if .chofer.PaisEmisionLicencia }}{{ .chofer.PaisEmisionLicencia }}
+                        {{ else }}<span class="empty-value">—</span>{{ end }}
+                    </dd>
+                </div>
+                <div class="tf-info-list__row">
+                    <dt><i class="bi bi-calendar-x"></i> Vencimiento</dt>
+                    <dd class="tf-tabular">
+                        {{ if .chofer.FechaVencimientoLicencia }}
+                            {{ .chofer.FechaVencimientoLicencia.Format "02/01/2006" }}
+                        {{ else }}
+                            <span class="empty-value">—</span>
+                        {{ end }}
+                    </dd>
+                </div>
+            </dl>
+        </div>
+    </section>
+
+    <!-- ══════════ GRID: CAPACIDAD + SEGURO ══════════ -->
+    <div class="tf-profile__grid">
+
+        <!-- Capacidad y experiencia -->
+        <section class="tf-info-block">
+            <header class="tf-info-block__head">
+                <i class="bi bi-truck-front-fill tf-info-block__icon"></i>
+                <div class="tf-info-block__text">
+                    <h2>Experiencia y capacidad</h2>
+                    <p>Equipos y certificaciones declaradas</p>
+                </div>
+            </header>
+            <div class="tf-info-block__body">
+                <dl class="tf-info-list">
+                    <div class="tf-info-list__row tf-info-list__row--full">
+                        <dt><i class="bi bi-hourglass-split"></i> Años de experiencia</dt>
+                        <dd>
+                            <span class="tf-value-unit">
+                                <strong>{{ .chofer.AniosExperiencia }}</strong><em>años</em>
+                            </span>
+                        </dd>
+                    </div>
+
+                    <div class="tf-info-list__row tf-info-list__row--full">
+                        <dt><i class="bi bi-truck"></i> Tipos de equipo permitidos</dt>
+                        <dd>
+                            {{ if .chofer.TiposEquipoPermitidos }}
+                                <div class="tf-chip-list">
+                                    <span class="tf-chip">{{ .chofer.TiposEquipoPermitidos }}</span>
+                                </div>
+                            {{ else }}
+                                <span class="empty-value">Sin equipos declarados</span>
+                            {{ end }}
+                        </dd>
+                    </div>
+
+                    <div class="tf-info-list__row tf-info-list__row--full">
+                        <dt><i class="bi bi-award"></i> Certificaciones</dt>
+                        <dd>
+                            {{ if .chofer.Certificaciones }}
+                                <div class="tf-chip-list">
+                                    <span class="tf-chip">{{ .chofer.Certificaciones }}</span>
+                                </div>
+                            {{ else }}
+                                <span class="empty-value">Sin certificaciones</span>
+                            {{ end }}
+                        </dd>
+                    </div>
+                </dl>
+            </div>
+        </section>
+
+        <!-- Seguro -->
+        <section class="tf-info-block">
+            <header class="tf-info-block__head">
+                <i class="bi bi-shield-check tf-info-block__icon"></i>
+                <div class="tf-info-block__text">
+                    <h2>Seguro del conductor</h2>
+                    <p>Cobertura vigente del profesional</p>
+                </div>
+            </header>
+            <div class="tf-info-block__body">
+                <dl class="tf-info-list">
+                    <div class="tf-info-list__row tf-info-list__row--full">
+                        <dt><i class="bi bi-file-earmark-text"></i> Número de póliza</dt>
+                        <dd class="tf-tabular">
+                            {{ if .chofer.NumeroSeguro }}{{ .chofer.NumeroSeguro }}
+                            {{ else }}<span class="empty-value">—</span>{{ end }}
+                        </dd>
+                    </div>
+                    <div class="tf-info-list__row tf-info-list__row--full">
+                        <dt><i class="bi bi-calendar-x"></i> Vencimiento</dt>
+                        <dd class="tf-tabular">
+                            {{ if .chofer.FechaVencimientoSeguro }}
+                                {{ .chofer.FechaVencimientoSeguro.Format "02/01/2006" }}
+                            {{ else }}
+                                <span class="empty-value">—</span>
+                            {{ end }}
+                        </dd>
+                    </div>
+                </dl>
+            </div>
+        </section>
+
+    </div>
+
+    <!-- ══════════ EMPRESA (si está vinculado a una carrier) ══════════ -->
+    {{ if .chofer.EmpresaID }}
+    <section class="tf-info-block">
+        <header class="tf-info-block__head">
+            <i class="bi bi-building tf-info-block__icon"></i>
+            <div class="tf-info-block__text">
+                <h2>Empresa</h2>
+                <p>Transportista al que está adscrito</p>
+            </div>
+        </header>
+        <div class="tf-info-block__body">
+            <dl class="tf-info-list">
+                <div class="tf-info-list__row tf-info-list__row--full">
+                    <dt><i class="bi bi-hash"></i> Empresa ID</dt>
+                    <dd>
+                        <a href="/empresas/{{ .chofer.EmpresaID }}" class="tf-breadcrumb__link">
+                            <i class="bi bi-building"></i> Ver empresa #{{ .chofer.EmpresaID }}
+                        </a>
+                    </dd>
+                </div>
+            </dl>
+        </div>
+    </section>
+    {{ end }}
+
+    <!-- ══════════ AUDITORÍA ══════════ -->
+    <section class="tf-info-block">
+        <header class="tf-info-block__head">
+            <i class="bi bi-clock-history tf-info-block__icon"></i>
+            <div class="tf-info-block__text">
+                <h2>Auditoría</h2>
+                <p>Registro temporal del perfil</p>
+            </div>
+        </header>
+        <div class="tf-info-block__body">
+            <dl class="tf-info-list">
+                <div class="tf-info-list__row">
+                    <dt><i class="bi bi-calendar-plus"></i> Creado</dt>
+                    <dd class="tf-tabular">{{ .chofer.CreatedAt.Format "02/01/2006 15:04" }}</dd>
+                </div>
+                {{ if .chofer.UpdatedAt }}
+                <div class="tf-info-list__row">
+                    <dt><i class="bi bi-calendar-check"></i> Actualizado</dt>
+                    <dd class="tf-tabular">{{ .chofer.UpdatedAt.Format "02/01/2006 15:04" }}</dd>
+                </div>
+                {{ end }}
+            </dl>
+        </div>
+    </section>
+
+    <!-- ══════════ FOOTER DE ACCIONES ══════════ -->
+    <footer class="tf-profile__footer">
+        <a href="/choferes" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Volver al listado
+        </a>
+
+        <div class="tf-flex">
+            {{ if or (eq .role "admin") }}
+            <form action="/choferes/{{ .chofer.ID }}/delete" method="POST"
+                  onsubmit="return confirm('¿Eliminar este chofer?')" style="display:inline">
+                <input type="hidden" name="_csrf" value="{{ .csrfToken }}">
+                <button type="submit" class="btn btn-outline-danger">
+                    <i class="bi bi-trash"></i> Eliminar
+                </button>
+            </form>
+
+            <a href="/choferes/{{ .chofer.ID }}/edit" class="btn btn-primary">
+                <i class="bi bi-pencil"></i> Editar chofer
+            </a>
+            {{ end }}
+        </div>
+    </footer>
+
+</div>

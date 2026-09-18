@@ -7,6 +7,8 @@
     <title>{{ .title }} | BUFALO</title>
     <link rel="icon" href="data:,">
     <link rel="stylesheet" href="/css/style.css">
+    <!-- Bootstrap Icons se usa en el shell y en todas las vistas autenticadas. -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
 
     <!-- ══════════ LEAFLET — SOLO desde jsdelivr (permitido por CSP) ══════════ -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
@@ -22,17 +24,21 @@
     </script>
 </head>
 
-<body>
+<body class="bf-app"><div class="bf-loader" id="bfLoader" role="status" aria-label="Cargando BUFALO"><div class="bf-loader__mark"><img src="/img/bufalo-square.png" alt=""><span></span></div><p>Preparando tu centro de operaciones</p></div>
+<a class="bf-skip-link" href="#main-content">Saltar al contenido</a>
 <header class="bf-topbar">
 
     <!-- LEFT: Perfil de usuario -->
     <div class="bf-topbar__left">
+        <a href="/home" class="bf-brand" aria-label="BUFALO - Inicio"><img src="/img/bufalo-wide.png" width="90" height="32" alt="BUFALO"></a>
+    </div>
+    <div class="bf-topbar__legacy-user">
         <button type="button" class="bf-user-btn" id="bfUserBtn"
                 aria-haspopup="menu" aria-expanded="false">
             <span class="bf-user-btn__avatar"><i class="bi bi-person-fill"></i></span>
             <span class="bf-user-btn__info">
-                <strong>{{ .user.Name }}</strong>
-                <small>{{ if .isAdmin }}Administrador{{ else if .isPublicador }}Publicador{{ else }}{{ end }}</small>
+                <strong>{{ if .user.Name }}{{ .user.Name }}{{ else if eq .role "admin" }}Administrador{{ else if eq .role "publicador" }}Publicador{{ else if eq .role "chofer" }}Chofer{{ else }}Cuenta{{ end }}</strong>
+                <small>{{ if or .isAdmin (eq .role "admin") }}Administrador{{ else if .isPublicador }}Publicador{{ else }}{{ end }}</small>
             </span>
             <i class="bi bi-chevron-down bf-user-btn__caret"></i>
         </button>
@@ -49,7 +55,7 @@
 
     <!-- CENTER: Navegación principal -->
     <nav class="bf-topnav" aria-label="Navegación principal">
-     {{ if or .isPublicador .isChofer .isAdmin }}
+     {{ if or .isPublicador .isChofer .isAdmin (eq .role "admin") (eq .role "publicador") (eq .role "chofer") }}
         <a href="/home" class="bf-topnav__link">
         
             <i class="bi bi-house"></i><span>Inicio</span>
@@ -68,7 +74,7 @@
             <i class="bi bi-person-badge"></i><span>Choferes</span>
         </a>
         {{ end }}
-        {{ if .isAdmin }}
+        {{ if or .isAdmin (eq .role "admin") }}
         <a href="/admin/users" class="bf-topnav__link">
             <i class="bi bi-people"></i><span>Usuarios</span>
         </a>
@@ -82,26 +88,54 @@
             <i class="bi bi-moon-stars"></i>
         </button>
         <a href="/home" class="bf-brand" aria-label="BUFALO · Inicio">
-            <img src="/img/bufalo.svg" width="90vh">
+            <img src="/img/bufalo-wide.png" width="90" height="32" alt="BUFALO">
         </a>
     </div>
 
 </header>
+    <div class="bf-body">
+    <aside class="bf-sidebar" aria-label="Navegación de BUFALO">
+        <div class="bf-sidebar__header">
+            <span class="bf-sidebar__eyebrow">Operaciones</span>
+            <strong class="bf-sidebar__title">Centro de control</strong>
+        </div>
+        <nav class="bf-sidebar__nav">
+            <a href="/home" class="bf-sidebar__link"><span class="bf-sidebar__icon"><i class="bi bi-grid-1x2"></i></span><span class="bf-sidebar__label">Inicio</span></a>
+            {{ if true }}
+            <a href="/loads" class="bf-sidebar__link"><span class="bf-sidebar__icon"><i class="bi bi-truck"></i></span><span class="bf-sidebar__label">Gestionar cargas</span></a>
+            <a href="/loads/create" class="bf-sidebar__link"><span class="bf-sidebar__icon"><i class="bi bi-plus-circle"></i></span><span class="bf-sidebar__label">Publicar carga</span></a>
+            {{ end }}
+            {{ if true }}
+            <a href="/empresas" class="bf-sidebar__link"><span class="bf-sidebar__icon"><i class="bi bi-building"></i></span><span class="bf-sidebar__label">Empresas</span></a>
+            <a href="/direcciones" class="bf-sidebar__link"><span class="bf-sidebar__icon"><i class="bi bi-geo-alt"></i></span><span class="bf-sidebar__label">Direcciones</span></a>
+            <a href="/choferes" class="bf-sidebar__link"><span class="bf-sidebar__icon"><i class="bi bi-person-badge"></i></span><span class="bf-sidebar__label">Choferes</span></a>
+            {{ end }}
+            {{ if .isAdmin }}<a href="/admin/users" class="bf-sidebar__link"><span class="bf-sidebar__icon"><i class="bi bi-people"></i></span><span class="bf-sidebar__label">Usuarios</span></a>{{ end }}
+            <hr class="bf-sidebar__divider">
+            <a href="/profile" class="bf-sidebar__link"><span class="bf-sidebar__icon"><i class="bi bi-person"></i></span><span class="bf-sidebar__label">Mi perfil</span></a>
+        </nav>
+        <div class="bf-sidebar__status"><span class="bf-status-dot"></span><span>Entorno local</span></div>
+    </aside>
+    <main class="bf-main" id="main-content">
     <div class="container">
         {{ if .flash_success }}
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <div class="alert alert-success alert-dismissible fade show" role="alert" data-auto-dismiss="5200">
             <i class="bi bi-check-circle-fill me-2"></i> {{ .flash_success }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            {{ if .created_id }}<a href="/loads/{{ .created_id }}" class="btn btn-sm btn-primary ms-3">Ver detalles</a>{{ end }}
+            <button type="button" class="btn-close" data-dismiss-alert aria-label="Cerrar aviso"></button>
         </div>
         {{ end }}
         {{ if .flash_error }}
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <div class="alert alert-danger alert-dismissible fade show" role="alert" data-auto-dismiss="6500">
             <i class="bi bi-exclamation-triangle-fill me-2"></i> {{ .flash_error }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            <button type="button" class="btn-close" data-dismiss-alert aria-label="Cerrar aviso"></button>
         </div>
         {{ end }}
         {{ embed }}
     </div>
+    </main>
+    </div>
+    <footer class="bf-footer"><div class="bf-footer__brand"><img src="/img/bufalo-square.png" alt="BUFALO" class="bf-footer__logo"><div><strong>BUFALO</strong><small>Centro de operaciones logísticas</small></div></div><div class="bf-footer__links"><a href="/home">Inicio</a><a href="/loads">Cargas</a><a href="/empresas">Empresas</a><a href="/profile">Mi perfil</a></div><div class="bf-footer__meta"><span>Gestión logística para equipos que avanzan.</span><span>© 2026 BUFALO · Todos los derechos reservados</span><span>Desarrollado para operaciones de carga</span></div></footer>
     <script>
 (function () {
     var root = document.documentElement;
@@ -154,16 +188,47 @@
 
     /* ─── Auto-highlight nav actual ─── */
     var here = window.location.pathname;
-    var match = function (a) {
+    var links = Array.prototype.slice.call(document.querySelectorAll('.bf-topnav__link, .bf-sidebar__link'));
+    links.forEach(function (a) {
         var href = a.getAttribute('href');
         if (!href || href === '/logout') return;
-        if (here === href || (href !== '/' && here.indexOf(href) === 0)) {
-            a.setAttribute('aria-current', 'page');
-        }
-    };
-    document.querySelectorAll('.bf-topnav__link, .bf-sidebar__link').forEach(match);
+        a.removeAttribute('aria-current');
+    });
+    var candidates = links.filter(function (a) {
+        var href = a.getAttribute('href');
+        return href && (here === href || (href !== '/' && here.indexOf(href + '/') === 0));
+    }).sort(function (a, b) { return b.getAttribute('href').length - a.getAttribute('href').length; });
+    if (candidates.length) candidates[0].setAttribute('aria-current', 'page');
+
+    /* Los avisos son HTML nativo; no dependemos de Bootstrap JS para cerrarlos. */
+    document.querySelectorAll('[data-dismiss-alert]').forEach(function (button) {
+        button.addEventListener('click', function () {
+            var alert = button.closest('.alert');
+            if (alert) alert.remove();
+        });
+    });
+
+    /* Los avisos de resultado desaparecen solos, pero siguen pudiendo cerrarse manualmente. */
+    document.querySelectorAll('.alert').forEach(function (alert) {
+        var delay = parseInt(alert.getAttribute('data-auto-dismiss'), 10) || 5200;
+        window.setTimeout(function () {
+            if (!alert || !alert.parentNode) return;
+            alert.style.transition = 'opacity .25s ease, transform .25s ease';
+            alert.style.opacity = '0';
+            alert.style.transform = 'translateY(-4px)';
+            window.setTimeout(function () { if (alert.parentNode) alert.remove(); }, 280);
+        }, delay);
+    });
 })();
 </script>
+<script>window.addEventListener('load',function(){var l=document.getElementById('bfLoader');if(l){l.classList.add('is-done');setTimeout(function(){l.remove()},500)}});</script>
 </body>
 
 </html>
+
+
+
+
+
+
+
