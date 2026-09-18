@@ -99,13 +99,14 @@ func (c *CargaController) Index(ctx fiber.Ctx) error {
 	}
 
 	return ctx.Render("dashboard/index", fiber.Map{
-		"title":   "Lista de Cargas",
-		"loads":   list,
-		"total":   total,
-		"page":    page,
-		"perPage": int64(perPage),
-		"filters": filters,
-		"role":    role,
+		"title":         "Lista de Cargas",
+		"loads":         list,
+		"total":         total,
+		"page":          page,
+		"perPage":       int64(perPage),
+		"filters":       filters,
+		"role":          role,
+		"flash_success": ctx.Query("flash_success"), "created_id": ctx.Query("created_id"),
 	}, "layouts/base")
 }
 
@@ -177,12 +178,12 @@ func (c *CargaController) canAccessCarga(carga *models.Carga, userID uint, role 
 func (c *CargaController) Create(ctx fiber.Ctx) error {
 	sess := session.FromContext(ctx)
 	return ctx.Render("dashboard/create", fiber.Map{
-		"title":        "Nueva Carga",
-		"flash_error":  ctx.Query("flash_error"),
+		"title":         "Nueva Carga",
+		"flash_error":   ctx.Query("flash_error"),
 		"flash_success": ctx.Query("flash_success"),
-		"destinations": c.getAllDestinations(),
-		"csrfToken":    csrf.TokenFromContext(ctx),
-		"role":         sess.Get("role"),
+		"destinations":  c.getAllDestinations(),
+		"csrfToken":     csrf.TokenFromContext(ctx),
+		"role":          sess.Get("role"),
 	}, "layouts/base")
 }
 
@@ -204,7 +205,9 @@ func (c *CargaController) Store(ctx fiber.Ctx) error {
 		if role == "admin" {
 			var fallback models.Publicador
 			err = facades.Orm().Query().Order("id asc").First(&fallback)
-			if err == nil && fallback.ID > 0 { publicador = &fallback }
+			if err == nil && fallback.ID > 0 {
+				publicador = &fallback
+			}
 		}
 	}
 	if err != nil {
@@ -303,7 +306,7 @@ func (c *CargaController) Store(ctx fiber.Ctx) error {
 		log.Printf("Error al crear carga: %v", err)
 		return ctx.Redirect().To("/loads/create?flash_error=Error al guardar")
 	}
-	return ctx.Redirect().To(fmt.Sprintf("/loads/%d", carga.ID))
+	return ctx.Redirect().To(fmt.Sprintf("/loads?flash_success=Carga publicada correctamente&created_id=%d", carga.ID))
 }
 
 // ─────────────────────────────────────────────────────────────
