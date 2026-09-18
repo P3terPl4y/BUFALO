@@ -1,15 +1,15 @@
 package controllers
 
 import (
+	"github.com/gofiber/fiber/v3"
+	"github.com/gofiber/fiber/v3/middleware/csrf"
+	"github.com/gofiber/fiber/v3/middleware/session"
 	"goravel/app/facades"
 	"goravel/app/models"
 	"goravel/app/requests"
 	"goravel/app/services"
 	"log"
-"time"
-	"github.com/gofiber/fiber/v3"
-	"github.com/gofiber/fiber/v3/middleware/csrf"
-	"github.com/gofiber/fiber/v3/middleware/session"
+	"time"
 )
 
 type AuthController struct{}
@@ -55,9 +55,9 @@ func (a *AuthController) ShowHome(ctx fiber.Ctx) error {
 			Where("estado = ?", "asignada").Count()
 		cargasEntregadas, _ = facades.Orm().Query().Model(&models.Carga{}).
 			Where("estado = ?", "entregada").Count()
-		data["totalCargas"]      = totalCargas
+		data["totalCargas"] = totalCargas
 		data["cargasPublicadas"] = cargasPublicadas
-		data["cargasAsignadas"]  = cargasAsignadas
+		data["cargasAsignadas"] = cargasAsignadas
 		data["cargasEntregadas"] = cargasEntregadas
 	}
 
@@ -120,7 +120,7 @@ func (a *AuthController) ShowHome(ctx fiber.Ctx) error {
 		}
 	}
 
-	data["cargasAsignadas"]  = asignadas
+	data["cargasAsignadas"] = asignadas
 	data["cargasEntregadas"] = entregadas
 
 	return ctx.Render("home", data, "layouts/base")
@@ -148,8 +148,8 @@ func (a *AuthController) ShowLogin(ctx fiber.Ctx) error {
 
 func (a *AuthController) ShowRegister(ctx fiber.Ctx) error {
 	userSvc := services.NewUserService()
-	empresasBroker, _ := userSvc.GetEmpresasByTipo("broker")    // para publicadores
-	empresasCarrier, _ := userSvc.GetEmpresasByTipo("carrier")  // para choferes
+	empresasBroker, _ := userSvc.GetEmpresasByTipo("broker")   // para publicadores
+	empresasCarrier, _ := userSvc.GetEmpresasByTipo("carrier") // para choferes
 
 	return ctx.Render("auth/register", fiber.Map{
 		"title":           "Crear Cuenta",
@@ -173,6 +173,7 @@ func (a *AuthController) HandleLogin(ctx fiber.Ctx) error {
 
 	var user models.User
 	if err := facades.Orm().Query().Where("email = ?", email).First(&user); err != nil {
+		log.Printf("🔐 [Login] usuario no encontrado para %q: %v", email, err)
 		return ctx.Render("auth/login", fiber.Map{
 			"title":       "Iniciar Sesión",
 			"flash_error": "Credenciales incorrectas",
@@ -181,6 +182,7 @@ func (a *AuthController) HandleLogin(ctx fiber.Ctx) error {
 	}
 
 	if !facades.Hash().Check(password, user.Password) {
+		log.Printf("🔐 [Login] contraseña no válida para %q", email)
 		return ctx.Render("auth/login", fiber.Map{
 			"title":       "Iniciar Sesión",
 			"flash_error": "Credenciales incorrectas",
@@ -196,6 +198,7 @@ func (a *AuthController) HandleLogin(ctx fiber.Ctx) error {
 	sess.Set("user_id", user.ID)
 	sess.Set("authenticated", true)
 	sess.Set("role", user.Role)
+	log.Printf("✅ [Login] autenticación correcta para %q (ID: %d, rol: %s)", email, user.ID, user.Role)
 	return ctx.Redirect().To("/home")
 }
 
@@ -238,13 +241,13 @@ func (a *AuthController) HandleRegister(ctx fiber.Ctx) error {
 		"whatsapp": "required|max:30",
 	}
 	if req.Role == "chofer" {
-		rules["chofer_numero_licencia"]   = "required|min:3|max:50"
-		rules["chofer_tipo_licencia"]     = "required|max:20"
+		rules["chofer_numero_licencia"] = "required|min:3|max:50"
+		rules["chofer_tipo_licencia"] = "required|max:20"
 		rules["chofer_anios_experiencia"] = "required|integer|min:0"
 	}
 	if req.Role == "publicador" {
 		rules["publicador_numero_licencia_broker"] = "required|min:3|max:50"
-		rules["publicador_anios_experiencia"]      = "required|integer|min:0"
+		rules["publicador_anios_experiencia"] = "required|integer|min:0"
 	}
 
 	validator, err := facades.Validation().Make(ctx.Context(), req, rules)
@@ -451,7 +454,6 @@ func strOrNil(s string) *string {
 	}
 	return &s
 }
-
 
 func (a *AuthController) Logout(ctx fiber.Ctx) error {
 	sess := session.FromContext(ctx)
