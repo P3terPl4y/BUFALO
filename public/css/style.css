@@ -1413,6 +1413,7 @@ input[type="number"],input[type="datetime-local"]{font-variant-numeric:tabular-n
 .bf-loader__mark img{position:relative;z-index:1;width:76px;max-height:68px;object-fit:contain}
 .bf-loader__mark span{z-index:0;inset:2px;border-width:3px}
 .bf-loader p{position:static;margin:0;font-size:.72rem;text-align:center}
+.bf-footer__logo{width:34px;height:34px;object-fit:contain;display:block}
 
 /* Header final: una sola línea, sin desbordes ni controles flotando. */
 .bf-topbar{height:64px!important;min-height:64px!important;box-sizing:border-box;display:grid!important;grid-template-columns:220px minmax(0,1fr) 220px!important;align-items:center!important;padding:0 16px!important;gap:16px!important;overflow:visible}
