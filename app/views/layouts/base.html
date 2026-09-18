@@ -209,7 +209,7 @@
     });
 
     /* Los avisos de resultado desaparecen solos, pero siguen pudiendo cerrarse manualmente. */
-    document.querySelectorAll('[data-auto-dismiss]').forEach(function (alert) {
+    document.querySelectorAll('.alert').forEach(function (alert) {
         var delay = parseInt(alert.getAttribute('data-auto-dismiss'), 10) || 5200;
         window.setTimeout(function () {
             if (!alert || !alert.parentNode) return;
