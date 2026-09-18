@@ -536,10 +536,11 @@
         this.dataset.manual = 'true';
     });
 
-    // Init
+    // Stepper guiado\n    var stepBlocks = Array.prototype.slice.call(form.querySelectorAll("[data-block]")); var currentStep = 0;\n    function showStep(){ stepBlocks.forEach(function(b,i){ b.classList.toggle("bf-step-hidden", i !== currentStep); }); document.getElementById("bfStepLabel").textContent = "Paso " + (currentStep + 1) + " de " + stepBlocks.length; document.getElementById("bfPrevStep").disabled = currentStep === 0; document.getElementById("bfNextStep").textContent = currentStep === stepBlocks.length - 1 ? "Publicar" : "Siguiente"; }\n    document.getElementById("bfPrevStep").addEventListener("click",function(){ if(currentStep>0){ currentStep--; showStep(); }}); document.getElementById("bfNextStep").addEventListener("click",function(){ var fields=stepBlocks[currentStep].querySelectorAll("[required]"); for(var i=0;i<fields.length;i++){ if(!fields[i].checkValidity()){ fields[i].reportValidity(); return; }} if(currentStep<stepBlocks.length-1){ currentStep++; showStep(); } else { form.requestSubmit(); }}); showStep();\n\n    // Init
     autoTarifaKm();
     updateSummary();
     updateProgress();
 })();
 </script>
+
 
