@@ -103,7 +103,7 @@ func (c *CargaController) Index(ctx fiber.Ctx) error {
 		"loads":   list,
 		"total":   total,
 		"page":    page,
-		"perPage": perPage,
+		"perPage": int64(perPage),
 		"filters": filters,
 		"role":    role,
 	}, "layouts/base")
@@ -178,6 +178,8 @@ func (c *CargaController) Create(ctx fiber.Ctx) error {
 	sess := session.FromContext(ctx)
 	return ctx.Render("dashboard/create", fiber.Map{
 		"title":        "Nueva Carga",
+		"flash_error":  ctx.Query("flash_error"),
+		"flash_success": ctx.Query("flash_success"),
 		"destinations": c.getAllDestinations(),
 		"csrfToken":    csrf.TokenFromContext(ctx),
 		"role":         sess.Get("role"),
@@ -195,6 +197,16 @@ func (c *CargaController) Store(ctx fiber.Ctx) error {
 
 	// 1. Resolver el Publicador del user logueado
 	publicador, err := c.publicadorService.GetByUserID(userID)
+	// El administrador puede publicar cargas de prueba usando el primer perfil
+	// publicador disponible; los demás roles deben tener su propio perfil.
+	if err != nil {
+		role, _ := session.FromContext(ctx).Get("role").(string)
+		if role == "admin" {
+			var fallback models.Publicador
+			err = facades.Orm().Query().Order("id asc").First(&fallback)
+			if err == nil && fallback.ID > 0 { publicador = &fallback }
+		}
+	}
 	if err != nil {
 		return ctx.Redirect().To("/loads/create?flash_error=Debes tener un perfil de publicador")
 	}
