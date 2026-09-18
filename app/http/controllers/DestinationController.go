@@ -24,7 +24,8 @@ func NewDireccionController() *DireccionController {
 
 func (c *DireccionController) Index(ctx fiber.Ctx) error {
 	sess := session.FromContext(ctx)
-	list, err := c.service.GetAll()
+	page, _ := strconv.Atoi(ctx.Query("page", "1")); perPage := 15
+	list, total, err := c.service.GetPage(page, perPage)
 	if err != nil {
 		log.Printf("Error listando direcciones: %v", err)
 	}
@@ -33,6 +34,7 @@ func (c *DireccionController) Index(ctx fiber.Ctx) error {
 		"direcciones": list,
 		"csrfToken":   csrf.TokenFromContext(ctx),
 		"role":       sess.Get("role"),
+		"page": page, "perPage": perPage, "total": total,
 	}, "layouts/base")
 }
 
@@ -68,7 +70,7 @@ func (c *DireccionController) Store(ctx fiber.Ctx) error {
 	}
 
 	// Log del payload para diagnóstico
-	log.Printf("[Direccion.Store] payload: ciudad=%q provincia=%q pais=%q lat=%q lng=%q",
+	log.Printf("[Direccion.Store] payload: ciudad=%q provincia=%q pais=%q lat=%v lng=%v",
 		req.Ciudad, req.EstadoProvincia, req.Pais, req.Latitud, req.Longitud)
 
 	rules := map[string]any{

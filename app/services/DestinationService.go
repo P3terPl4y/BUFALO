@@ -22,6 +22,15 @@ func (s *DireccionService) GetAll() ([]models.Direccion, error) {
 	return list, err
 }
 
+func (s *DireccionService) GetPage(page, perPage int) ([]models.Direccion, int64, error) {
+	if page < 1 { page = 1 }; if perPage < 1 { perPage = 15 }
+	q := facades.Orm().Query().Model(&models.Direccion{})
+	total, err := q.Count(); if err != nil { return nil, 0, err }
+	var list []models.Direccion
+	err = q.Order("estado_provincia asc, ciudad asc").Limit(perPage).Offset((page-1)*perPage).Find(&list)
+	return list, total, err
+}
+
 func (s *DireccionService) GetByID(id string) (*models.Direccion, error) {
 	var d models.Direccion
 	err := facades.Orm().Query().With("Owner").Where("id = ?", id).First(&d)

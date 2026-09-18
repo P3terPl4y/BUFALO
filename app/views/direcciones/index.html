@@ -119,6 +119,7 @@
                 </tbody>
             </table>
         </div>
+        {{ if gt .total .perPage }}<div class="tf-pagination-wrap"><nav class="tf-pagination"><a class="btn btn-sm btn-outline-secondary" href="?page={{ if gt .page 1 }}{{ sub .page 1 }}{{ else }}1{{ end }}">Anterior</a><span>Página {{ .page }}</span><a class="btn btn-sm btn-outline-secondary" href="?page={{ add .page 1 }}">Siguiente</a></nav></div>{{ end }}
     </section>
 
 </div>
