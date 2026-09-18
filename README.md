@@ -15,6 +15,7 @@ Plataforma de gestión logística y marketplace de cargas para Cuba, inspirada e
 8. [Arquitectura del CSS](#-arquitectura-del-css)
 9. [Instalación y ejecución](#-instalación-y-ejecución)
 10. [Testing](#-testing)
+11. [Guía de desarrollo](docs/DEVELOPMENT.md)
 
 ---
 
