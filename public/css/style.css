@@ -1414,6 +1414,8 @@ input[type="number"],input[type="datetime-local"]{font-variant-numeric:tabular-n
 .bf-loader__mark span{z-index:0;inset:2px;border-width:3px}
 .bf-loader p{position:static;margin:0;font-size:.72rem;text-align:center}
 .bf-footer__logo{width:34px;height:34px;object-fit:contain;display:block}
+.bf-footer{display:grid;grid-template-columns:1.2fr auto 1.8fr;align-items:center;gap:2rem;padding:1.5rem 2.5rem;margin-left:224px;background:#152126;color:#dbe5e8;border-top:3px solid #f59e0b}
+.bf-footer__brand{display:flex;align-items:center;gap:.8rem}.bf-footer__logo{width:58px;height:58px}.bf-footer__brand strong{display:block;color:#fff;letter-spacing:.12em;font-size:1.05rem}.bf-footer__brand small{display:block;color:#9fb0b7;margin-top:.2rem}.bf-footer__links{display:flex;gap:1.1rem}.bf-footer__links a{color:#f8b33a;text-decoration:none;font-weight:700;font-size:.8rem}.bf-footer__links a:hover{color:#fff}.bf-footer__meta{display:flex;flex-direction:column;align-items:flex-end;gap:.22rem;color:#9fb0b7;font-size:.72rem}@media(max-width:900px){.bf-footer{margin-left:0;grid-template-columns:1fr;padding:1.25rem}.bf-footer__meta{align-items:flex-start}.bf-footer__links{flex-wrap:wrap}}
 
 /* Header final: una sola línea, sin desbordes ni controles flotando. */
 .bf-topbar{height:64px!important;min-height:64px!important;box-sizing:border-box;display:grid!important;grid-template-columns:220px minmax(0,1fr) 220px!important;align-items:center!important;padding:0 16px!important;gap:16px!important;overflow:visible}

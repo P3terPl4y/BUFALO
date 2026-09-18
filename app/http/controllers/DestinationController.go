@@ -24,17 +24,20 @@ func NewDireccionController() *DireccionController {
 
 func (c *DireccionController) Index(ctx fiber.Ctx) error {
 	sess := session.FromContext(ctx)
-	page, _ := strconv.Atoi(ctx.Query("page", "1")); perPage := 15
+	page, _ := strconv.Atoi(ctx.Query("page", "1"))
+	perPage := 15
 	list, total, err := c.service.GetPage(page, perPage)
 	if err != nil {
 		log.Printf("Error listando direcciones: %v", err)
+		list = []models.Direccion{}
+		total = 0
 	}
 	return ctx.Render("direcciones/index", fiber.Map{
-		"title":      "Direcciones",
+		"title":       "Direcciones",
 		"direcciones": list,
 		"csrfToken":   csrf.TokenFromContext(ctx),
-		"role":       sess.Get("role"),
-		"page": page, "perPage": perPage, "total": total,
+		"role":        sess.Get("role"),
+		"page": page, "perPage": perPage, "total": total, "hasPagination": total > int64(perPage),
 	}, "layouts/base")
 }
 
@@ -92,7 +95,6 @@ func (c *DireccionController) Store(ctx fiber.Ctx) error {
 	}
 
 	// Convertir lat/lng string → *float64
-	
 
 	pais := req.Pais
 	if pais == "" {
@@ -123,14 +125,15 @@ func (c *DireccionController) Edit(ctx fiber.Ctx) error {
 	if err != nil {
 		return ctx.Render("dashboard/404", fiber.Map{"title": "No encontrada", "role": sess.Get("role")}, "layouts/base")
 	}
-	if sess.Get("user_id").(uint)==*d.OwnerID{
-	return ctx.Render("direcciones/edit", fiber.Map{
-		"title":     "Editar Dirección",
-		"direccion": d,
-		"csrfToken": csrf.TokenFromContext(ctx),
-		"role":      sess.Get("role"),
-	}, "layouts/base")}else{
-	return ctx.Render("dashboard/404", fiber.Map{"title": "No encontrada", "role": sess.Get("role")}, "layouts/base")
+	if sess.Get("user_id").(uint) == *d.OwnerID {
+		return ctx.Render("direcciones/edit", fiber.Map{
+			"title":     "Editar Dirección",
+			"direccion": d,
+			"csrfToken": csrf.TokenFromContext(ctx),
+			"role":      sess.Get("role"),
+		}, "layouts/base")
+	} else {
+		return ctx.Render("dashboard/404", fiber.Map{"title": "No encontrada", "role": sess.Get("role")}, "layouts/base")
 	}
 }
 
@@ -141,29 +144,28 @@ func (c *DireccionController) Update(ctx fiber.Ctx) error {
 	if err != nil {
 		return ctx.Render("dashboard/404", fiber.Map{"title": "No encontrada", "role": sess.Get("role")}, "layouts/base")
 	}
-	if sess.Get("user_id").(uint)==*d.OwnerID{
-	var req requests.DireccionUpdateRequest
-	if err := ctx.Bind().Body(&req); err != nil {
-		return ctx.Redirect().To("/direcciones/" + id + "/edit?flash_error=Datos inválidos")
-	}
+	if sess.Get("user_id").(uint) == *d.OwnerID {
+		var req requests.DireccionUpdateRequest
+		if err := ctx.Bind().Body(&req); err != nil {
+			return ctx.Redirect().To("/direcciones/" + id + "/edit?flash_error=Datos inválidos")
+		}
 
-	
-log.Println(req)
-	updates := map[string]interface{}{
-		"calle":            strPtr(req.Calle),
-		"ciudad":           req.Ciudad,
-		"estado_provincia": req.EstadoProvincia,
-		"codigo_postal":    strPtr(req.CodigoPostal),
-		"pais":             req.Pais,
-		"latitud":          req.Latitud,
-		"longitud":        req.Longitud,
-	}
-	if err := c.service.Update(id, updates); err != nil {
+		log.Println(req)
+		updates := map[string]interface{}{
+			"calle":            strPtr(req.Calle),
+			"ciudad":           req.Ciudad,
+			"estado_provincia": req.EstadoProvincia,
+			"codigo_postal":    strPtr(req.CodigoPostal),
+			"pais":             req.Pais,
+			"latitud":          req.Latitud,
+			"longitud":         req.Longitud,
+		}
+		if err := c.service.Update(id, updates); err != nil {
+			return ctx.Redirect().To("/direcciones/" + id + "/edit?flash_error=Error al actualizar")
+		}
+		return ctx.Redirect().To("/direcciones/" + id + "?flash_success=Actualizada")
+	} else {
 		return ctx.Redirect().To("/direcciones/" + id + "/edit?flash_error=Error al actualizar")
-	}
-	return ctx.Redirect().To("/direcciones/" + id + "?flash_success=Actualizada")
-	}else{
-	return ctx.Redirect().To("/direcciones/" + id + "/edit?flash_error=Error al actualizar")
 	}
 }
 
@@ -174,10 +176,11 @@ func (c *DireccionController) Delete(ctx fiber.Ctx) error {
 	if err != nil {
 		return ctx.Render("dashboard/404", fiber.Map{"title": "No encontrada", "role": sess.Get("role")}, "layouts/base")
 	}
-	if sess.Get("user_id").(uint)==*d.OwnerID{
-	if err := c.service.Delete(id); err != nil {
-		return ctx.Redirect().To("/direcciones?flash_error=Error al eliminar")
-	}}
+	if sess.Get("user_id").(uint) == *d.OwnerID {
+		if err := c.service.Delete(id); err != nil {
+			return ctx.Redirect().To("/direcciones?flash_error=Error al eliminar")
+		}
+	}
 	return ctx.Redirect().To("/direcciones?flash_success=Eliminada")
 }
 
