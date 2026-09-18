@@ -37,8 +37,8 @@
                 aria-haspopup="menu" aria-expanded="false">
             <span class="bf-user-btn__avatar"><i class="bi bi-person-fill"></i></span>
             <span class="bf-user-btn__info">
-                <strong>{{ .user.Name }}</strong>
-                <small>{{ if .isAdmin }}Administrador{{ else if .isPublicador }}Publicador{{ else }}{{ end }}</small>
+                <strong>{{ if .user.Name }}{{ .user.Name }}{{ else if eq .role "admin" }}Administrador{{ else if eq .role "publicador" }}Publicador{{ else if eq .role "chofer" }}Chofer{{ else }}Cuenta{{ end }}</strong>
+                <small>{{ if or .isAdmin (eq .role "admin") }}Administrador{{ else if .isPublicador }}Publicador{{ else }}{{ end }}</small>
             </span>
             <i class="bi bi-chevron-down bf-user-btn__caret"></i>
         </button>
@@ -55,7 +55,7 @@
 
     <!-- CENTER: Navegación principal -->
     <nav class="bf-topnav" aria-label="Navegación principal">
-     {{ if or .isPublicador .isChofer .isAdmin }}
+     {{ if or .isPublicador .isChofer .isAdmin (eq .role "admin") (eq .role "publicador") (eq .role "chofer") }}
         <a href="/home" class="bf-topnav__link">
         
             <i class="bi bi-house"></i><span>Inicio</span>
@@ -74,7 +74,7 @@
             <i class="bi bi-person-badge"></i><span>Choferes</span>
         </a>
         {{ end }}
-        {{ if .isAdmin }}
+        {{ if or .isAdmin (eq .role "admin") }}
         <a href="/admin/users" class="bf-topnav__link">
             <i class="bi bi-people"></i><span>Usuarios</span>
         </a>
@@ -212,4 +212,5 @@
 </body>
 
 </html>
+
 
