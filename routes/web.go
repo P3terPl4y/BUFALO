@@ -8,6 +8,7 @@ import (
 )
 
 func SetupWebRoutes(app *fiber.App) {
+	app.Get("/", func(ctx fiber.Ctx) error { return ctx.Redirect().To("/login") })
 	// ------------------------------------------------------------------
 	// Controladores
 	// ------------------------------------------------------------------
