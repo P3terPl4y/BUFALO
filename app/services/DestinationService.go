@@ -2,6 +2,7 @@ package services
 
 import (
 	"errors"
+	"fmt"
 	"goravel/app/facades"
 	"goravel/app/models"
 	"strconv"
@@ -31,14 +32,41 @@ func (s *DireccionService) GetPage(page, perPage int) ([]models.Direccion, int64
 	if perPage < 1 {
 		perPage = 10
 	}
-	q := facades.Orm().Query().Model(&models.Direccion{})
-	total, err := q.Count()
+	// Se deduplica por los datos visibles. Esto protege la grilla frente a
+	// registros demo antiguos que repetían la misma dirección con otro ID.
+	var all []models.Direccion
+	err := facades.Orm().Query().Model(&models.Direccion{}).
+		Order("estado_provincia asc, ciudad asc, id asc").Find(&all)
 	if err != nil {
 		return nil, 0, err
 	}
-	var list []models.Direccion
-	err = q.Order("estado_provincia asc, ciudad asc").Limit(perPage).Offset((page - 1) * perPage).Find(&list)
-	return list, total, err
+	unique := make([]models.Direccion, 0, len(all))
+	seen := make(map[string]struct{}, len(all))
+	for _, d := range all {
+		key := fmt.Sprintf("%s|%s|%s|%s|%v|%v", valueString(d.Calle), d.Ciudad, d.EstadoProvincia, d.Pais, d.Latitud, d.Longitud)
+		if _, ok := seen[key]; ok {
+			continue
+		}
+		seen[key] = struct{}{}
+		unique = append(unique, d)
+	}
+	total := int64(len(unique))
+	start := (page - 1) * perPage
+	if start >= len(unique) {
+		return []models.Direccion{}, total, nil
+	}
+	end := start + perPage
+	if end > len(unique) {
+		end = len(unique)
+	}
+	return unique[start:end], total, nil
+}
+
+func valueString(v *string) string {
+	if v == nil {
+		return ""
+	}
+	return *v
 }
 
 func (s *DireccionService) GetByID(id string) (*models.Direccion, error) {
