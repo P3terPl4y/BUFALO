@@ -1407,6 +1407,12 @@ input[type="number"],input[type="datetime-local"]{font-variant-numeric:tabular-n
 .tf-users-table th:nth-child(1){min-width:180px}.tf-users-table th:nth-child(2){min-width:240px}
 .tf-cell-email{color:var(--tf-text-muted);font-size:.86rem;white-space:nowrap}
 @media (max-width:700px){.tf-users-table{min-width:900px}}
+.tf-cell-email{color:var(--tf-text-muted);font-size:.86rem;white-space:nowrap}
+.bf-loader{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1rem}
+.bf-loader__mark{width:104px;height:104px;flex:0 0 104px;z-index:0}
+.bf-loader__mark img{position:relative;z-index:1;width:76px;max-height:68px;object-fit:contain}
+.bf-loader__mark span{z-index:0;inset:2px;border-width:3px}
+.bf-loader p{position:static;margin:0;font-size:.72rem;text-align:center}
 
 /* Profundidad visual, movimiento sutil y carga de marca. */
 .bf-app,.bf-public-page{position:relative;isolation:isolate;overflow-x:hidden}
