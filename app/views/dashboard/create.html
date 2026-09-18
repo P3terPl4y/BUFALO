@@ -12,7 +12,7 @@
 {{ if .flash_error }}<div class="alert alert-danger tf-mb-4">{{ .flash_error }}</div>{{ end }}
 
 <form action="/loads" method="post" class="tf-form-page" id="cargaCreateForm">
-    <input type="hidden" name="_csrf" value="{{ .csrfToken }}">
+    <input type="hidden" name="_csrf" value="{{ .csrfToken }}"><div class="bf-step-actions" aria-label="Pasos del formulario"><button type="button" class="btn btn-secondary" id="bfPrevStep">Anterior</button><span id="bfStepLabel">Paso 1 de 4</span><button type="button" class="btn btn-primary" id="bfNextStep">Siguiente</button></div>
 
     <!-- ═══════════════════════════════════════════════════════════
          COLUMNA PRINCIPAL
@@ -542,3 +542,4 @@
     updateProgress();
 })();
 </script>
+
