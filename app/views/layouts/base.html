@@ -119,13 +119,14 @@
     <main class="bf-main" id="main-content">
     <div class="container">
         {{ if .flash_success }}
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <div class="alert alert-success alert-dismissible fade show" role="alert" data-auto-dismiss="5200">
             <i class="bi bi-check-circle-fill me-2"></i> {{ .flash_success }}
+            {{ if .created_id }}<a href="/loads/{{ .created_id }}" class="btn btn-sm btn-primary ms-3">Ver detalles</a>{{ end }}
             <button type="button" class="btn-close" data-dismiss-alert aria-label="Cerrar aviso"></button>
         </div>
         {{ end }}
         {{ if .flash_error }}
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <div class="alert alert-danger alert-dismissible fade show" role="alert" data-auto-dismiss="6500">
             <i class="bi bi-exclamation-triangle-fill me-2"></i> {{ .flash_error }}
             <button type="button" class="btn-close" data-dismiss-alert aria-label="Cerrar aviso"></button>
         </div>
@@ -205,6 +206,18 @@
             var alert = button.closest('.alert');
             if (alert) alert.remove();
         });
+    });
+
+    /* Los avisos de resultado desaparecen solos, pero siguen pudiendo cerrarse manualmente. */
+    document.querySelectorAll('[data-auto-dismiss]').forEach(function (alert) {
+        var delay = parseInt(alert.getAttribute('data-auto-dismiss'), 10) || 5200;
+        window.setTimeout(function () {
+            if (!alert || !alert.parentNode) return;
+            alert.style.transition = 'opacity .25s ease, transform .25s ease';
+            alert.style.opacity = '0';
+            alert.style.transform = 'translateY(-4px)';
+            window.setTimeout(function () { if (alert.parentNode) alert.remove(); }, 280);
+        }, delay);
     });
 })();
 </script>
