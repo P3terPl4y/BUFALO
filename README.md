@@ -17,6 +17,23 @@ Plataforma de gestión logística y marketplace de cargas para Cuba, inspirada e
 10. [Testing](#-testing)
 11. [Guía de desarrollo](docs/DEVELOPMENT.md)
 
+## 🖼️ Identidad visual y pantallas
+
+Los recursos visuales se sirven desde `public/img` y no dependen de URLs externas:
+
+| Recurso | Uso recomendado |
+|---|---|
+| [`bufalo-wide.png`](public/img/bufalo-wide.png) | Header y navegación horizontal |
+| [`bufalo-square.png`](public/img/bufalo-square.png) | Login, loader, footer y tarjetas compactas |
+| [`bufalo-logistics-horizontal.png`](public/img/bufalo-logistics-horizontal.png) | Informes y encabezados amplios |
+| [`bufalo-logistics-square.png`](public/img/bufalo-logistics-square.png) | Avatares, accesos y fondos compactos |
+| [`dashboard-truck.png`](public/img/dashboard-truck.png) | Hero del dashboard y textura del footer |
+| [`bufalo.svg`](public/img/bufalo.svg) | Favicon o superficies que requieren SVG |
+
+![Hero de operaciones logísticas](public/img/dashboard-truck.png)
+
+Las vistas autenticadas comparten `app/views/layouts/base.html`. Ese layout contiene el header, sidebar, menú de usuario, avisos flash, loader y footer. Las vistas de cada módulo deben aportar únicamente su contenido.
+
 ---
 
 ## 🎯 Descripción general
@@ -816,7 +833,17 @@ Y el toggle cambia a `midnight`.
 
 ### Configuración
 
-Crea un `.env`:
+En Windows PowerShell:
+
+```powershell
+Set-Location D:\xampp2\BUFALO
+Copy-Item .env.example .env
+go mod download
+```
+
+Edita `.env` con una base PostgreSQL local o administrada. El entorno original de este proyecto usa Supabase, pero cada desarrollador puede usar su propio PostgreSQL local con los mismos nombres de variables. Nunca subas `.env` al repositorio.
+
+Variables mínimas:
 
 ```env
 APP_ENV=local
@@ -824,9 +851,11 @@ APP_KEY=base64:...
 
 DB_HOST=127.0.0.1
 DB_PORT=5432
-DB_DATABASE=datclone
+DB_DATABASE=bufalo
 DB_USERNAME=postgres
 DB_PASSWORD=postgres
+DB_SCHEMA=public
+DB_SSLMODE=disable
 
 REDIS_HOST=127.0.0.1
 REDIS_PORT=6379
@@ -836,17 +865,41 @@ REDIS_POOL_SIZE=10
 
 ### Migrar y arrancar
 
-```bash
-# 1. Migrar
+```powershell
+# Desarrollo limpio: borra y recrea todas las tablas
 go run . artisan migrate:fresh
 
-# 2. Levantar el servidor
-go run .
+# Desarrollo normal: aplica solo migraciones pendientes
+go run . artisan migrate
 
-# → http://localhost:3000
+# Levantar el servidor
+go run .
 ```
 
-Al arrancar, si no existe el admin `admin@example.com` / `Admin123!` se crea automáticamente.
+La aplicación queda disponible en [http://localhost:3000/login](http://localhost:3000/login). La ruta `/` redirige automáticamente a `/login`.
+
+Al arrancar, si no existe el administrador `admin@example.com` / `Admin123!`, se crea automáticamente. Es una cuenta de desarrollo: cambia la contraseña antes de usar datos reales.
+
+Para detener el servidor en la terminal activa, pulsa `Ctrl+C`. Si está ejecutándose en otra terminal, identifica el PID con `Get-Process go` y detén solo el proceso correcto con `Stop-Process -Id <PID>`.
+
+### Seeder de datos de ejemplo
+
+El seeder está en [`demo_data.go`](demo_data.go) y se ejecuta automáticamente al arrancar cuando `APP_ENV=local`. Es idempotente: busca correos y referencias demo antes de crear registros, por lo que puedes reiniciar el servidor sin duplicar los datos.
+
+Después de migrar una base local vacía:
+
+```powershell
+go run .
+```
+
+El arranque crea el administrador y datos coherentes para revisar usuarios, empresas, publicadores, choferes, direcciones, cargas, facturas e historial. Las credenciales de las cuentas demo usan la contraseña `Admin123!`; los correos están definidos en el seeder. Para reconstruir todo desde cero:
+
+```powershell
+go run . artisan migrate:fresh
+go run .
+```
+
+No ejecutes este seeder en producción. Para cambiar los ejemplos, edita `demo_data.go`, conserva referencias únicas y mantén la operación idempotente.
 
 ### Flujos disponibles
 
