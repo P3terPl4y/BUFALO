@@ -119,7 +119,11 @@
                 </tbody>
             </table>
         </div>
-        {{ if .hasPagination }}<div class="tf-pagination-wrap"><nav class="tf-pagination"><a class="btn btn-sm btn-outline-secondary" href="?page={{ if gt .page 1 }}{{ sub .page 1 }}{{ else }}1{{ end }}">Anterior</a><span>Página {{ .page }}</span><a class="btn btn-sm btn-outline-secondary" href="?page={{ add .page 1 }}">Siguiente</a></nav></div>{{ end }}
+        {{ if .hasPagination }}<div class="tf-pagination-wrap"><nav class="tf-pagination" aria-label="Paginación de direcciones">
+            {{ if .hasPrev }}<a class="btn btn-sm btn-outline-secondary" href="?page={{ sub .page 1 }}">Anterior</a>{{ else }}<span class="btn btn-sm btn-outline-secondary is-disabled" aria-disabled="true">Anterior</span>{{ end }}
+            <span class="tf-pagination__current">Página {{ .page }} de {{ .totalPages }}</span>
+            {{ if .hasNext }}<a class="btn btn-sm btn-outline-secondary" href="?page={{ add .page 1 }}">Siguiente</a>{{ else }}<span class="btn btn-sm btn-outline-secondary is-disabled" aria-disabled="true">Siguiente</span>{{ end }}
+        </nav></div>{{ end }}
     </section>
 
 </div>

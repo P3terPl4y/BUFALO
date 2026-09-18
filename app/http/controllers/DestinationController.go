@@ -37,7 +37,11 @@ func (c *DireccionController) Index(ctx fiber.Ctx) error {
 		"direcciones": list,
 		"csrfToken":   csrf.TokenFromContext(ctx),
 		"role":        sess.Get("role"),
-		"page":        page, "perPage": perPage, "total": total, "hasPagination": total > int64(perPage),
+		"page":        page, "perPage": perPage, "total": total,
+		"totalPages":    (total + int64(perPage) - 1) / int64(perPage),
+		"hasPagination": total > int64(perPage),
+		"hasPrev":       page > 1,
+		"hasNext":       int64(page)*int64(perPage) < total,
 	}, "layouts/base")
 }
 
