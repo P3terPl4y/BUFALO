@@ -152,3 +152,4 @@ func SetupWebRoutes(app *fiber.App) {
 	admin.Post("/users/:id<int>/delete", adminCtrl.Delete)
 	admin.Post("/users/:id<int>/toggle", adminCtrl.ToggleActive)
 }
+
