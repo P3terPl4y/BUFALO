@@ -51,15 +51,17 @@ func (c *FacturaController) Index(ctx fiber.Ctx) error {
 	if err != nil {
 		log.Printf("Error listando facturas: %v", err)
 	}
-	return ctx.Render("facturas/index", fiber.Map{
-		"title":   "Facturas",
-		"facturas": list,
-		"total":   total,
-		"page":    page,
-		"perPage": perPage,
-		"filters": filters,
-		"role":    role,
-	}, "layouts/base")
+
+		return ctx.Render("facturas/index", fiber.Map{
+			"title":   "Facturas",
+			"facturas": list,
+			"total":   total,
+			"page":    page,
+			"perPage": perPage,
+			"filters": filters,
+			"role":    role,
+		}, "layouts/base")
+	
 }
 
 func (c *FacturaController) Show(ctx fiber.Ctx) error {
@@ -68,12 +70,16 @@ func (c *FacturaController) Show(ctx fiber.Ctx) error {
 	if err != nil {
 		return ctx.Render("dashboard/404", fiber.Map{"title": "No encontrada", "role": sess.Get("role")}, "layouts/base")
 	}
+	if f.EmisorID==sess.Get("user_id") || f.ReceptorID==sess.Get("user_id"){
 	return ctx.Render("facturas/show", fiber.Map{
 		"title":     "Detalle Factura",
 		"factura":   f,
 		"csrfToken": csrf.TokenFromContext(ctx),
 		"role":      sess.Get("role"),
 	}, "layouts/base")
+	}else{
+		return ctx.Render("dashboard/404", fiber.Map{"title": "No encontrada", "role": sess.Get("role")}, "layouts/base")
+	}
 }
 
 func (c *FacturaController) Create(ctx fiber.Ctx) error {
