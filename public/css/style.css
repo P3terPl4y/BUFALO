@@ -1919,3 +1919,70 @@ input[type="number"],input[type="datetime-local"]{font-variant-numeric:tabular-n
 /* Keep the footer branded while giving it a subtle logistics texture. */
 .bf-footer{position:relative;overflow:hidden;background-image:linear-gradient(90deg,rgba(21,33,38,.98),rgba(21,33,38,.82)),url('/img/dashboard-truck.png');background-position:center right;background-size:cover}
 .bf-footer>*{position:relative;z-index:1}
+/* Theme toggle flotante — siempre visible, abajo a la derecha */
+.bf-theme-toggle{
+  position: fixed !important;
+  bottom: 24px !important;
+  right: 24px !important;
+  top: auto !important;
+  left: auto !important;
+
+  width: 52px !important;
+  height: 52px !important;
+  border-radius: 50% !important;
+
+  display: grid !important;
+  place-items: center !important;
+
+  background: var(--tf-surface) !important;
+  color: var(--tf-text) !important;
+  border: 1px solid var(--tf-border) !important;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, .18),
+              0 2px 6px rgba(15, 23, 42, .10) !important;
+
+  cursor: pointer !important;
+  font-size: 1.15rem !important;
+  z-index: 9999 !important;
+
+  transition: transform var(--tf-dur-fast) var(--tf-ease),
+              box-shadow var(--tf-dur) var(--tf-ease),
+              background-color var(--tf-dur-fast) var(--tf-ease),
+              color var(--tf-dur-fast) var(--tf-ease) !important;
+}
+
+.bf-theme-toggle:hover{
+  transform: translateY(-2px) !important;
+  background: var(--tf-yellow-500) !important;
+  color: #17120a !important;
+  border-color: var(--tf-yellow-600) !important;
+  box-shadow: 0 12px 28px rgba(245, 158, 11, .38),
+              0 3px 8px rgba(15, 23, 42, .12) !important;
+}
+
+.bf-theme-toggle:active{
+  transform: translateY(0) scale(.96) !important;
+}
+
+.bf-theme-toggle:focus-visible{
+  outline: 2px solid var(--tf-yellow-500) !important;
+  outline-offset: 3px !important;
+}
+
+/* Móvil: un poco más pegado al borde */
+@media (max-width: 575.98px){
+  .bf-theme-toggle{
+    bottom: 16px !important;
+    right: 16px !important;
+    width: 46px !important;
+    height: 46px !important;
+    font-size: 1.05rem !important;
+  }
+}
+
+/* Pantallas grandes: un poco más de aire */
+@media (min-width: 1400px){
+  .bf-theme-toggle{
+    bottom: 32px !important;
+    right: 32px !important;
+  }
+}
