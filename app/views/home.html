@@ -217,7 +217,7 @@
             {{ if .cargasDisponibles }}
             <div class="bf-loads-grid">
                 {{ range .cargasDisponibles }}
-                <article class="tf-load-mini bf-load-card">
+                <article class="tf-load-mini bf-load-card" onclick='window.location.href="loads/{{.ID}}"'>
                     <div class="tf-load-mini__top">
                         <h4 class="tf-load-mini__title">{{ .NumeroReferencia }}</h4>
                         <span class="tf-load-mini__id">#{{ .ID }}</span>

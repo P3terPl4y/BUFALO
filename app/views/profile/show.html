@@ -1,6 +1,9 @@
 <html
     data-theme="light">
-
+<head>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
 <body lang="es" >
     <div class="tf-profile">
 
@@ -96,67 +99,52 @@
                 </div>
             </section>
 
-            <!-- ───────── 02 · UBICACIÓN ───────── -->
-            <section class="tf-info-block" data-block="location">
-                <header class="tf-info-block__head">
-                    <i class="bi bi-geo-alt-fill tf-info-block__icon"></i>
-                    <div class="tf-info-block__text">
-                        <h2>Ubicación</h2>
-                        <p>Dirección base y radio de operación</p>
-                    </div>
-                </header>
+           <!-- ───────── 02 · UBICACIÓN ───────── -->
+<section class="tf-form-block" id="block-location" data-block="location">
+    <header class="tf-form-block__head">
+        <i class="bi bi-geo-alt-fill tf-form-block__icon"></i>
+        <div class="tf-form-block__text">
+            <h2>Ubicación</h2>
+            <p>Tu dirección base y radio de operación. Haz clic en el mapa o arrastra el marcador.</p>
+        </div>
+    </header>
 
-                <div class="tf-info-block__body">
-                    <dl class="tf-info-list">
-                        <div class="tf-info-list__row tf-info-list__row--full">
-                            <dt><i class="bi bi-house"></i> Dirección</dt>
-                            <dd>{{ if .user.Address }}{{ .user.Address }}{{ else }}<span class="empty-value">—</span>{{
-                                end
-                                }}</dd>
-                        </div>
-                        <div class="tf-info-list__row">
-                            <dt><i class="bi bi-buildings"></i> Ciudad</dt>
-                            <dd>{{ if .user.City }}{{ .user.City }}{{ else }}<span class="empty-value">—</span>{{ end }}
-                            </dd>
-                        </div>
-                        <div class="tf-info-list__row">
-                            <dt><i class="bi bi-map"></i> Estado</dt>
-                            <dd>{{ if .user.State }}{{ .user.State }}{{ else }}<span class="empty-value">—</span>{{ end
-                                }}
-                            </dd>
-                        </div>
-                        <div class="tf-info-list__row">
-                            <dt><i class="bi bi-globe-americas"></i> País</dt>
-                            <dd>{{ if .user.Country }}{{ .user.Country }}{{ else }}<span class="empty-value">—</span>{{
-                                end
-                                }}</dd>
-                        </div>
-                        <div class="tf-info-list__row">
-                            <dt><i class="bi bi-mailbox"></i> Código postal</dt>
-                            <dd>{{ if .user.PostalCode }}{{ .user.PostalCode }}{{ else }}<span
-                                    class="empty-value">—</span>{{ end }}</dd>
-                        </div>
-                        <div class="tf-info-list__row">
-                            <dt><i class="bi bi-crosshair"></i> Latitud</dt>
-                            <dd class="tf-tabular">{{ if .user.Latitude }}{{ .user.Latitude }}{{ else }}<span
-                                    class="empty-value">—</span>{{ end }}</dd>
-                        </div>
-                        <div class="tf-info-list__row">
-                            <dt><i class="bi bi-crosshair"></i> Longitud</dt>
-                            <dd class="tf-tabular">{{ if .user.Longitude }}{{ .user.Longitude }}{{ else }}<span
-                                    class="empty-value">—</span>{{ end }}</dd>
-                        </div>
-                        <div class="tf-info-list__row">
-                            <dt><i class="bi bi-broadcast"></i> Radio de operación</dt>
-                            <dd>
-                                {{ if .user.Radius }}
-                                <span class="tf-value-unit"><strong>{{ .user.Radius }}</strong><em>km</em></span>
-                                {{ else }}<span class="empty-value">—</span>{{ end }}
-                            </dd>
-                        </div>
-                    </dl>
-                </div>
-            </section>
+    <div class="tf-form-block__body">
+
+        <!-- ═══════ MAP PICKER ═══════ -->
+        <div class="tf-map-picker"
+             data-map-picker
+             data-initial-lat="{{ if .old }}{{ .old.Latitude }}{{ else }}{{ .user.Latitude }}{{ end }}"
+             data-initial-lng="{{ if .old }}{{ .old.Longitude }}{{ else }}{{ .user.Longitude }}{{ end }}">
+
+            <div class="tf-map-picker__search">
+                <i class="bi bi-search"></i>
+                <input type="text"
+                       class="tf-map-picker__search-input"
+                       placeholder="Buscar dirección, ciudad o lugar…"
+                       autocomplete="off">
+                <div class="tf-map-picker__results" hidden></div>
+            </div>
+
+            <div class="tf-map-picker__map" data-map></div>
+
+            <div class="tf-map-picker__footer">
+                <span class="tf-map-picker__coords" data-coords data-empty="true">
+                    <i class="bi bi-crosshair"></i>
+                    Arrastra el marcador o haz clic en el mapa
+                </span>
+                <span class="tf-map-picker__hint">
+                    <i class="bi bi-info-circle"></i>
+                    <span data-address-hint>Sin ubicación seleccionada</span>
+                </span>
+            </div>
+        </div>
+
+        <!-- ═══════ CAMPOS ═══════ -->
+        
+
+    </div>
+</section>
 
             {{ if eq .user.Role "carrier" }}
             <!-- ───────── 03 · PREFERENCIAS DE CARGA ───────── -->
@@ -267,5 +255,227 @@
 
     </div>
 </body>
+<script>
+(function () {
+    const NOMINATIM_SEARCH  = 'https://nominatim.openstreetmap.org/search';
+    const NOMINATIM_REVERSE = 'https://nominatim.openstreetmap.org/reverse';
+    const COUNTRY_CODES     = 'cu,mx,us,es';  // ajusta según tu público
 
+    const CUBA_CENTER = [21.5218, -77.7812];
+    const CUBA_ZOOM   = 7;
+
+    const root = document.querySelector('[data-map-picker]');
+    if (!root) return;
+    if (typeof L === 'undefined') {
+        console.warn('[map-picker] Leaflet no está disponible.');
+        window.__initProfileMapPicker = function () {};
+        return;
+    }
+
+    const searchInput  = root.querySelector('.tf-map-picker__search-input');
+    const resultsBox   = root.querySelector('.tf-map-picker__results');
+    const mapEl        = root.querySelector('[data-map]');
+    const coordsEl     = root.querySelector('[data-coords]');
+    const hintEl       = root.querySelector('[data-address-hint]');
+
+    const latInput     = document.getElementById('latitude');
+    const lngInput     = document.getElementById('longitude');
+    const cityInput    = document.getElementById('city');
+    const stateInput   = document.getElementById('state');
+    const countryInput = document.getElementById('country');
+    const postalInput  = document.getElementById('postal_code');
+    const addressInput = document.getElementById('address');
+
+    let map = null;
+    let marker = null;
+
+    function makeIcon() {
+        return L.divIcon({
+            className: '',
+            html: '<div class="tf-map-pin tf-map-pin--pickup"><i class="bi bi-geo-alt-fill"></i></div>',
+            iconSize: [32, 32],
+            iconAnchor: [16, 32],
+        });
+    }
+
+    function setMarker(lat, lng, opts) {
+        opts = opts || {};
+        if (!map) return;
+        if (marker) {
+            marker.setLatLng([lat, lng]);
+        } else {
+            marker = L.marker([lat, lng], { icon: makeIcon(), draggable: true }).addTo(map);
+            marker.on('dragend', function () {
+                const pos = marker.getLatLng();
+                setMarker(pos.lat, pos.lng);
+            });
+        }
+        if (opts.pan !== false) map.panTo([lat, lng], { animate: true });
+        if (latInput) latInput.value = lat.toFixed(8);
+        if (lngInput) lngInput.value = lng.toFixed(8);
+        if (coordsEl) {
+            coordsEl.dataset.empty = 'false';
+            coordsEl.innerHTML = '<i class="bi bi-crosshair"></i> ' + lat.toFixed(5) + ', ' + lng.toFixed(5);
+        }
+        if (!opts.skipReverse) reverseGeocode(lat, lng);
+    }
+
+    let reverseTimer = null;
+    function reverseGeocode(lat, lng) {
+        clearTimeout(reverseTimer);
+        if (hintEl) hintEl.textContent = 'Obteniendo dirección…';
+        reverseTimer = setTimeout(function () {
+            const url = NOMINATIM_REVERSE + '?format=json&lat=' + lat + '&lon=' + lng + '&zoom=18&addressdetails=1&accept-language=es';
+            fetch(url, { headers: { Accept: 'application/json' } })
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    const a = data.address || {};
+                    if (addressInput && !addressInput.value.trim()) {
+                        addressInput.value = a.road ? (a.road + (a.house_number ? ' #' + a.house_number : '')) : (a.neighbourhood || a.suburb || '');
+                    }
+                    if (cityInput && !cityInput.value.trim()) {
+                        cityInput.value = a.city || a.town || a.village || a.municipality || '';
+                    }
+                    if (stateInput && !stateInput.value.trim()) {
+                        stateInput.value = a.state || a.province || a.region || '';
+                    }
+                    if (countryInput && !countryInput.value.trim()) {
+                        countryInput.value = (a.country_code || '').toUpperCase();
+                    }
+                    if (postalInput && !postalInput.value.trim()) {
+                        postalInput.value = a.postcode || '';
+                    }
+                    if (hintEl) hintEl.textContent = data.display_name || 'Ubicación seleccionada';
+                })
+                .catch(function () {
+                    if (hintEl) hintEl.textContent = 'No se pudo obtener la dirección';
+                });
+        }, 400);
+    }
+
+    let searchTimer = null;
+    if (searchInput) {
+        searchInput.addEventListener('input', function () {
+            clearTimeout(searchTimer);
+            const q = searchInput.value.trim();
+            if (q.length < 3) { resultsBox.hidden = true; return; }
+            searchTimer = setTimeout(function () { runSearch(q); }, 450);
+        });
+    }
+
+    function runSearch(q) {
+        const url = NOMINATIM_SEARCH + '?format=json&q=' + encodeURIComponent(q)
+                  + '&countrycodes=' + COUNTRY_CODES + '&limit=6&addressdetails=1&accept-language=es';
+        fetch(url, { headers: { Accept: 'application/json' } })
+            .then(function (r) { return r.json(); })
+            .then(renderResults)
+            .catch(function () {
+                resultsBox.innerHTML = '<div class="tf-map-picker__empty">Error de búsqueda</div>';
+                resultsBox.hidden = false;
+            });
+    }
+
+    function renderResults(items) {
+        if (!items || !items.length) {
+            resultsBox.innerHTML = '<div class="tf-map-picker__empty">Sin resultados</div>';
+            resultsBox.hidden = false;
+            return;
+        }
+        resultsBox.innerHTML = items.map(function (it, idx) {
+            return '<button type="button" class="tf-map-picker__result" data-idx="' + idx + '">'
+                 + '<i class="bi bi-geo-alt-fill"></i>'
+                 + '<span>' + escapeHtml(it.display_name) + '</span></button>';
+        }).join('');
+        resultsBox.hidden = false;
+        resultsBox._items = items;
+        resultsBox.querySelectorAll('.tf-map-picker__result').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                const it = resultsBox._items[Number(btn.dataset.idx)];
+                if (!it) return;
+                const lat = parseFloat(it.lat);
+                const lng = parseFloat(it.lon);
+                map.setView([lat, lng], 15);
+                setMarker(lat, lng, { skipReverse: true, pan: false });
+
+                if (hintEl) hintEl.textContent = it.display_name;
+                const a = it.address || {};
+                if (addressInput) addressInput.value = a.road ? (a.road + (a.house_number ? ' #' + a.house_number : '')) : (a.neighbourhood || '');
+                if (cityInput)     cityInput.value   = a.city || a.town || a.village || a.municipality || '';
+                if (stateInput)    stateInput.value  = a.state || a.province || a.region || '';
+                if (countryInput)  countryInput.value = (a.country_code || '').toUpperCase();
+                if (postalInput)   postalInput.value = a.postcode || '';
+                searchInput.value = it.display_name;
+                resultsBox.hidden = true;
+            });
+        });
+    }
+
+    [latInput, lngInput].forEach(function (inp) {
+        if (!inp) return;
+        inp.addEventListener('change', function () {
+            const lat = parseFloat(latInput.value);
+            const lng = parseFloat(lngInput.value);
+            if (!isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0 && map) setMarker(lat, lng);
+        });
+    });
+
+    document.addEventListener('click', function (e) {
+        if (root && !root.contains(e.target) && resultsBox) resultsBox.hidden = true;
+    });
+
+    window.__initProfileMapPicker = function () {
+        if (map) return;
+        map = L.map(mapEl, {
+            center: CUBA_CENTER,
+            zoom: CUBA_ZOOM,
+            scrollWheelZoom: true,
+            zoomControl: true,
+        });
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap',
+            maxZoom: 18,
+        }).addTo(map);
+        map.on('click', function (e) { setMarker(e.latlng.lat, e.latlng.lng); });
+
+        const initLat = parseFloat(root.dataset.initialLat);
+        const initLng = parseFloat(root.dataset.initialLng);
+        if (!isNaN(initLat) && !isNaN(initLng) && initLat !== 0 && initLng !== 0) {
+            map.setView([initLat, initLng], 14);
+            setMarker(initLat, initLng, { skipReverse: true, pan: false });
+            if (hintEl) hintEl.textContent = 'Ubicación actual';
+        } else if (latInput && latInput.value && lngInput && lngInput.value) {
+            // Fallback: si data-* no tiene valores pero los inputs sí
+            const lat = parseFloat(latInput.value);
+            const lng = parseFloat(lngInput.value);
+            if (!isNaN(lat) && !isNaN(lng)) {
+                map.setView([lat, lng], 14);
+                setMarker(lat, lng, { skipReverse: true, pan: false });
+            }
+        }
+        setTimeout(function () { map.invalidateSize(); }, 150);
+    };
+
+    window.addEventListener('resize', function () { if (map) map.invalidateSize(); });
+
+    function escapeHtml(s) {
+        return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    // Inicializar cuando el DOM esté listo y el contenedor sea visible
+    function bootMap() {
+        const el = root.querySelector('[data-map]');
+        if (!el || el.offsetWidth === 0) {
+            setTimeout(bootMap, 100);
+            return;
+        }
+        window.__initProfileMapPicker();
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', bootMap);
+    } else {
+        bootMap();
+    }
+})();
+</script>
 </html>
