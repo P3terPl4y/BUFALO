@@ -42,6 +42,7 @@ func canEditPublicador(pub *models.Publicador, userID uint, role string) bool {
 func (c *PublicadorController) Index(ctx fiber.Ctx) error {
 	sess := session.FromContext(ctx)
 	role, _ := sess.Get("role").(string)
+	userID, _ := sess.Get("user_id").(uint)
 
 	filters := map[string]string{
 		"estado": ctx.Query("estado"),
@@ -60,13 +61,16 @@ func (c *PublicadorController) Index(ctx fiber.Ctx) error {
 	}
 
 	return ctx.Render("publicadores/index", fiber.Map{
-		"title":        "Publicadores",
-		"publicadores": list,
-		"total":        total,
-		"page":         page,
-		"perPage":      perPage,
-		"filters":      filters,
-		"role":         role,
+		"title":         "Publicadores",
+		"publicadores":  list,
+		"total":         total,
+		"page":          page,
+		"perPage":       perPage,
+		"filters":       filters,
+		"role":          role,
+		"currentUserID": userID,
+		"flash_error":   ctx.Query("flash_error"),
+		"flash_success": ctx.Query("flash_success"),
 	}, "layouts/base")
 }
 
@@ -89,10 +93,13 @@ func (c *PublicadorController) Show(ctx fiber.Ctx) error {
 	}
 
 	return ctx.Render("publicadores/show", fiber.Map{
-		"title":      "Detalle del Publicador",
-		"publicador": pub,
-		"csrfToken":  csrf.TokenFromContext(ctx),
-		"role":       sess.Get("role"),
+		"title":         "Detalle del Publicador",
+		"publicador":    pub,
+		"csrfToken":     csrf.TokenFromContext(ctx),
+		"role":          sess.Get("role"),
+		"currentUserID": sess.Get("user_id"),
+		"flash_success": ctx.Query("flash_success"),
+		"flash_error":   ctx.Query("flash_error"),
 	}, "layouts/base")
 }
 
@@ -121,10 +128,11 @@ func (c *PublicadorController) Edit(ctx fiber.Ctx) error {
 	}
 
 	return ctx.Render("publicadores/edit", fiber.Map{
-		"title":      "Editar Publicador",
-		"publicador": pub,
-		"csrfToken":  csrf.TokenFromContext(ctx),
-		"role":       role,
+		"title":         "Editar Publicador",
+		"publicador":    pub,
+		"csrfToken":     csrf.TokenFromContext(ctx),
+		"role":          role,
+		"currentUserID": userID,
 	}, "layouts/base")
 }
 

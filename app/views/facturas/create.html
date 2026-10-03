@@ -1,0 +1,29 @@
+<div class="tf-loads-page">
+    <header class="tf-page-header"><div><p><a href="/facturas"><i class="bi bi-arrow-left"></i> Volver a facturas</a></p><h1><i class="bi bi-file-earmark-plus"></i> Crear factura</h1><p>Guarda primero un borrador; podrás revisarlo antes de emitirlo.</p></div></header>
+    <form method="post" action="/facturas" class="tf-form-page" id="invoiceCreateForm">
+        <input type="hidden" name="_csrf" value="{{ .csrfToken }}">
+        <div class="tf-form-page__main"><section class="tf-form-card">
+            <header class="tf-form-block__head"><i class="bi bi-file-earmark-text tf-form-block__icon"></i><div class="tf-form-block__text"><h2>Información de la factura</h2><p>Vincula la factura con una carga entregada y las empresas correspondientes.</p></div></header>
+            <div class="tf-form-block__body tf-invoice-form">
+                <label>Carga entregada<input name="carga_id" type="number" min="1" required></label>
+                <label>Empresa emisora<input name="emisor_id" type="number" min="1" required></label>
+                <label>Empresa receptora<input name="receptor_id" type="number" min="1" required></label>
+                <label>Número de factura<input name="numero_factura" type="text" maxlength="50" required></label>
+                <label>Fecha de emisión<input name="fecha_emision" type="date" required></label>
+                <label>Fecha de vencimiento <span class="text-muted">(opcional)</span><input name="fecha_vencimiento" type="date"></label>
+            </div>
+        </section>
+        <section class="tf-form-card">
+            <header class="tf-form-block__head"><i class="bi bi-calculator tf-form-block__icon"></i><div class="tf-form-block__text"><h2>Importes</h2><p>El total es la suma del subtotal y los impuestos.</p></div></header>
+            <div class="tf-form-block__body tf-invoice-form">
+                <label>Distancia (km)<input name="distancia_km" type="number" min="0" step="0.01" value="0" required></label>
+                <label>Tarifa por km<input name="tarifa_por_km" type="number" min="0" step="0.0001" value="0" required></label>
+                <label>Subtotal<input name="subtotal" type="number" min="0" step="0.01" value="0" required></label>
+                <label>Impuestos<input name="impuestos" type="number" min="0" step="0.01" value="0" required></label>
+                <label>Moneda<select name="moneda" required><option value="">Seleccionar moneda</option><option value="CUP">CUP</option><option value="MLC">MLC</option><option value="USD">USD</option><option value="EUR">EUR</option></select></label>
+                <label>Método de pago previsto<input name="metodo_pago" maxlength="50" placeholder="Transferencia, efectivo…"></label>
+            </div>
+        </section></div>
+        <aside class="tf-form-page__aside"><div class="tf-form-card"><h2>Antes de emitir</h2><p>Comprueba que la carga esté entregada y que emisor, receptor e importes sean correctos.</p><button class="btn btn-primary tf-w-full" type="submit"><i class="bi bi-save"></i> Guardar borrador</button><a class="btn btn-secondary tf-w-full" href="/facturas">Cancelar</a></div></aside>
+    </form>
+</div>

@@ -322,6 +322,9 @@
 
         if (latInput) latInput.value = lat.toFixed(8);
         if (lngInput) lngInput.value = lng.toFixed(8);
+        [latInput, lngInput].forEach(function (input) {
+            if (input) input.dispatchEvent(new Event('input', { bubbles: true }));
+        });
 
         if (coordsEl) {
             coordsEl.dataset.empty = 'false';
@@ -360,6 +363,9 @@
                     if (postalInput && !postalInput.value.trim()) {
                         postalInput.value = a.postcode || '';
                     }
+                    [cityInput, stateInput, countryInput, postalInput].forEach(function (input) {
+                        if (input) input.dispatchEvent(new Event('input', { bubbles: true }));
+                    });
 
                     if (hintEl) hintEl.textContent = data.display_name || 'Ubicación seleccionada';
                 })

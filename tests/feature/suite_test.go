@@ -15,8 +15,10 @@ import (
 
 	"goravel/app/models"
 	"goravel/app/services"
+	"goravel/app/viewhelpers"
 	"goravel/bootstrap"
 	"goravel/routes"
+	"goravel/tests"
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/extractors"
@@ -72,11 +74,15 @@ func TestMain(m *testing.M) {
 
 	app := bootstrap.Boot()
 	app.Boot()
+	if err := tests.RunMigrations(); err != nil {
+		panic(err)
+	}
 
 	viewsDir := findViewsDir()
 	println(">>> viewsDir:", viewsDir)
 
 	engine := html.New(viewsDir, ".html")
+	viewhelpers.Register(engine)
 	engine.Reload(true)
 
 	testApp = fiber.New(fiber.Config{Views: engine})
@@ -85,16 +91,16 @@ func TestMain(m *testing.M) {
 	testApp.Use(recover.New())
 	testApp.Use(logger.New())
 	testApp.Use(session.New(session.Config{
-		Extractor:      extractors.FromCookie("session_id"), // ← v3: reemplaza KeyLookup
-		CookieSecure:   false,                               // httptest usa http://
-		CookieHTTPOnly: true,
-		CookieSameSite: "Lax",
-		IdleTimeout:    30 * time.Minute,                    // ← v3: reemplaza Expiration
-		AbsoluteTimeout: 24 * time.Hour,                     // debe ser >= IdleTimeout
+		Extractor:       extractors.FromCookie("session_id"), // ← v3: reemplaza KeyLookup
+		CookieSecure:    false,                               // httptest usa http://
+		CookieHTTPOnly:  true,
+		CookieSameSite:  "Lax",
+		IdleTimeout:     30 * time.Minute, // ← v3: reemplaza Expiration
+		AbsoluteTimeout: 24 * time.Hour,   // debe ser >= IdleTimeout
 	}))
 	// ────────────────────────────────────────
 
-	routes.SetupWebRoutes(testApp)
+	routes.SetupWebRoutes(testApp, func(c fiber.Ctx) error { return c.Next() })
 
 	testServer = httptest.NewServer(adaptor.FiberApp(testApp))
 	defer testServer.Close()

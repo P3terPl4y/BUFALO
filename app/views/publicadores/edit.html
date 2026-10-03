@@ -1,0 +1,32 @@
+<div class="tf-page-header">
+    <div><h1>Editar perfil de publicador #{{ .publicador.ID }}</h1><p>{{ if .publicador.User }}{{ .publicador.User.Name }}{{ end }}</p></div>
+    <a href="/publicadores/{{ .publicador.ID }}" class="btn btn-secondary">Volver</a>
+</div>
+{{ if .flash_error }}<div class="alert alert-danger">{{ .flash_error }}</div>{{ end }}
+{{ if .errors }}<div class="alert alert-danger"><ul>{{ range $field, $message := .errors }}<li>{{ $field }}: {{ $message }}</li>{{ end }}</ul></div>{{ end }}
+<form action="/publicadores/{{ .publicador.ID }}" method="POST" class="tf-form-page">
+    <input type="hidden" name="_csrf" value="{{ .csrfToken }}">
+    <div class="tf-form-card">
+        <label for="numero_licencia_broker">Número de licencia</label>
+        <input id="numero_licencia_broker" name="numero_licencia_broker" value="{{ .publicador.NumeroLicenciaBroker }}" required minlength="3" maxlength="50">
+        <label for="pais_emision_licencia">País de emisión</label>
+        <input id="pais_emision_licencia" name="pais_emision_licencia" value="{{ .publicador.PaisEmisionLicencia }}">
+        <label for="fecha_vencimiento_licencia">Vencimiento</label>
+        <input id="fecha_vencimiento_licencia" type="date" name="fecha_vencimiento_licencia" value="{{ if .publicador.FechaVencimientoLicencia }}{{ .publicador.FechaVencimientoLicencia.Format "2006-01-02" }}{{ end }}">
+        <label for="anios_experiencia">Años de experiencia</label>
+        <input id="anios_experiencia" type="number" min="0" name="anios_experiencia" value="{{ .publicador.AniosExperiencia }}" required>
+        <label for="especialidad">Especialidad</label>
+        <input id="especialidad" name="especialidad" value="{{ .publicador.Especialidad }}">
+        <label for="comision">Comisión (%)</label>
+        <input id="comision" type="number" min="0" max="100" step="0.01" name="comision" value="{{ .publicador.Comision }}">
+        <label for="credit_score">Crédito</label>
+        <input id="credit_score" type="number" min="0" name="credit_score" value="{{ .publicador.CreditScore }}">
+        <label for="estado">Estado</label>
+        <select id="estado" name="estado" required>
+            <option value="activo" {{ if eq .publicador.Estado "activo" }}selected{{ end }}>Activo</option>
+            <option value="inactivo" {{ if eq .publicador.Estado "inactivo" }}selected{{ end }}>Inactivo</option>
+            <option value="suspendido" {{ if eq .publicador.Estado "suspendido" }}selected{{ end }}>Suspendido</option>
+        </select>
+        <button type="submit" class="btn btn-primary">Guardar cambios</button>
+    </div>
+</form>

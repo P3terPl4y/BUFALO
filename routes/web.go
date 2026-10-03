@@ -7,40 +7,47 @@ import (
 	"github.com/gofiber/fiber/v3"
 )
 
-func SetupWebRoutes(app *fiber.App) {
+// SetupWebRoutes accepts a limiter override for isolated HTTP test harnesses.
+func SetupWebRoutes(app *fiber.App, limiterOverride ...fiber.Handler) {
+	loginLimiter := middleware.LoginRateLimiter()
+	registerLimiter := middleware.LoginRateLimiter()
+	if len(limiterOverride) > 0 {
+		loginLimiter = limiterOverride[0]
+		registerLimiter = limiterOverride[0]
+	}
 	// ------------------------------------------------------------------
 	// Controladores
 	// ------------------------------------------------------------------
-	authCtrl         := controllers.NewAuthController()
-	cargaCtrl        := controllers.NewCargaController()
-	direccionCtrl    := controllers.NewDireccionController()
-	empresaCtrl      := controllers.NewEmpresaController()
-	choferCtrl       := controllers.NewChoferController()
-	publicadorCtrl   := controllers.NewPublicadorController()
-	facturaCtrl      := controllers.NewFacturaController()
+	authCtrl := controllers.NewAuthController()
+	cargaCtrl := controllers.NewCargaController()
+	direccionCtrl := controllers.NewDireccionController()
+	empresaCtrl := controllers.NewEmpresaController()
+	choferCtrl := controllers.NewChoferController()
+	publicadorCtrl := controllers.NewPublicadorController()
+	facturaCtrl := controllers.NewFacturaController()
 	loadInterestCtrl := controllers.NewLoadInterestController()
-	userCtrl         := controllers.NewUserController()
-	adminCtrl        := controllers.NewAdminController()
+	userCtrl := controllers.NewUserController()
+	adminCtrl := controllers.NewAdminController()
 
 	// ============================================================
 	// PÚBLICAS
 	// ============================================================
 	app.Get("/login", authCtrl.ShowLogin)
-	app.Post("/login", middleware.LoginRateLimiter(), authCtrl.HandleLogin)
+	app.Post("/login", loginLimiter, authCtrl.HandleLogin)
 	app.Get("/register", authCtrl.ShowRegister)
-	app.Post("/register", middleware.LoginRateLimiter(), authCtrl.HandleRegister)
+	app.Post("/register", registerLimiter, authCtrl.HandleRegister)
 
 	// ============================================================
 	// PROTEGIDAS — todas las rutas van planas con su middleware
 	// ============================================================
 	auth := middleware.SessionAuth()
-	pub  := middleware.PublicadorAuth()
+	pub := middleware.PublicadorAuth()
 	chof := middleware.ChoferAuth()
 	both := middleware.RoleAuth("publicador", "chofer", "admin")
-	adm  := middleware.AdminAuth()
-	is_active:=middleware.IsActiveUserHandler()
+	adm := middleware.AdminAuth()
+	is_active := middleware.IsActiveUserHandler()
 	// Atajo para no repetir: todas las rutas cuelgan de un solo Use
-	protected := app.Group("", auth,is_active)
+	protected := app.Group("", auth, is_active)
 
 	// ── Generales ──
 	protected.Get("/home", authCtrl.ShowHome)
@@ -74,7 +81,7 @@ func SetupWebRoutes(app *fiber.App) {
 	// CARGAS — escritura (publicador + admin)
 	// ═══════════════════════════════════════════════════════════
 	protected.Get("/loads/create", pub, cargaCtrl.Create)
-	protected.Post("/loads", pub, is_active,cargaCtrl.Store)
+	protected.Post("/loads", pub, is_active, cargaCtrl.Store)
 	protected.Get("/loads/:id<int>/edit", pub, cargaCtrl.Edit)
 	protected.Put("/loads/:id<int>", pub, cargaCtrl.Update)
 	protected.Delete("/loads/:id<int>", pub, cargaCtrl.Delete)
@@ -86,6 +93,8 @@ func SetupWebRoutes(app *fiber.App) {
 	// CARGAS — aceptar / interés (chofer + admin)
 	// ═══════════════════════════════════════════════════════════
 	protected.Post("/loads/:id<int>/accept", chof, cargaCtrl.AcceptLoad)
+	protected.Post("/loads/:id<int>/start-transit", chof, cargaCtrl.StartTransit)
+	protected.Post("/loads/:id<int>/deliver", chof, cargaCtrl.MarkDelivered)
 	protected.Post("/loads/:id<int>/interest", chof, loadInterestCtrl.SendInterest)
 
 	// ═══════════════════════════════════════════════════════════
@@ -138,9 +147,10 @@ func SetupWebRoutes(app *fiber.App) {
 	protected.Delete("/facturas/:id<int>", pub, facturaCtrl.Delete)
 	protected.Post("/facturas/:id<int>", pub, facturaCtrl.Update)
 	protected.Post("/facturas/:id<int>/delete", pub, facturaCtrl.Delete)
+	protected.Post("/facturas/:id<int>/emitir", pub, facturaCtrl.Emitir)
 	protected.Post("/facturas/:id<int>/pagar", pub, facturaCtrl.MarcarPagada)
 
-		// ═══════════════════════════════════════════════════════════
+	// ═══════════════════════════════════════════════════════════
 	// ADMIN — todo el panel
 	// ═══════════════════════════════════════════════════════════
 	admin := app.Group("/admin", auth, adm)

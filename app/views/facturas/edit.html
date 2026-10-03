@@ -1,0 +1,21 @@
+<div class="tf-loads-page">
+    <header class="tf-page-header"><div><p><a href="/facturas/{{ .factura.ID }}"><i class="bi bi-arrow-left"></i> Volver al detalle</a></p><h1><i class="bi bi-pencil-square"></i> Editar borrador</h1><p>Factura {{ .factura.NumeroFactura }} · #{{ .factura.ID }}</p></div></header>
+    {{ if .flash_error }}<div class="alert alert-danger" role="alert">{{ .flash_error }}</div>{{ end }}
+    <form method="post" action="/facturas/{{ .factura.ID }}" class="tf-form-page" id="invoiceEditForm">
+        <input type="hidden" name="_csrf" value="{{ .csrfToken }}">
+        <div class="tf-form-page__main">
+            <section class="tf-form-card">
+                <header class="tf-form-block__head"><i class="bi bi-calculator tf-form-block__icon"></i><div class="tf-form-block__text"><h2>Importes</h2><p>El total se calcula con el subtotal y los impuestos.</p></div></header>
+                <div class="tf-form-block__body tf-invoice-form">
+                    <label>Distancia (km)<input name="distancia_km" type="number" min="0" step="0.01" value="{{ .factura.DistanciaKm }}" required></label>
+                    <label>Tarifa por km<input name="tarifa_por_km" type="number" min="0" step="0.0001" value="{{ .factura.TarifaPorKm }}" required></label>
+                    <label>Subtotal<input name="subtotal" type="number" min="0" step="0.01" value="{{ .factura.Subtotal }}" required></label>
+                    <label>Impuestos<input name="impuestos" type="number" min="0" step="0.01" value="{{ .factura.Impuestos }}" required></label>
+                    <label>Moneda<select name="moneda" required><option value="CUP" {{ if eq (printf "%s" .factura.Moneda) "CUP" }}selected{{ end }}>CUP</option><option value="MLC" {{ if eq (printf "%s" .factura.Moneda) "MLC" }}selected{{ end }}>MLC</option><option value="USD" {{ if eq (printf "%s" .factura.Moneda) "USD" }}selected{{ end }}>USD</option><option value="EUR" {{ if eq (printf "%s" .factura.Moneda) "EUR" }}selected{{ end }}>EUR</option></select></label>
+                    <label>Método de pago previsto<input name="metodo_pago" maxlength="50" value="{{ if .factura.MetodoPago }}{{ .factura.MetodoPago }}{{ end }}" placeholder="Transferencia, efectivo…"></label>
+                </div>
+            </section>
+        </div>
+        <aside class="tf-form-page__aside"><div class="tf-form-card"><h2>Resumen actual</h2><dl class="tf-summary"><div class="tf-summary__row"><dt>Subtotal</dt><dd>{{ .factura.Subtotal }} {{ .factura.Moneda }}</dd></div><div class="tf-summary__row"><dt>Impuestos</dt><dd>{{ .factura.Impuestos }} {{ .factura.Moneda }}</dd></div><div class="tf-summary__row tf-summary__row--highlight"><dt>Total</dt><dd>{{ .factura.Total }} {{ .factura.Moneda }}</dd></div></dl><button class="btn btn-primary tf-w-full" type="submit"><i class="bi bi-save"></i> Guardar cambios</button><a class="btn btn-secondary tf-w-full" href="/facturas/{{ .factura.ID }}">Descartar</a></div></aside>
+    </form>
+</div>

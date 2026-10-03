@@ -1,9 +1,10 @@
 package controllers_test
 
 import (
+	"goravel/app/facades"
 	"goravel/app/http/controllers"
 	"goravel/app/models"
-	"goravel/app/facades"
+	"goravel/app/viewhelpers"
 	"goravel/bootstrap"
 	"goravel/tests"
 	"io"
@@ -33,6 +34,7 @@ func TestMain(m *testing.M) {
 	viewsPath := filepath.Join(root, "app", "views")
 
 	engine := html.New(viewsPath, ".html")
+	viewhelpers.Register(engine)
 	testApp = fiber.New(fiber.Config{Views: engine})
 
 	// Registrar SOLO las rutas que necesitamos, sin rate limiter
@@ -83,10 +85,10 @@ func TestHandleRegister_Chofer_NewEmpresa(t *testing.T) {
 		"phone": {"+5355555555"}, "whatsapp": {"+5355555555"},
 		"city": {"La Habana"}, "state": {"La Habana"},
 		"country": {"Cuba"}, "radius": {"100"},
-		"empresa_mode": {"new"},
-		"empresa_nombre_legal": {"Transportes Juan S.A."},
-		"chofer_numero_licencia": {"LIC-JUAN-001"},
-		"chofer_tipo_licencia": {"A"},
+		"empresa_mode":             {"new"},
+		"empresa_nombre_legal":     {"Transportes Juan S.A."},
+		"chofer_numero_licencia":   {"LIC-JUAN-001"},
+		"chofer_tipo_licencia":     {"A"},
 		"chofer_anios_experiencia": {"5"},
 	}
 
@@ -135,10 +137,10 @@ func TestHandleRegister_Chofer_ExistingEmpresa(t *testing.T) {
 		"phone": {"+5355555555"}, "whatsapp": {"+5355555555"},
 		"city": {"La Habana"}, "state": {"La Habana"},
 		"country": {"Cuba"}, "radius": {"100"},
-		"empresa_mode": {"existing"},
-		"empresa_id": {strconv.FormatUint(uint64(emp.ID), 10)},
-		"chofer_numero_licencia": {"LIC-PEDRO"},
-		"chofer_tipo_licencia": {"B"},
+		"empresa_mode":             {"existing"},
+		"empresa_id":               {strconv.FormatUint(uint64(emp.ID), 10)},
+		"chofer_numero_licencia":   {"LIC-PEDRO"},
+		"chofer_tipo_licencia":     {"B"},
 		"chofer_anios_experiencia": {"3"},
 	}
 
@@ -167,9 +169,9 @@ func TestHandleRegister_Chofer_NoEmpresa(t *testing.T) {
 		"phone": {"+5355555555"}, "whatsapp": {"+5355555555"},
 		"city": {"La Habana"}, "state": {"La Habana"},
 		"country": {"Cuba"}, "radius": {"100"},
-		"empresa_mode": {"none"},
-		"chofer_numero_licencia": {"LIC-SIN"},
-		"chofer_tipo_licencia": {"A"},
+		"empresa_mode":             {"none"},
+		"chofer_numero_licencia":   {"LIC-SIN"},
+		"chofer_tipo_licencia":     {"A"},
 		"chofer_anios_experiencia": {"1"},
 	}
 
@@ -202,10 +204,10 @@ func TestHandleRegister_Publicador_NewEmpresa(t *testing.T) {
 		"phone": {"+5355555555"}, "whatsapp": {"+5355555555"},
 		"city": {"La Habana"}, "state": {"La Habana"},
 		"country": {"Cuba"}, "radius": {"50"},
-		"empresa_mode": {"new"},
-		"empresa_nombre_legal": {"Brokers Ana S.A."},
+		"empresa_mode":                      {"new"},
+		"empresa_nombre_legal":              {"Brokers Ana S.A."},
 		"publicador_numero_licencia_broker": {"BRK-ANA-001"},
-		"publicador_anios_experiencia": {"4"},
+		"publicador_anios_experiencia":      {"4"},
 	}
 
 	resp := postForm(t, "/register", form)
@@ -236,9 +238,9 @@ func TestHandleRegister_Publicador_NoEmpresa(t *testing.T) {
 		"phone": {"+5355555555"}, "whatsapp": {"+5355555555"},
 		"city": {"La Habana"}, "state": {"La Habana"},
 		"country": {"Cuba"}, "radius": {"50"},
-		"empresa_mode": {"none"},
+		"empresa_mode":                      {"none"},
 		"publicador_numero_licencia_broker": {"BRK-SOLO"},
-		"publicador_anios_experiencia": {"2"},
+		"publicador_anios_experiencia":      {"2"},
 	}
 
 	resp := postForm(t, "/register", form)
@@ -301,9 +303,9 @@ func TestHandleRegister_DuplicateEmail(t *testing.T) {
 		"phone": {"+5355555555"}, "whatsapp": {"+5355555555"},
 		"city": {"La Habana"}, "state": {"La Habana"},
 		"country": {"Cuba"}, "radius": {"100"},
-		"empresa_mode": {"none"},
-		"chofer_numero_licencia": {"LIC-001"},
-		"chofer_tipo_licencia": {"A"},
+		"empresa_mode":             {"none"},
+		"chofer_numero_licencia":   {"LIC-001"},
+		"chofer_tipo_licencia":     {"A"},
 		"chofer_anios_experiencia": {"1"},
 	}
 	postForm(t, "/register", base)
@@ -315,9 +317,9 @@ func TestHandleRegister_DuplicateEmail(t *testing.T) {
 		"phone": {"+5355555555"}, "whatsapp": {"+5355555555"},
 		"city": {"La Habana"}, "state": {"La Habana"},
 		"country": {"Cuba"}, "radius": {"100"},
-		"empresa_mode": {"none"},
-		"chofer_numero_licencia": {"LIC-002"},
-		"chofer_tipo_licencia": {"B"},
+		"empresa_mode":             {"none"},
+		"chofer_numero_licencia":   {"LIC-002"},
+		"chofer_tipo_licencia":     {"B"},
 		"chofer_anios_experiencia": {"2"},
 	}
 	resp := postForm(t, "/register", form2)
@@ -358,10 +360,10 @@ func TestHandleRegister_ExistingEmpresaDeOtroTipo(t *testing.T) {
 		"phone": {"+5355555555"}, "whatsapp": {"+5355555555"},
 		"city": {"La Habana"}, "state": {"La Habana"},
 		"country": {"Cuba"}, "radius": {"100"},
-		"empresa_mode": {"existing"},
-		"empresa_id": {strconv.FormatUint(uint64(empBroker.ID), 10)},
-		"chofer_numero_licencia": {"LIC-X"},
-		"chofer_tipo_licencia": {"A"},
+		"empresa_mode":             {"existing"},
+		"empresa_id":               {strconv.FormatUint(uint64(empBroker.ID), 10)},
+		"chofer_numero_licencia":   {"LIC-X"},
+		"chofer_tipo_licencia":     {"A"},
 		"chofer_anios_experiencia": {"1"},
 	}
 
@@ -386,9 +388,9 @@ func TestHandleRegister_PasswordIsHashed(t *testing.T) {
 		"phone": {"+5355555555"}, "whatsapp": {"+5355555555"},
 		"city": {"La Habana"}, "state": {"La Habana"},
 		"country": {"Cuba"}, "radius": {"100"},
-		"empresa_mode": {"none"},
-		"chofer_numero_licencia": {"LIC-001"},
-		"chofer_tipo_licencia": {"A"},
+		"empresa_mode":             {"none"},
+		"chofer_numero_licencia":   {"LIC-001"},
+		"chofer_tipo_licencia":     {"A"},
 		"chofer_anios_experiencia": {"1"},
 	}
 	postForm(t, "/register", form)

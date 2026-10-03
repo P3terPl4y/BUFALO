@@ -15,5 +15,6 @@ func Migrations() []schema.Migration {
 		&migrations.M20260916172015CreateCargasHistorialTable{},
 		&migrations.M20260916204352CreateUsersTable{},
 		&migrations.M20260917043858CreateDireccionesTable{},
+		&migrations.M20261003000001FixDireccionCoordinatePrecision{},
 	}
 }

@@ -351,6 +351,17 @@
                     <i class="bi bi-check2-circle"></i> Aceptar carga
                 </button>
             </form>
+            {{ else if and (eq .load.Estado "asignada") .load.Chofer (eq .load.Chofer.UserID $.userID) }}
+            <form action="/loads/{{ .load.ID }}/start-transit" method="POST" style="display:inline">
+                <input type="hidden" name="_csrf" value="{{ .csrfToken }}">
+                <button type="submit" class="btn btn-primary"><i class="bi bi-truck"></i> Iniciar tránsito</button>
+            </form>
+            {{ else if and (eq .load.Estado "en_transito") .load.Chofer (eq .load.Chofer.UserID $.userID) }}
+            <form action="/loads/{{ .load.ID }}/deliver" method="POST" style="display:inline"
+                  onsubmit="return confirm('¿Confirmas que esta carga fue entregada?')">
+                <input type="hidden" name="_csrf" value="{{ .csrfToken }}">
+                <button type="submit" class="btn btn-success"><i class="bi bi-check2-circle"></i> Confirmar entrega</button>
+            </form>
             {{ else }}
             <span class="tf-detail-note">
                 <i class="bi bi-info-circle"></i>

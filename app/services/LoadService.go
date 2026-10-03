@@ -20,9 +20,9 @@ func NewCargaService() *CargaService {
 func (s *CargaService) GetAllWithFilters(filters map[string]string, page, perPage int) ([]models.Carga, int64, error) {
 	query := facades.Orm().Query().
 		Model(&models.Carga{}).
-		With("Publicador").
+		With("Publicador.User").
 		With("Empresa").
-		With("Chofer").
+		With("Chofer.User").
 		With("OrigenDireccion").
 		With("DestinoDireccion")
 
@@ -88,9 +88,9 @@ func (s *CargaService) GetAllWithFilters(filters map[string]string, page, perPag
 func (s *CargaService) GetByID(id string) (*models.Carga, error) {
 	var c models.Carga
 	err := facades.Orm().Query().
-		With("Publicador").
+		With("Publicador.User").
 		With("Empresa").
-		With("Chofer").
+		With("Chofer.User").
 		With("OrigenDireccion").
 		With("DestinoDireccion").
 		With("Factura").
@@ -142,9 +142,65 @@ func (s *CargaService) AcceptLoadService(id string, choferID uint) error {
 // Asignar chofer — el publicador lo hace explícitamente
 // ─────────────────────────────────────────────────────────────
 func (s *CargaService) AssignChofer(cargaID string, choferID uint) error {
-	_, err := facades.Orm().Query().
+	if choferID == 0 {
+		return errors.New("chofer inválido")
+	}
+	var chofer models.Chofer
+	if err := facades.Orm().Query().Where("id = ?", choferID).First(&chofer); err != nil || chofer.ID == 0 {
+		return errors.New("chofer no encontrado")
+	}
+	if chofer.Estado != models.ChoferDisponible {
+		return errors.New("chofer no disponible")
+	}
+	result, err := facades.Orm().Query().
 		Model(&models.Carga{}).
 		Where("id = ?", cargaID).
-		Update(map[string]interface{}{"chofer_id": choferID})
-	return err
+		Where("estado = ?", models.CargaPublicada).
+		Where("chofer_id IS NULL").
+		Update(map[string]interface{}{"chofer_id": choferID, "estado": models.CargaAsignada})
+	if err != nil {
+		return err
+	}
+	if result.RowsAffected == 0 {
+		return errors.New("carga no está publicada o ya fue asignada")
+	}
+	return nil
+}
+
+// StartTransit moves a load to transit only when it is still assigned to this driver.
+func (s *CargaService) StartTransit(cargaID string, choferID uint) error {
+	if choferID == 0 {
+		return errors.New("chofer inválido")
+	}
+	result, err := facades.Orm().Query().Model(&models.Carga{}).
+		Where("id = ?", cargaID).
+		Where("chofer_id = ?", choferID).
+		Where("estado = ?", models.CargaAsignada).
+		Update("estado", models.CargaEnTransito)
+	if err != nil {
+		return err
+	}
+	if result.RowsAffected != 1 {
+		return errors.New("carga no asignada a este chofer o transición inválida")
+	}
+	return nil
+}
+
+// MarkDelivered completes a load only when the assigned driver has started transit.
+func (s *CargaService) MarkDelivered(cargaID string, choferID uint) error {
+	if choferID == 0 {
+		return errors.New("chofer inválido")
+	}
+	result, err := facades.Orm().Query().Model(&models.Carga{}).
+		Where("id = ?", cargaID).
+		Where("chofer_id = ?", choferID).
+		Where("estado = ?", models.CargaEnTransito).
+		Update(map[string]interface{}{"estado": models.CargaEntregada, "fecha_entrega": time.Now().UTC()})
+	if err != nil {
+		return err
+	}
+	if result.RowsAffected != 1 {
+		return errors.New("carga no asignada a este chofer o transición inválida")
+	}
+	return nil
 }

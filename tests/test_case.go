@@ -1,10 +1,8 @@
 package tests
 
 import (
-	"goravel/app/facades"
-	"log"
-
 	"github.com/stretchr/testify/suite"
+	"testing"
 )
 
 type TestCase struct {
@@ -13,15 +11,10 @@ type TestCase struct {
 
 // RefreshDatabase limpia las tablas entre tests.
 // Requiere que la app esté arrancada (ver TestMain en cada paquete).
-func (t *TestCase) RefreshDatabase() {
-	orm := facades.Orm()
-	if orm == nil {
-		t.FailNow("❌ facades.Orm() es nil — revisa que TestMain llame a bootstrap.Boot() y app.Boot()")
+func (t *TestCase) RefreshDatabase(current *testing.T) {
+	if err := RequireTestDatabase(); err != nil {
+		current.Fatal(err)
+		return
 	}
-
-	for _, table := range []string{"loads", "users"} {
-		if _, err := orm.Query().Exec("TRUNCATE TABLE " + table + " RESTART IDENTITY CASCADE"); err != nil {
-			log.Printf("RefreshDatabase: %s → %v", table, err)
-		}
-	}
+	ResetDB(current)
 }

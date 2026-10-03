@@ -11,6 +11,9 @@
                 <p class="tf-sub">Panel de administración de cargas</p>
             </div>
 
+            {{ if .flash_success }}
+            <div class="alert alert-success tf-mb-4" role="status">{{ .flash_success }}</div>
+            {{ end }}
             {{ if .flash_error }}
             <div class="alert alert-danger tf-mb-4">
                 <i class="bi bi-exclamation-triangle"></i>

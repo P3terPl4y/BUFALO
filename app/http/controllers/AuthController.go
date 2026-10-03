@@ -188,15 +188,18 @@ func (a *AuthController) HandleLogin(ctx fiber.Ctx) error {
 		})
 	}
 	log.Println(user.IsActive)
-	if !user.IsActive{
+	if !user.IsActive {
 		return ctx.Redirect().To("/login?flash_error=Usuario deshabilitado")
 	}
 	sess := session.FromContext(ctx)
 	if sess == nil {
 		return ctx.Redirect().To("/login?flash_error=Error de sesión")
 	}
-	_ = sess.Regenerate()
-	sess.Set("is_active",user.IsActive)
+	if err := sess.Regenerate(); err != nil {
+		log.Printf("Error regenerando sesión al iniciar sesión: %v", err)
+		return fiber.ErrInternalServerError
+	}
+	sess.Set("is_active", user.IsActive)
 	sess.Set("user_id", user.ID)
 	sess.Set("authenticated", true)
 	sess.Set("role", user.Role)

@@ -1,0 +1,74 @@
+<div class="tf-loads-page">
+    <header class="tf-page-header">
+        <div>
+            <p><a href="/facturas"><i class="bi bi-arrow-left"></i> Volver a facturas</a></p>
+            <h1><i class="bi bi-receipt-cutoff"></i> {{ .factura.NumeroFactura }}</h1>
+            <p>Detalle de la factura · Referencia #{{ .factura.ID }}</p>
+        </div>
+        {{ if eq (printf "%s" .factura.Estado) "borrador" }}
+        {{ if or (eq .role "publicador") (eq .role "admin") }}<a href="/facturas/{{ .factura.ID }}/edit" class="btn btn-secondary"><i class="bi bi-pencil-square"></i> Editar borrador</a>{{ end }}
+        {{ end }}
+    </header>
+
+    {{ if .flash_success }}<div class="alert alert-success" role="status">{{ .flash_success }}</div>{{ end }}
+    {{ if .flash_error }}<div class="alert alert-danger" role="alert">{{ .flash_error }}</div>{{ end }}
+
+    <section class="tf-profile__hero" aria-label="Resumen de factura">
+        <div class="tf-profile__identity">
+            <span class="text-muted">Estado actual</span>
+            <h2>
+                {{ if eq (printf "%s" .factura.Estado) "borrador" }}<span class="badge bg-light text-dark"><i class="bi bi-pencil"></i> Borrador</span>{{ end }}
+                {{ if eq (printf "%s" .factura.Estado) "emitida" }}<span class="badge bg-info"><i class="bi bi-send"></i> Emitida</span>{{ end }}
+                {{ if eq (printf "%s" .factura.Estado) "pagada" }}<span class="badge bg-success"><i class="bi bi-check-circle"></i> Pagada</span>{{ end }}
+                {{ if eq (printf "%s" .factura.Estado) "vencida" }}<span class="badge bg-danger"><i class="bi bi-exclamation-circle"></i> Vencida</span>{{ end }}
+                {{ if eq (printf "%s" .factura.Estado) "cancelada" }}<span class="badge bg-secondary"><i class="bi bi-x-circle"></i> Cancelada</span>{{ end }}
+            </h2>
+        </div>
+        <div class="tf-profile__id"><small>Total a cobrar</small><strong>{{ .factura.Total }}</strong><em>{{ .factura.Moneda }}</em></div>
+    </section>
+
+    <div class="tf-profile__grid">
+        <section class="tf-info-block" aria-labelledby="invoice-data-title">
+            <header class="tf-info-block__head"><i class="bi bi-file-earmark-text tf-info-block__icon"></i><div class="tf-info-block__text"><h2 id="invoice-data-title">Datos de la factura</h2><p>Partes y fechas del documento.</p></div></header>
+            <div class="tf-info-block__body"><dl class="tf-info-list">
+                <div class="tf-info-list__row"><dt>Emisor</dt><dd>{{ if .factura.Emisor }}{{ .factura.Emisor.NombreLegal }}{{ else }}Empresa #{{ .factura.EmisorID }}{{ end }}</dd></div>
+                <div class="tf-info-list__row"><dt>Receptor</dt><dd>{{ if .factura.Receptor }}{{ .factura.Receptor.NombreLegal }}{{ else }}Empresa #{{ .factura.ReceptorID }}{{ end }}</dd></div>
+                <div class="tf-info-list__row"><dt>Fecha de emisión</dt><dd>{{ .factura.FechaEmision.Format "02/01/2006" }}</dd></div>
+                <div class="tf-info-list__row"><dt>Vencimiento</dt><dd>{{ if .factura.FechaVencimiento }}{{ .factura.FechaVencimiento.Format "02/01/2006" }}{{ else }}Sin fecha de vencimiento{{ end }}</dd></div>
+                <div class="tf-info-list__row"><dt>Carga asociada</dt><dd>#{{ .factura.CargaID }}</dd></div>
+                <div class="tf-info-list__row"><dt>Método de pago</dt><dd>{{ if .factura.MetodoPago }}{{ .factura.MetodoPago }}{{ else }}Pendiente de registrar{{ end }}</dd></div>
+            </dl></div>
+        </section>
+
+        <section class="tf-info-block" aria-labelledby="invoice-amount-title">
+            <header class="tf-info-block__head"><i class="bi bi-calculator tf-info-block__icon"></i><div class="tf-info-block__text"><h2 id="invoice-amount-title">Desglose del importe</h2><p>Resumen de los conceptos facturados.</p></div></header>
+            <div class="tf-info-block__body"><dl class="tf-summary">
+                <div class="tf-summary__row"><dt>Distancia</dt><dd>{{ .factura.DistanciaKm }} km</dd></div>
+                <div class="tf-summary__row"><dt>Tarifa por km</dt><dd>{{ .factura.TarifaPorKm }} {{ .factura.Moneda }}</dd></div>
+                <div class="tf-summary__row"><dt>Subtotal</dt><dd>{{ .factura.Subtotal }} {{ .factura.Moneda }}</dd></div>
+                <div class="tf-summary__row"><dt>Impuestos</dt><dd>{{ .factura.Impuestos }} {{ .factura.Moneda }}</dd></div>
+                <div class="tf-summary__row tf-summary__row--highlight"><dt>Total</dt><dd>{{ .factura.Total }} {{ .factura.Moneda }}</dd></div>
+            </dl></div>
+        </section>
+    </div>
+
+    {{ if or (eq .role "publicador") (eq .role "admin") }}
+    <section class="tf-table-card" aria-labelledby="invoice-actions-title">
+        <header class="tf-table-card__header"><h2 class="tf-table-card__title" id="invoice-actions-title"><i class="bi bi-lightning-charge"></i> Próxima acción</h2></header>
+        <div class="tf-form-block__body tf-invoice-actions">
+            {{ if eq (printf "%s" .factura.Estado) "borrador" }}
+            <p>Revisa los importes y emite la factura cuando esté lista para enviar.</p>
+            <form method="post" action="/facturas/{{ .factura.ID }}/emitir"><input type="hidden" name="_csrf" value="{{ .csrfToken }}"><button class="btn btn-primary" type="submit"><i class="bi bi-send"></i> Emitir factura</button></form>
+            {{ end }}
+            {{ if or (eq (printf "%s" .factura.Estado) "emitida") (eq (printf "%s" .factura.Estado) "vencida") }}
+            <p>Registra el pago recibido para cerrar el ciclo de cobro.</p>
+            <form method="post" action="/facturas/{{ .factura.ID }}/pagar" class="tf-invoice-payment"><label for="metodo_pago">Método de pago</label><input id="metodo_pago" name="metodo_pago" maxlength="50" required placeholder="Transferencia, efectivo…"><button class="btn btn-success" type="submit"><i class="bi bi-check2-circle"></i> Registrar pago completo</button><input type="hidden" name="_csrf" value="{{ .csrfToken }}"></form>
+            {{ end }}
+            {{ if and (ne (printf "%s" .factura.Estado) "pagada") (ne (printf "%s" .factura.Estado) "cancelada") }}
+            <form method="post" action="/facturas/{{ .factura.ID }}/delete" onsubmit="return confirm('¿Cancelar esta factura?')"><input type="hidden" name="_csrf" value="{{ .csrfToken }}"><button class="btn btn-outline-danger" type="submit"><i class="bi bi-x-circle"></i> Cancelar factura</button></form>
+            {{ end }}
+            {{ if or (eq (printf "%s" .factura.Estado) "pagada") (eq (printf "%s" .factura.Estado) "cancelada") }}<p>Esta factura está cerrada y no tiene acciones pendientes.</p>{{ end }}
+        </div>
+    </section>
+    {{ end }}
+</div>

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"goravel/app/models"
+	"goravel/app/viewhelpers"
 	"goravel/bootstrap"
 	"goravel/routes"
 
@@ -52,8 +53,15 @@ func envBool(key string, def bool) bool {
 
 // ensureAdminUser crea un usuario administrador si no existe en la base de datos.
 func ensureAdminUser() {
-	adminEmail := "admin@example.com"
-	adminPassword := "Admin123!"
+	adminEmail := os.Getenv("BOOTSTRAP_ADMIN_EMAIL")
+	adminPassword := os.Getenv("BOOTSTRAP_ADMIN_PASSWORD")
+	if adminEmail == "" || adminPassword == "" {
+		return
+	}
+	if len(adminPassword) < 12 {
+		log.Println("BOOTSTRAP_ADMIN_PASSWORD requiere al menos 12 caracteres")
+		return
+	}
 	adminName := "Administrador"
 	adminRole := "admin"
 
@@ -127,14 +135,7 @@ func main() {
 	engine := html.New("./app/views", ".html")
 	engine.Reload(!isProd)
 	engine.Delims("{{", "}}")
-engine.AddFunc("deref", func(p *uint) uint {
-    if p == nil {
-        return 0
-    }
-    return *p
-})
-engine.AddFunc("add", func(a, b int) int { return a + b })
-engine.AddFunc("sub", func(a, b int) int { return a - b })
+	viewhelpers.Register(engine)
 	// ── Fiber app ──
 	appFiber := fiber.New(fiber.Config{
 		Views: engine,

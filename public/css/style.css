@@ -1986,3 +1986,18 @@ input[type="number"],input[type="datetime-local"]{font-variant-numeric:tabular-n
     right: 32px !important;
   }
 }
+
+/* Facturación: formularios y acciones con jerarquía clara y adaptación móvil. */
+.tf-invoice-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem 1.25rem}
+.tf-invoice-form label,.tf-invoice-payment label{display:flex;flex-direction:column;gap:.4rem;font-size:.88rem;font-weight:600;color:var(--tf-text)}
+.tf-invoice-form input,.tf-invoice-form select,.tf-invoice-payment input{width:100%;min-height:42px;padding:.6rem .75rem;border:1px solid var(--tf-border-strong);border-radius:var(--tf-radius-sm);background:var(--tf-surface-2);color:var(--tf-text)}
+.tf-invoice-form input:focus,.tf-invoice-form select:focus,.tf-invoice-payment input:focus{outline:none;border-color:var(--tf-yellow-500);box-shadow:var(--tf-focus-ring)}
+.tf-invoice-actions{display:flex;align-items:center;gap:1rem;flex-wrap:wrap}
+.tf-invoice-actions>p{flex:1 1 100%;margin:0;color:var(--tf-text-muted)}
+.tf-invoice-actions form{margin:0}
+.tf-invoice-payment{display:flex;align-items:end;gap:.75rem;flex:1 1 100%;max-width:720px}
+.tf-invoice-payment label{flex:1}
+.tf-invoice-payment button{white-space:nowrap}
+.tf-pagination-wrap{display:flex;align-items:center;justify-content:space-between;gap:1rem;color:var(--tf-text-muted)}
+.tf-loads-page .tf-empty p{margin:0;color:var(--tf-text-muted)}
+@media (max-width:640px){.tf-invoice-form{grid-template-columns:1fr}.tf-invoice-payment{align-items:stretch;flex-direction:column}.tf-pagination-wrap{align-items:flex-start;flex-direction:column}}

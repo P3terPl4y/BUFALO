@@ -965,9 +965,7 @@ func (c *AdminController) FacturasDelete(ctx fiber.Ctx) error {
 func (c *AdminController) FacturasPagar(ctx fiber.Ctx) error {
 	id := ctx.Params("id")
 	metodo := ctx.FormValue("metodo_pago")
-	if metodo == "" {
-		metodo = "transferencia"
-	}
+
 	if err := c.facturaService.MarcarPagada(id, metodo); err != nil {
 		return ctx.Redirect().To("/admin/facturas/" + id + "?flash_error=Error al marcar pagada")
 	}

@@ -25,7 +25,7 @@ func TestUserServiceTestSuite(t *testing.T) {
 // Se ejecuta antes de cada test
 func (s *UserServiceTestSuite) SetupTest() {
 	// Opcional: limpiar tabla users
-	s.RefreshDatabase()
+	s.RefreshDatabase(s.T())
 }
 
 func (s *UserServiceTestSuite) TestCreate_Success() {

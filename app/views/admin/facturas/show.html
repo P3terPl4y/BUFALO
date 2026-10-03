@@ -9,7 +9,7 @@
             <span class="tf-breadcrumb__current">{{ .factura.NumeroFactura }}</span>
         </div>
         <div class="tf-profile__actions">
-            <a href="/admin/facturas/{{ .factura.ID }}/edit" class="btn btn-primary">
+            <a href="/facturas/{{ .factura.ID }}/edit" class="btn btn-primary">
                 <i class="bi bi-pencil-square"></i> Editar
             </a>
         </div>
@@ -52,7 +52,10 @@
     <footer class="tf-profile__footer">
         <a href="/admin/facturas" class="btn btn-secondary"><i class="bi bi-arrow-left"></i> Volver</a>
         <div class="tf-flex">
-            {{ if ne (printf "%v" .factura.Estado) "pagada" }}
+            {{ if eq (printf "%v" .factura.Estado) "borrador" }}
+ <form action="/facturas/{{ .factura.ID }}/emitir" method="POST"><input type="hidden" name="_csrf" value="{{ .csrfToken }}"><button type="submit">Emitir</button></form>
+ {{ end }}
+ {{ if or (eq (printf "%v" .factura.Estado) "emitida") (eq (printf "%v" .factura.Estado) "vencida") }}
             <form action="/admin/facturas/{{ .factura.ID }}/pagar" method="POST" style="display:inline">
                 <input type="hidden" name="_csrf" value="{{ .csrfToken }}">
                 <input type="hidden" name="metodo_pago" value="transferencia">
@@ -62,9 +65,9 @@
             </form>
             {{ end }}
             <form action="/admin/facturas/{{ .factura.ID }}/delete" method="POST"
-                  onsubmit="return confirm('¿Eliminar?')" style="display:inline">
+                  onsubmit="return confirm('¿Cancelar factura?')" style="display:inline">
                 <input type="hidden" name="_csrf" value="{{ .csrfToken }}">
-                <button type="submit" class="btn btn-outline-danger"><i class="bi bi-trash"></i> Eliminar</button>
+                <button type="submit" class="btn btn-outline-danger"><i class="bi bi-trash"></i> Cancelar</button>
             </form>
         </div>
     </footer>

@@ -19,7 +19,7 @@ func TestProfileTestSuite(t *testing.T) {
 }
 
 func (s *ProfileTestSuite) SetupTest() {
-	s.RefreshDatabase()
+	s.RefreshDatabase(s.T())
 }
 
 func (s *ProfileTestSuite) TestUpdate_ChangesName() {

@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"testing"
 
+	"goravel/app/services"
 	"goravel/tests"
 
 	"github.com/stretchr/testify/suite"
@@ -19,7 +20,7 @@ func TestAuthTestSuite(t *testing.T) {
 }
 
 func (s *AuthTestSuite) SetupTest() {
-	s.RefreshDatabase()
+	s.RefreshDatabase(s.T())
 }
 
 func (s *AuthTestSuite) TestLogin_Success() {
@@ -51,7 +52,7 @@ func (s *AuthTestSuite) TestLogin_WrongPassword() {
 func (s *AuthTestSuite) TestRegister_Success() {
 	client := newClient()
 	resp := postForm(s.T(), client, "/register", map[string]string{
-		"name":     "New User",
+		"name": "New User", "role": "publicador", "city": "La Habana", "state": "La Habana", "country": "Cuba", "radius": "100", "phone": "+5355555555", "whatsapp": "+5355555555", "empresa_mode": "none", "publicador_numero_licencia_broker": "NEW-USER", "publicador_anios_experiencia": "1",
 		"email":    "new@test.com",
 		"password": "password123",
 	})
@@ -74,4 +75,28 @@ func (s *AuthTestSuite) TestRegister_DuplicateEmail() {
 	})
 	s.Equal(http.StatusOK, resp.StatusCode)
 	s.Contains(readBody(s.T(), resp), "email")
+}
+
+func (s *AuthTestSuite) TestSessionRoleChangeRevokesAdminAccess() {
+	user := seedUser(s.T(), "Former admin", "former-admin@test.com", "password123", "admin")
+	client := login(s.T(), user.Email, "password123")
+	s.NoError(services.NewUserService().Update(user.ID, map[string]interface{}{"role": "chofer"}))
+	resp := get(s.T(), client, "/admin")
+	defer resp.Body.Close()
+	s.Equal(http.StatusSeeOther, resp.StatusCode)
+	s.Contains(resp.Header.Get("Location"), "/home")
+}
+
+func (s *AuthTestSuite) TestDisabledAccountSessionIsDestroyed() {
+	user := seedUser(s.T(), "Disabled", "disabled@test.com", "password123", "admin")
+	client := login(s.T(), user.Email, "password123")
+	s.NoError(services.NewUserService().ToggleActive(user.ID, false))
+	resp := get(s.T(), client, "/admin")
+	defer resp.Body.Close()
+	s.Equal(http.StatusSeeOther, resp.StatusCode)
+	s.Contains(resp.Header.Get("Location"), "/login")
+	resp = get(s.T(), client, "/admin")
+	defer resp.Body.Close()
+	s.Equal(http.StatusSeeOther, resp.StatusCode)
+	s.Contains(resp.Header.Get("Location"), "/login")
 }

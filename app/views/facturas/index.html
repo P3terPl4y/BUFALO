@@ -1,0 +1,53 @@
+<div class="tf-loads-page">
+    <header class="tf-page-header">
+        <div>
+            <h1><i class="bi bi-receipt-cutoff"></i> Facturación</h1>
+            <p>Consulta el estado de cobro y abre una factura para ver sus detalles.</p>
+        </div>
+        {{ if or (eq .role "publicador") (eq .role "admin") }}
+        <a class="btn btn-primary" href="/facturas/create"><i class="bi bi-plus-lg"></i> Crear borrador</a>
+        {{ end }}
+    </header>
+
+    {{ if .flash_success }}<div class="alert alert-success" role="status">{{ .flash_success }}</div>{{ end }}
+    {{ if .flash_error }}<div class="alert alert-danger" role="alert">{{ .flash_error }}</div>{{ end }}
+
+    <section class="tf-table-card" aria-labelledby="invoice-list-title">
+        <header class="tf-table-card__header">
+            <h2 class="tf-table-card__title" id="invoice-list-title"><i class="bi bi-list-ul"></i> Tus facturas</h2>
+            <span class="tf-table-card__count">{{ .total }} registros</span>
+        </header>
+        <div class="table-responsive">
+            <table class="tf-table">
+                <thead><tr><th scope="col">Factura</th><th scope="col">Emisión</th><th scope="col">Estado</th><th scope="col">Importe total</th><th scope="col"><span class="visually-hidden">Acciones</span></th></tr></thead>
+                <tbody>
+                    {{ range .facturas }}
+                    <tr>
+                        <td class="tf-cell-title"><a href="/facturas/{{ .ID }}">{{ .NumeroFactura }}</a><small class="d-block text-muted">#{{ .ID }}</small></td>
+                        <td>{{ .FechaEmision.Format "02/01/2006" }}</td>
+                        <td>
+                            {{ if eq (printf "%s" .Estado) "borrador" }}<span class="badge bg-light text-dark"><i class="bi bi-pencil"></i> Borrador</span>{{ end }}
+                            {{ if eq (printf "%s" .Estado) "emitida" }}<span class="badge bg-info"><i class="bi bi-send"></i> Emitida</span>{{ end }}
+                            {{ if eq (printf "%s" .Estado) "pagada" }}<span class="badge bg-success"><i class="bi bi-check-circle"></i> Pagada</span>{{ end }}
+                            {{ if eq (printf "%s" .Estado) "vencida" }}<span class="badge bg-danger"><i class="bi bi-exclamation-circle"></i> Vencida</span>{{ end }}
+                            {{ if eq (printf "%s" .Estado) "cancelada" }}<span class="badge bg-secondary"><i class="bi bi-x-circle"></i> Cancelada</span>{{ end }}
+                        </td>
+                        <td><strong>{{ .Total }} {{ .Moneda }}</strong></td>
+                        <td class="tf-cell-actions"><a class="btn btn-outline-primary" href="/facturas/{{ .ID }}" aria-label="Ver factura {{ .NumeroFactura }}"><i class="bi bi-arrow-right-circle"></i> Ver</a></td>
+                    </tr>
+                    {{ else }}
+                    <tr><td colspan="5"><div class="tf-empty"><div class="tf-empty__icon"><i class="bi bi-receipt"></i></div><h3>Aún no hay facturas</h3><p>Cuando se genere una factura, aparecerá aquí con su estado e importe.</p></div></td></tr>
+                    {{ end }}
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <nav class="tf-pagination-wrap" aria-label="Paginación de facturas">
+        <span>Página {{ .page }} · {{ .total }} facturas</span>
+        <div class="tf-action-group">
+            {{ if gt .page 1 }}<a class="btn btn-secondary" href="/facturas?page={{ sub .page 1 }}&amp;per_page={{ .perPage }}"><i class="bi bi-arrow-left"></i> Anterior</a>{{ end }}
+            {{ if .hasNext }}<a class="btn btn-secondary" href="/facturas?page={{ add .page 1 }}&amp;per_page={{ .perPage }}">Siguiente <i class="bi bi-arrow-right"></i></a>{{ end }}
+        </div>
+    </nav>
+</div>

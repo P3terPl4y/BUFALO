@@ -43,8 +43,15 @@ func (c *CargaController) getCurrentUserID(ctx fiber.Ctx) (uint, error) {
 	return 0, fiber.ErrUnauthorized
 }
 
-func (c *CargaController) getAllDestinations() []models.Direccion {
-	dests, err := c.direccionService.GetAll()
+func (c *CargaController) getAllDestinations(ctx fiber.Ctx) []models.Direccion {
+	userID, role := currentUser(ctx)
+	var dests []models.Direccion
+	var err error
+	if role == "admin" {
+		dests, err = c.direccionService.GetAll()
+	} else {
+		dests, err = c.direccionService.GetOwnedByUserID(userID)
+	}
 	if err != nil {
 		log.Printf("Error al obtener direcciones: %v", err)
 		return []models.Direccion{}
@@ -76,13 +83,19 @@ func (c *CargaController) Index(ctx fiber.Ctx) error {
 	// admin:      ve todas
 	switch role {
 	case "publicador":
-		if pub, err := c.publicadorService.GetByUserID(userID); err == nil {
-			filters["publicador_id"] = strconv.FormatUint(uint64(pub.ID), 10)
+		pub, err := c.publicadorService.GetByUserID(userID)
+		if err != nil {
+			log.Printf("No se pudo resolver perfil publicador user_id=%d: %v", userID, err)
+			return ctx.SendStatus(fiber.StatusForbidden)
 		}
+		filters["publicador_id"] = strconv.FormatUint(uint64(pub.ID), 10)
 	case "chofer":
-		if ch, err := c.choferService.GetByUserID(userID); err == nil {
-			filters["chofer_id"] = strconv.FormatUint(uint64(ch.ID), 10)
+		ch, err := c.choferService.GetByUserID(userID)
+		if err != nil {
+			log.Printf("No se pudo resolver perfil chofer user_id=%d: %v", userID, err)
+			return ctx.SendStatus(fiber.StatusForbidden)
 		}
+		filters["chofer_id"] = strconv.FormatUint(uint64(ch.ID), 10)
 	}
 
 	page, _ := strconv.Atoi(ctx.Query("page", "1"))
@@ -142,6 +155,7 @@ func (c *CargaController) Show(ctx fiber.Ctx) error {
 		"csrfToken": csrf.TokenFromContext(ctx),
 		"hasMap":    hasMap,
 		"role":      role,
+		"userID":    userID,
 	}, "layouts/base")
 }
 
@@ -178,7 +192,7 @@ func (c *CargaController) Create(ctx fiber.Ctx) error {
 	sess := session.FromContext(ctx)
 	return ctx.Render("dashboard/create", fiber.Map{
 		"title":        "Nueva Carga",
-		"destinations": c.getAllDestinations(),
+		"destinations": c.getAllDestinations(ctx),
 		"csrfToken":    csrf.TokenFromContext(ctx),
 		"role":         sess.Get("role"),
 	}, "layouts/base")
@@ -204,7 +218,7 @@ func (c *CargaController) Store(ctx fiber.Ctx) error {
 		return ctx.Render("dashboard/create", fiber.Map{
 			"title":        "Nueva Carga",
 			"flash_error":  "Datos inválidos",
-			"destinations": c.getAllDestinations(),
+			"destinations": c.getAllDestinations(ctx),
 			"csrfToken":    csrf.TokenFromContext(ctx),
 		}, "layouts/base")
 	}
@@ -237,7 +251,7 @@ func (c *CargaController) Store(ctx fiber.Ctx) error {
 			"flash_error":  "Error de validación",
 			"errors":       errs,
 			"old":          req,
-			"destinations": c.getAllDestinations(),
+			"destinations": c.getAllDestinations(ctx),
 			"csrfToken":    csrf.TokenFromContext(ctx),
 		}, "layouts/base")
 	}
@@ -314,7 +328,7 @@ func (c *CargaController) Edit(ctx fiber.Ctx) error {
 		"title":        "Editar Carga",
 		"load":         carga,
 		"role":         role,
-		"destinations": c.getAllDestinations(),
+		"destinations": c.getAllDestinations(ctx),
 		"csrfToken":    csrf.TokenFromContext(ctx),
 	}, "layouts/base")
 }
@@ -437,6 +451,40 @@ func (c *CargaController) AcceptLoad(ctx fiber.Ctx) error {
 		return ctx.Redirect().To("/home?flash_error=No se pudo aceptar la carga")
 	}
 	return ctx.Redirect().To("/home?flash_success=Carga aceptada correctamente")
+}
+
+// StartTransit lets only the assigned driver begin the journey.
+func (c *CargaController) StartTransit(ctx fiber.Ctx) error {
+	userID, err := c.getCurrentUserID(ctx)
+	if err != nil {
+		return ctx.Redirect().To("/login")
+	}
+	chofer, err := c.choferService.GetByUserID(userID)
+	if err != nil {
+		return ctx.Redirect().To("/home?flash_error=Debes tener un perfil de chofer")
+	}
+	id := ctx.Params("id")
+	if err := c.cargaService.StartTransit(id, chofer.ID); err != nil {
+		return ctx.Redirect().To(fmt.Sprintf("/loads/%s?flash_error=No se pudo iniciar el tránsito", id))
+	}
+	return ctx.Redirect().To(fmt.Sprintf("/loads/%s?flash_success=Tránsito iniciado", id))
+}
+
+// MarkDelivered lets only the assigned driver complete a load already in transit.
+func (c *CargaController) MarkDelivered(ctx fiber.Ctx) error {
+	userID, err := c.getCurrentUserID(ctx)
+	if err != nil {
+		return ctx.Redirect().To("/login")
+	}
+	chofer, err := c.choferService.GetByUserID(userID)
+	if err != nil {
+		return ctx.Redirect().To("/home?flash_error=Debes tener un perfil de chofer")
+	}
+	id := ctx.Params("id")
+	if err := c.cargaService.MarkDelivered(id, chofer.ID); err != nil {
+		return ctx.Redirect().To(fmt.Sprintf("/loads/%s?flash_error=No se pudo registrar la entrega", id))
+	}
+	return ctx.Redirect().To(fmt.Sprintf("/loads/%s?flash_success=Carga entregada", id))
 }
 
 // ─────────────────────────────────────────────────────────────

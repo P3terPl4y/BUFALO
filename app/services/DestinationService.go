@@ -22,6 +22,19 @@ func (s *DireccionService) GetAll() ([]models.Direccion, error) {
 	return list, err
 }
 
+func (s *DireccionService) GetOwnedByUserID(userID uint) ([]models.Direccion, error) {
+	var list []models.Direccion
+	if userID == 0 {
+		return list, errors.New("usuario requerido para listar direcciones")
+	}
+	err := facades.Orm().Query().
+		Model(&models.Direccion{}).
+		Where("owner_id = ?", userID).
+		Order("estado_provincia asc, ciudad asc").
+		Find(&list)
+	return list, err
+}
+
 func (s *DireccionService) GetByID(id string) (*models.Direccion, error) {
 	var d models.Direccion
 	err := facades.Orm().Query().With("Owner").Where("id = ?", id).First(&d)

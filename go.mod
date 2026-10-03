@@ -3,6 +3,7 @@ module goravel
 go 1.25.0
 
 require (
+	github.com/AfterShip/email-verifier v1.5.0
 	github.com/gofiber/contrib/v3/jwt v1.2.2
 	github.com/gofiber/fiber/v3 v3.5.0
 	github.com/gofiber/storage/redis/v3 v3.6.0
@@ -19,7 +20,6 @@ require (
 	atomicgo.dev/cursor v0.2.0 // indirect
 	atomicgo.dev/keyboard v0.2.9 // indirect
 	atomicgo.dev/schedule v0.1.0 // indirect
-	github.com/AfterShip/email-verifier v1.5.0 // indirect
 	github.com/Masterminds/squirrel v1.5.4 // indirect
 	github.com/MicahParks/keyfunc/v2 v2.1.0 // indirect
 	github.com/andybalholm/brotli v1.2.3 // indirect

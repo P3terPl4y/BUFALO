@@ -1,18 +1,14 @@
 package middleware
 
-import (
-	"log"
-"github.com/gofiber/fiber/v3/middleware/session"
-	"github.com/gofiber/fiber/v3"
-)
+import "github.com/gofiber/fiber/v3"
 
+// IsActiveUserHandler remains for route compatibility; SessionAuth verifies
+// the authoritative account state in the database before this middleware runs.
 func IsActiveUserHandler() fiber.Handler {
 	return func(ctx fiber.Ctx) error {
-		isActive,_ := session.FromContext(ctx).Get("is_active").(bool)
-		log.Printf("Esta activo el usuario %v ?",isActive)
-		if isActive{
+		if active, _ := ctx.Locals("is_active").(bool); active {
 			return ctx.Next()
 		}
-		return ctx.Redirect().To("/login?flash_error=Usuario deshabilitado") 
+		return ctx.Redirect().To("/login?flash_error=Usuario deshabilitado")
 	}
 }

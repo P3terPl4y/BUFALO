@@ -1,38 +1,50 @@
 package middleware
 
 import (
-	"log"
-
+	"errors"
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/session"
+	frameworkerrors "github.com/goravel/framework/errors"
+	"goravel/app/facades"
+	"goravel/app/models"
+	"log"
 )
 
-// SessionAuth valida la sesión y asigna user_id al contexto
+// SessionAuth treats the database account as authoritative on every request.
+// This revokes stale sessions after disabling an account or changing its role.
 func SessionAuth() fiber.Handler {
 	return func(c fiber.Ctx) error {
-		log.Println("🔐 [SessionAuth] Validando sesión")
-
 		sess := session.FromContext(c)
 		if sess == nil {
-			log.Println("❌ [SessionAuth] sesión es nil")
 			return c.Redirect().To("/login")
 		}
-		log.Println("✅ [SessionAuth] sesión obtenida correctamente")
-
-		userID := sess.Get("user_id")
-		if userID == nil {
-			log.Println("❌ [SessionAuth] user_id no encontrado")
+		rawID := sess.Get("user_id")
+		userID, ok := rawID.(uint)
+		if !ok || userID == 0 {
 			return c.Redirect().To("/login")
 		}
-
-		userIDUint, ok := userID.(uint)
-		if !ok {
-			log.Printf("❌ [SessionAuth] user_id no es uint, es %T", userID)
-			return c.Redirect().To("/login")
+		var user models.User
+		if err := facades.Orm().Query().Where("id = ?", userID).First(&user); err != nil {
+			if !errors.Is(err, frameworkerrors.OrmRecordNotFound) {
+				log.Printf("session account lookup failed: %v", err)
+				return fiber.ErrServiceUnavailable
+			}
+			if destroyErr := sess.Destroy(); destroyErr != nil {
+				log.Printf("session revocation failed: %v", destroyErr)
+			}
+			return c.Redirect().To("/login?flash_error=Sesión inválida o usuario deshabilitado")
 		}
-
-		log.Printf("✅ [SessionAuth] user_id = %v", userIDUint)
-		c.Locals("user_id", userIDUint)
+		if user.ID == 0 || !user.IsActive {
+			if err := sess.Destroy(); err != nil {
+				log.Printf("session revocation failed: %v", err)
+			}
+			return c.Redirect().To("/login?flash_error=Sesión inválida o usuario deshabilitado")
+		}
+		sess.Set("role", user.Role)
+		sess.Set("is_active", user.IsActive)
+		c.Locals("user_id", user.ID)
+		c.Locals("role", user.Role)
+		c.Locals("is_active", user.IsActive)
 		return c.Next()
 	}
 }

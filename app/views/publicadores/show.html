@@ -1,0 +1,21 @@
+<div class="tf-profile">
+    <header class="tf-profile__header">
+        <div><a href="/publicadores">← Publicadores</a><h1>Perfil de publicador</h1></div>
+        {{ if eq .role "admin" }}<a href="/admin/publicadores/{{ .publicador.ID }}/edit" class="btn btn-primary">Editar</a>
+        {{ else if eq .currentUserID .publicador.UserID }}<a href="/publicadores/{{ .publicador.ID }}/edit" class="btn btn-primary">Editar</a>{{ end }}
+    </header>
+    {{ if .flash_success }}<div class="alert alert-success">{{ .flash_success }}</div>{{ end }}
+    {{ if .flash_error }}<div class="alert alert-danger">{{ .flash_error }}</div>{{ end }}
+    <section class="tf-info-block">
+        <h2>{{ if .publicador.User }}{{ .publicador.User.Name }}{{ else }}Publicador #{{ .publicador.ID }}{{ end }}</h2>
+        <dl class="tf-info-list">
+            <div class="tf-info-list__row"><dt>Empresa</dt><dd>{{ if .publicador.Empresa }}{{ .publicador.Empresa.NombreLegal }}{{ else }}—{{ end }}</dd></div>
+            <div class="tf-info-list__row"><dt>Licencia</dt><dd>{{ .publicador.NumeroLicenciaBroker }}</dd></div>
+            <div class="tf-info-list__row"><dt>País de emisión</dt><dd>{{ .publicador.PaisEmisionLicencia }}</dd></div>
+            <div class="tf-info-list__row"><dt>Experiencia</dt><dd>{{ .publicador.AniosExperiencia }} años</dd></div>
+            <div class="tf-info-list__row"><dt>Especialidad</dt><dd>{{ .publicador.Especialidad }}</dd></div>
+            <div class="tf-info-list__row"><dt>Comisión</dt><dd>{{ .publicador.Comision }}%</dd></div>
+            <div class="tf-info-list__row"><dt>Estado</dt><dd>{{ .publicador.Estado }}</dd></div>
+        </dl>
+    </section>
+</div>

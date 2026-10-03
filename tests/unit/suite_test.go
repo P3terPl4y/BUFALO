@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"goravel/bootstrap"
+	"goravel/tests"
 )
 
 // TestMain arranca la app (ORM, config, providers) antes de correr los tests.
@@ -16,5 +17,8 @@ func TestMain(m *testing.M) {
 
 	app := bootstrap.Boot()
 	app.Boot()
+	if err := tests.RunMigrations(); err != nil {
+		panic(err)
+	}
 	os.Exit(m.Run())
 }

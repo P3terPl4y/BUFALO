@@ -29,8 +29,8 @@
                     <tr>
                         <td class="tf-cell-id">#{{ .ID }}</td>
                         <td class="tf-cell-title">{{ .NumeroReferencia }}</td>
-                        <td>{{ if .Publicador }}{{ .Publicador.User.Name }}{{ else }}—{{ end }}</td>
-                        <td>{{ if .Chofer }}{{ .Chofer.User.Name }}{{ else }}<span class="empty-value">—</span>{{ end }}</td>
+                        <td>{{ if and .Publicador .Publicador.User }}{{ .Publicador.User.Name }}{{ else }}—{{ end }}</td>
+                        <td>{{ if and .Chofer .Chofer.User }}{{ .Chofer.User.Name }}{{ else }}<span class="empty-value">—</span>{{ end }}</td>
                         <td>
                             {{ if .OrigenDireccion }}{{ .OrigenDireccion.Ciudad }}{{ end }} →
                             {{ if .DestinoDireccion }}{{ .DestinoDireccion.Ciudad }}{{ end }}

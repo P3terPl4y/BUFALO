@@ -1,24 +1,31 @@
 package tests
 
 import (
+	"fmt"
+	"os"
+	"strings"
 	"testing"
 
 	"goravel/app/facades"
 	"goravel/app/models"
+	"goravel/bootstrap"
 )
 
 // ResetDB trunca todas las tablas respetando FK.
 func ResetDB(t *testing.T) {
 	t.Helper()
+	if err := RequireTestDatabase(); err != nil {
+		t.Fatal(err)
+	}
 	_, err := facades.Orm().Query().Exec(`
 		TRUNCATE TABLE
 			facturas,
 			cargas,
-			choferes,
-			publicadores,
+			chofers,
+			publicadors,
 			users,
 			empresas,
-			direcciones
+			direccions
 		RESTART IDENTITY CASCADE
 	`)
 	if err != nil {
@@ -26,9 +33,17 @@ func ResetDB(t *testing.T) {
 	}
 }
 
-// RunMigrations corre migrate:fresh una sola vez. Llamar desde TestMain.
+// RunMigrations creates the registered schema in an isolated test database.
 func RunMigrations() error {
-	return facades.Artisan().Run([]string{"migrate:fresh"}, false)
+	if err := RequireTestDatabase(); err != nil {
+		return err
+	}
+	for _, migration := range bootstrap.Migrations() {
+		if err := migration.Up(); err != nil {
+			return fmt.Errorf("migration %s: %w", migration.Signature(), err)
+		}
+	}
+	return nil
 }
 
 // SeedEmpresa crea una empresa de prueba y la devuelve.
@@ -122,3 +137,12 @@ func NewPublicadorProfile() *models.Publicador {
 
 func StrPtr(s string) *string { return &s }
 func PtrUint(v uint) *uint    { return &v }
+
+// RequireTestDatabase refuses destructive tests unless explicitly isolated.
+func RequireTestDatabase() error {
+	name := os.Getenv("DB_DATABASE")
+	if os.Getenv("APP_ENV") != "testing" || !strings.HasSuffix(name, "_test") || facades.Config().GetString("database.connections.postgres.database") != name {
+		return fmt.Errorf("tests require APP_ENV=testing and an explicit DB_DATABASE ending in _test matching active configuration")
+	}
+	return nil
+}

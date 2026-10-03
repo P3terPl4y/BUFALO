@@ -20,10 +20,10 @@ func TestAdminUsersTestSuite(t *testing.T) {
 }
 
 func (s *AdminUsersTestSuite) SetupTest() {
-	s.RefreshDatabase()
+	s.RefreshDatabase(s.T())
 }
 
-func (s *AdminUsersTestSuite) TestStore_CreatesBroker() {
+func (s *AdminUsersTestSuite) TestStore_CreatesPublicador() {
 	seedUser(s.T(), "Admin", "admin@test.com", "password123", "admin")
 	client := login(s.T(), "admin@test.com", "password123")
 
@@ -31,7 +31,7 @@ func (s *AdminUsersTestSuite) TestStore_CreatesBroker() {
 		"name":     "Broker Test",
 		"email":    "broker@test.com",
 		"password": "password123",
-		"role":     "broker",
+		"role":     "publicador", "city": "La Habana", "state": "La Habana", "country": "Cuba", "radius": "100", "empresa_mode": "none", "publicador_numero_licencia_broker": "BROKER-TEST", "publicador_anios_experiencia": "1",
 	})
 	defer resp.Body.Close()
 
@@ -42,7 +42,7 @@ func (s *AdminUsersTestSuite) TestStore_CreatesBroker() {
 	users, total, _ := svc.GetAllWithFilters(map[string]string{"search": "broker@test.com"}, 1, 10)
 	s.Equal(int64(1), total)
 	s.Require().Len(users, 1)
-	s.Equal("broker", users[0].Role)
+	s.Equal("publicador", users[0].Role)
 	s.True(users[0].IsActive)
 }
 
@@ -74,7 +74,7 @@ func (s *AdminUsersTestSuite) TestStore_DuplicateEmail() {
 		"name":     "B",
 		"email":    "dup@test.com",
 		"password": "password123",
-		"role":     "broker",
+		"role":     "publicador", "city": "La Habana", "state": "La Habana", "country": "Cuba", "radius": "100", "empresa_mode": "none", "publicador_numero_licencia_broker": "BROKER-TEST", "publicador_anios_experiencia": "1",
 	})
 	resp.Body.Close()
 
