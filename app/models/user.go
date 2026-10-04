@@ -11,18 +11,19 @@ type User struct {
 	orm.Model
 
 	// ── Identidad y acceso ──
-	Name     string `gorm:"column:name;type:varchar(100);not null"`
-	Email    string `gorm:"column:email;type:varchar(100);uniqueIndex;not null"`
-	Password string `gorm:"column:password;type:varchar(255);not null"`
-	Role     string `gorm:"column:role;type:varchar(50);index"` // admin | publicador | chofer
+	Name         string `gorm:"column:name;type:varchar(100);not null"`
+	Email        string `gorm:"column:email;type:varchar(100);uniqueIndex;not null"`
+	Password     string `gorm:"column:password;type:varchar(255);not null"`
+	Role         string `gorm:"column:role;type:varchar(50);index"` // admin | publicador | chofer
+	ProfilePhoto string `gorm:"column:profile_photo;type:varchar(255)"`
 
 	// ── Contacto ──
-	Phone            *string `gorm:"column:phone;type:varchar(30)"`
-	PhoneAlt         *string `gorm:"column:phone_alt;type:varchar(30)"`
-	WhatsApp         *string `gorm:"column:whatsapp;type:varchar(30)"`
-	Telegram         *string `gorm:"column:telegram;type:varchar(60)"`
-	EmergencyName    *string `gorm:"column:emergency_name;type:varchar(100)"`
-	EmergencyPhone   *string `gorm:"column:emergency_phone;type:varchar(30)"`
+	Phone          *string `gorm:"column:phone;type:varchar(30)"`
+	PhoneAlt       *string `gorm:"column:phone_alt;type:varchar(30)"`
+	WhatsApp       *string `gorm:"column:whatsapp;type:varchar(30)"`
+	Telegram       *string `gorm:"column:telegram;type:varchar(60)"`
+	EmergencyName  *string `gorm:"column:emergency_name;type:varchar(100)"`
+	EmergencyPhone *string `gorm:"column:emergency_phone;type:varchar(30)"`
 
 	// ── Empresa a la que pertenece el usuario (opcional) ──
 	EmpresaID *uint    `gorm:"column:empresa_id;index"`

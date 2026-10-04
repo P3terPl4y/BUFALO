@@ -38,6 +38,7 @@ func (c *ChoferController) Index(ctx fiber.Ctx) error {
 	filters := map[string]string{
 		"estado": ctx.Query("estado"),
 		"q":      ctx.Query("q"),
+		"orden":  ctx.Query("orden"),
 	}
 
 	// Un carrier solo ve los choferes de su empresa
@@ -58,13 +59,14 @@ func (c *ChoferController) Index(ctx fiber.Ctx) error {
 	}
 
 	return ctx.Render("choferes/index", fiber.Map{
-		"title":    "Choferes",
-		"choferes": list,
-		"total":    total,
-		"page":     page,
-		"perPage":  perPage,
-		"filters":  filters,
-		"role":     role,
+		"title":         "Choferes",
+		"choferes":      list,
+		"total":         total,
+		"page":          page,
+		"perPage":       perPage,
+		"filters":       filters,
+		"role":          role,
+		"currentUserID": userID,
 	}, "layouts/base")
 }
 

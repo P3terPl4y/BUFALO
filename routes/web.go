@@ -28,6 +28,8 @@ func SetupWebRoutes(app *fiber.App, limiterOverride ...fiber.Handler) {
 	loadInterestCtrl := controllers.NewLoadInterestController()
 	userCtrl := controllers.NewUserController()
 	adminCtrl := controllers.NewAdminController()
+	mobileCtrl := controllers.NewMobileController()
+	communityCtrl := controllers.NewDriverCommunityController()
 
 	// ============================================================
 	// PÚBLICAS
@@ -49,12 +51,25 @@ func SetupWebRoutes(app *fiber.App, limiterOverride ...fiber.Handler) {
 	// Atajo para no repetir: todas las rutas cuelgan de un solo Use
 	protected := app.Group("", auth, is_active)
 
+	// API used by the installable React mobile client. CSRF remains enabled for
+	// all mutations; the client gets its short-lived token from this endpoint.
+	app.Get("/api/mobile/csrf", mobileCtrl.CSRF)
+	protected.Get("/api/mobile/me", mobileCtrl.Me)
+	protected.Get("/api/mobile/loads", mobileCtrl.Loads)
+	protected.Post("/api/mobile/loads/:id<int>/accept", mobileCtrl.Accept)
+	protected.Post("/api/mobile/loads/:id<int>/start-transit", mobileCtrl.StartTransit)
+	protected.Post("/api/mobile/loads/:id<int>/deliver", mobileCtrl.Deliver)
+
 	// ── Generales ──
 	protected.Get("/home", authCtrl.ShowHome)
 	protected.Get("/logout", authCtrl.Logout)
 	protected.Get("/profile", userCtrl.Show)
 	protected.Get("/profile/edit", userCtrl.Edit)
 	protected.Post("/profile/update", userCtrl.Update)
+	protected.Post("/profile/photo", userCtrl.UploadPhoto)
+	protected.Get("/red-choferes", pub, communityCtrl.Index)
+	protected.Post("/red-choferes/:id<int>", pub, communityCtrl.Add)
+	protected.Post("/red-choferes/:id<int>/remove", pub, communityCtrl.Remove)
 
 	// ═══════════════════════════════════════════════════════════
 	// LECTURA (cualquier autenticado)
@@ -88,6 +103,7 @@ func SetupWebRoutes(app *fiber.App, limiterOverride ...fiber.Handler) {
 	protected.Post("/loads/:id<int>", pub, cargaCtrl.Update)
 	protected.Post("/loads/:id<int>/delete", pub, cargaCtrl.Delete)
 	protected.Post("/loads/:id<int>/assign-chofer", pub, cargaCtrl.AssignChofer)
+	protected.Post("/loads/:id<int>/rate-driver", pub, cargaCtrl.RateDriver)
 
 	// ═══════════════════════════════════════════════════════════
 	// CARGAS — aceptar / interés (chofer + admin)

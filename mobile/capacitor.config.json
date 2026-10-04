@@ -1,0 +1,8 @@
+{
+  "appId": "com.p3terplay.bufalo",
+  "appName": "BUFALO Operaciones",
+  "webDir": "dist",
+  "server": {
+    "allowNavigation": ["*"]
+  }
+}

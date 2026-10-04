@@ -1,0 +1,15 @@
+{
+  "id": "/mobile/",
+  "name": "BUFALO Operaciones",
+  "short_name": "BUFALO",
+  "description": "Gestión logística de cargas BUFALO",
+  "start_url": "/mobile/",
+  "scope": "/mobile/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#f4f6f2",
+  "theme_color": "#101b17",
+  "icons": [
+    { "src": "/img/bufalo-square.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

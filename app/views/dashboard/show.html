@@ -323,6 +323,21 @@
         </div>
     </section>
 
+    {{ if and (eq .role "publicador") (eq .load.Estado "entregada") .load.Chofer }}
+    <section class="tf-info-block" style="margin-bottom:1.5rem">
+        <header class="tf-info-block__head"><i class="bi bi-star-fill tf-info-block__icon"></i><div class="tf-info-block__text"><h2>Valoración del chofer</h2><p>Califica esta entrega para ayudar a otras empresas a elegir.</p></div></header>
+        <div class="tf-info-block__body">
+            {{ if .alreadyRated }}<p>Ya registraste una valoración para este viaje.</p>{{ else }}
+            <form action="/loads/{{ .load.ID }}/rate-driver" method="POST" class="tf-form-row">
+                <input type="hidden" name="_csrf" value="{{ .csrfToken }}">
+                <div class="tf-field"><label class="form-label" for="puntaje">Puntuación</label><select class="form-select" id="puntaje" name="puntaje" required><option value="">Selecciona…</option><option value="5">5 · Excelente</option><option value="4">4 · Muy bueno</option><option value="3">3 · Correcto</option><option value="2">2 · Mejorable</option><option value="1">1 · Deficiente</option></select></div>
+                <div class="tf-field"><label class="form-label" for="comentario">Comentario (opcional)</label><textarea class="form-control" id="comentario" name="comentario" maxlength="1000" rows="2"></textarea></div>
+                <button type="submit" class="btn btn-primary">Enviar valoración</button>
+            </form>{{ end }}
+        </div>
+    </section>
+    {{ end }}
+
     <!-- ══════════ FOOTER DE ACCIONES ══════════ -->
     <footer class="tf-profile__footer">
         <a href="/loads" class="btn btn-secondary">

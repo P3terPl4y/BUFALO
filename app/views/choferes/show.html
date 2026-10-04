@@ -25,7 +25,9 @@
     <!-- ══════════ HERO ══════════ -->
     <section class="tf-profile__hero">
         <div class="tf-profile__avatar">
+            {{ if and .chofer.User .chofer.User.ProfilePhoto }}<img src="{{ .chofer.User.ProfilePhoto }}" alt="Foto de {{ .chofer.User.Name }}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">{{ else }}
             <i class="bi bi-person-badge"></i>
+            {{ end }}
             <span class="tf-profile__avatar-status"></span>
         </div>
 
@@ -56,9 +58,9 @@
         </div>
 
         <div class="tf-profile__id">
-            <small>Experiencia</small>
-            <strong>{{ .chofer.AniosExperiencia }}</strong>
-            <em>años</em>
+            <small>Valoración de empresas</small>
+            <strong>{{ printf "%.1f" .chofer.RatingAverage }} ★</strong>
+            <em>{{ .chofer.RatingCount }} calificaciones · {{ .chofer.AniosExperiencia }} años de experiencia</em>
         </div>
     </section>
 

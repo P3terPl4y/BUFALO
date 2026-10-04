@@ -6,3 +6,7 @@
 !.env.example
 storage
 tmp
+
+# React/Capacitor mobile build outputs
+mobile/node_modules/
+mobile/dist/

@@ -138,14 +138,15 @@ func main() {
 	viewhelpers.Register(engine)
 	// ── Fiber app ──
 	appFiber := fiber.New(fiber.Config{
-		Views: engine,
+		Views:      engine,
+		BodyLimit:  6 << 20, // 5 MB profile images plus multipart headers.
 		TrustProxy: true,
-    // 2. Leer la IP real desde la cabecera que envía Ngrok
-    ProxyHeader: fiber.HeaderXForwardedFor,
-    // 3. Confiar solo en proxies locales (Ngrok se conecta desde 127.0.0.1)
-    TrustProxyConfig: fiber.TrustProxyConfig{
-        Loopback: true, // Confía en 127.0.0.0/8 y ::1/128
-    },
+		// 2. Leer la IP real desde la cabecera que envía Ngrok
+		ProxyHeader: fiber.HeaderXForwardedFor,
+		// 3. Confiar solo en proxies locales (Ngrok se conecta desde 127.0.0.1)
+		TrustProxyConfig: fiber.TrustProxyConfig{
+			Loopback: true, // Confía en 127.0.0.0/8 y ::1/128
+		},
 	})
 	log.Println("✅ App Fiber creada")
 
@@ -160,13 +161,13 @@ func main() {
 
 	// 2) Helmet — cabeceras de seguridad
 	appFiber.Use(helmet.New(helmet.Config{
-		ContentSecurityPolicy:"default-src 'self'; " +
-        "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; " +
-        "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; " +
-        "img-src 'self' data: blob: https://*.tile.openstreetmap.org https://tile.openstreetmap.org; " +
-        "font-src 'self' https://cdn.jsdelivr.net; " +
-        "connect-src 'self' https://nominatim.openstreetmap.org; " +   // ← NUEVO
-        "frame-ancestors 'none';",
+		ContentSecurityPolicy: "default-src 'self'; " +
+			"script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; " +
+			"style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; " +
+			"img-src 'self' data: blob: https://*.tile.openstreetmap.org https://tile.openstreetmap.org; " +
+			"font-src 'self' https://cdn.jsdelivr.net; " +
+			"connect-src 'self' https://nominatim.openstreetmap.org; " + // ← NUEVO
+			"frame-ancestors 'none';",
 		HSTSMaxAge:                31536000,
 		HSTSPreloadEnabled:        true,
 		XFrameOptions:             "DENY",
@@ -174,17 +175,17 @@ func main() {
 		ContentTypeNosniff:        "nosniff",
 		ReferrerPolicy:            "strict-origin-when-cross-origin",
 		CrossOriginOpenerPolicy:   "same-origin",
-		CrossOriginEmbedderPolicy: "",              // ← sin esto, bloquea los tiles
-    	CrossOriginResourcePolicy: "",              // ← también mejor vacío en dev
+		CrossOriginEmbedderPolicy: "", // ← sin esto, bloquea los tiles
+		CrossOriginResourcePolicy: "", // ← también mejor vacío en dev
 	}))
 
 	// 3) Sesiones con Redis
 	log.Println("🍪 Configurando middleware de sesiones...")
-appFiber.Use(func(c fiber.Ctx) error {
-    c.Response().Header.Del("Cross-Origin-Embedder-Policy")
-    c.Response().Header.Del("Cross-Origin-Resource-Policy")
-    return c.Next()
-})
+	appFiber.Use(func(c fiber.Ctx) error {
+		c.Response().Header.Del("Cross-Origin-Embedder-Policy")
+		c.Response().Header.Del("Cross-Origin-Resource-Policy")
+		return c.Next()
+	})
 	// En HTTPS usar __Host- (más seguro). En HTTP usar nombre normal.
 	sessionCookieName := "session_id"
 	if isProd {
@@ -219,9 +220,9 @@ appFiber.Use(func(c fiber.Ctx) error {
 		IdleTimeout:    30 * time.Minute,
 		Session:        sessionStore, // ← vincula el token a la sesión
 		TrustedOrigins: []string{
-        "https://mariana-flagless-inaudibly.ngrok-free.dev", // Tu URL de Ngrok
-        // O usa un patrón: "https://*.ngrok-free.dev"
-    },	
+			"https://mariana-flagless-inaudibly.ngrok-free.dev", // Tu URL de Ngrok
+			// O usa un patrón: "https://*.ngrok-free.dev"
+		},
 	}))
 
 	// ── Archivos estáticos ──

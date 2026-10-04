@@ -1,11 +1,19 @@
 package controllers
 
 import (
+	"crypto/rand"
+	"encoding/hex"
+	"errors"
+	"goravel/app/community"
 	"goravel/app/facades"
 	"goravel/app/models"
 	"goravel/app/requests"
 	"goravel/app/services"
+	"io"
 	"log"
+	"os"
+	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/gofiber/fiber/v3"
@@ -48,7 +56,14 @@ func (c *UserController) Show(ctx fiber.Ctx) error {
 	return ctx.Render("profile/show", fiber.Map{
 		"title": "Mi Perfil",
 		"user":  user,
-		"role":  ctx.Locals("role"),
+		"driver": func() *models.Chofer {
+			if user.Role == "chofer" {
+				driver, _ := services.NewChoferService().GetByUserID(userID)
+				return driver
+			}
+			return nil
+		}(),
+		"role": ctx.Locals("role"),
 	}, "layouts/base")
 }
 
@@ -184,21 +199,21 @@ func (c *UserController) Update(ctx fiber.Ctx) error {
 	}
 
 	// Ubicación
-	updates["address"]     = req.Address
-	updates["city"]        = req.City
-	updates["state"]       = req.State
-	updates["country"]     = req.Country
+	updates["address"] = req.Address
+	updates["city"] = req.City
+	updates["state"] = req.State
+	updates["country"] = req.Country
 	updates["postal_code"] = req.PostalCode
-	updates["latitude"]    = req.Latitude
-	updates["longitude"]   = req.Longitude
-	updates["radius"]      = req.Radius
+	updates["latitude"] = req.Latitude
+	updates["longitude"] = req.Longitude
+	updates["radius"] = req.Radius
 
 	// Preferencias
 	updates["preferred_equipment_types"] = req.PreferredEquipmentTypes
-	updates["preferred_cargo_types"]     = req.PreferredCargoTypes
-	updates["max_weight"]                = req.MaxWeight
-	updates["max_distance"]              = req.MaxDistance
-	updates["preferred_routes"]          = req.PreferredRoutes
+	updates["preferred_cargo_types"] = req.PreferredCargoTypes
+	updates["max_weight"] = req.MaxWeight
+	updates["max_distance"] = req.MaxDistance
+	updates["preferred_routes"] = req.PreferredRoutes
 
 	// Disponibilidad
 	if req.AvailableFrom != "" {
@@ -227,4 +242,76 @@ func (c *UserController) Update(ctx fiber.Ctx) error {
 	}
 
 	return ctx.Redirect().To("/profile?flash_success=Perfil actualizado correctamente")
+}
+
+// UploadPhoto replaces only the authenticated user's own profile image.
+func (c *UserController) UploadPhoto(ctx fiber.Ctx) error {
+	userID, ok := c.getCurrentUserID(ctx)
+	if !ok {
+		return ctx.Redirect().To("/login")
+	}
+	user, err := c.userService.GetByID(userID)
+	if err != nil {
+		return ctx.Redirect().To("/profile/edit?flash_error=Usuario+no+encontrado")
+	}
+	file, err := ctx.FormFile("profile_photo")
+	if err != nil || file == nil {
+		return ctx.Redirect().To("/profile/edit?flash_error=Selecciona+una+foto")
+	}
+	if file.Size <= 0 || file.Size > community.MaxProfilePhotoBytes {
+		return ctx.Redirect().To("/profile/edit?flash_error=La+foto+debe+pesar+menos+de+5+MB")
+	}
+	input, err := file.Open()
+	if err != nil {
+		return ctx.Redirect().To("/profile/edit?flash_error=No+se+pudo+leer+la+foto")
+	}
+	data, validationErr := io.ReadAll(io.LimitReader(input, community.MaxProfilePhotoBytes+1))
+	_ = input.Close()
+	ext := ""
+	if validationErr == nil {
+		ext, validationErr = community.ValidateProfilePhoto(data)
+	}
+	if validationErr != nil {
+		return ctx.Redirect().To("/profile/edit?flash_error=Foto+inv%C3%A1lida")
+	}
+	var random [16]byte
+	if _, err := rand.Read(random[:]); err != nil {
+		return ctx.SendStatus(fiber.StatusInternalServerError)
+	}
+	filename := hex.EncodeToString(random[:]) + ext
+	dir := filepath.Join("public", "uploads", "avatars")
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return ctx.SendStatus(fiber.StatusInternalServerError)
+	}
+	dst, err := os.OpenFile(filepath.Join(dir, filename), os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0644)
+	if err != nil {
+		return ctx.SendStatus(fiber.StatusInternalServerError)
+	}
+	input, err = file.Open()
+	if err == nil {
+		var written int64
+		written, err = io.Copy(dst, io.LimitReader(input, community.MaxProfilePhotoBytes+1))
+		if written > community.MaxProfilePhotoBytes {
+			err = errors.New("el archivo supera el límite")
+		}
+		_ = input.Close()
+	}
+	closeErr := dst.Close()
+	if err != nil || closeErr != nil {
+		_ = os.Remove(filepath.Join(dir, filename))
+		return ctx.Redirect().To("/profile/edit?flash_error=No+se+pudo+guardar+la+foto")
+	}
+	oldPhoto := user.ProfilePhoto
+	photoURL := "/uploads/avatars/" + filename
+	if err := c.userService.Update(userID, map[string]interface{}{"profile_photo": photoURL}); err != nil {
+		_ = os.Remove(filepath.Join(dir, filename))
+		return ctx.Redirect().To("/profile/edit?flash_error=No+se+pudo+actualizar+el+perfil")
+	}
+	if strings.HasPrefix(oldPhoto, "/uploads/avatars/") {
+		oldName := filepath.Base(oldPhoto)
+		if oldName != "." && oldName != string(filepath.Separator) {
+			_ = os.Remove(filepath.Join(dir, oldName))
+		}
+	}
+	return ctx.Redirect().To("/profile/edit?flash_success=Foto+de+perfil+actualizada")
 }

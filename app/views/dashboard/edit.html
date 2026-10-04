@@ -221,6 +221,7 @@
             </div>
         </div>
     </section>
+    <section class="tf-form-block" data-block="extras"><div class="tf-form-block__body"><div class="tf-field"><label for="audiencia" class="form-label">Visibilidad de la carga</label><select class="form-select" id="audiencia" name="audiencia"><option value="load_board" {{ if eq .load.Audiencia "load_board" }}selected{{ end }}>Pública · Visible para todos los choferes</option><option value="red_privada" {{ if eq .load.Audiencia "red_privada" }}selected{{ end }}>Solo mi red privada de choferes</option></select></div></div></section>
 </form>
 
 <script>

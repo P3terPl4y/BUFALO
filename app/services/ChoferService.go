@@ -20,6 +20,9 @@ func (s *ChoferService) GetAllWithFilters(filters map[string]string, page, perPa
 	if empresaID := filters["empresa_id"]; empresaID != "" {
 		query = query.Where("empresa_id = ?", empresaID)
 	}
+	if filters["active_user"] == "true" {
+		query = query.Where("user_id IN (SELECT id FROM users WHERE is_active = ?)", true)
+	}
 	if estado := filters["estado"]; estado != "" {
 		query = query.Where("estado = ?", estado)
 	}
@@ -30,6 +33,9 @@ func (s *ChoferService) GetAllWithFilters(filters map[string]string, page, perPa
 			"%"+q+"%", "%"+q+"%",
 		)
 	}
+	if filters["orden"] == "puntaje" {
+		query = query.OrderByRaw("rating_average DESC, rating_count DESC, id ASC")
+	}
 
 	total, err := query.Count()
 	if err != nil {
@@ -38,7 +44,10 @@ func (s *ChoferService) GetAllWithFilters(filters map[string]string, page, perPa
 
 	offset := (page - 1) * perPage
 	var list []models.Chofer
-	err = query.Limit(perPage).Offset(offset).Order("id asc").Find(&list)
+	if filters["orden"] != "puntaje" {
+		query = query.OrderBy("id", "asc")
+	}
+	err = query.Limit(perPage).Offset(offset).Find(&list)
 	return list, total, err
 }
 

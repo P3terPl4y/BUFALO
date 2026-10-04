@@ -18,6 +18,17 @@
     {{ if .flash_success }}<div class="alert alert-success tf-mb-4">{{ .flash_success }}</div>{{ end }}
     {{ if .flash_error }}<div class="alert alert-danger tf-mb-4">{{ .flash_error }}</div>{{ end }}
     </p>{{.errors}}</p>
+    <section class="tf-form-card" style="margin-bottom:1rem;padding:1.25rem">
+        <h2>Foto de perfil</h2>
+        <p>JPEG o PNG, hasta 5 MB. La foto será visible en tu perfil.</p>
+        {{ if .user.ProfilePhoto }}<img src="{{ .user.ProfilePhoto }}" alt="Foto actual de perfil" width="96" height="96" style="object-fit:cover;border-radius:50%;margin-bottom:1rem">{{ end }}
+        <form action="/profile/photo" method="POST" enctype="multipart/form-data">
+            <input type="hidden" name="_csrf" value="{{ .csrfToken }}">
+            <label for="profile_photo">Seleccionar foto</label>
+            <input type="file" id="profile_photo" name="profile_photo" accept="image/jpeg,image/png" required>
+            <button class="btn btn-primary" type="submit">Guardar foto</button>
+        </form>
+    </section>
     <form action="/profile/update" method="POST" class="tf-form-page">
         <input type="hidden" name="_csrf" value="{{ .csrfToken }}">
         <input type="hidden" name="_method" value="PUT">

@@ -324,9 +324,8 @@
                         <div class="tf-col-6 tf-field">
                             <label for="audiencia" class="form-label">Audiencia</label>
                             <select class="form-select" id="audiencia" name="audiencia">
-                                <option value="load_board"    {{ if and .old (eq .old.Audiencia "load_board") }}selected{{ end }}>Load Board · Público</option>
-                                <option value="red_privada"   {{ if and .old (eq .old.Audiencia "red_privada") }}selected{{ end }}>Red Privada · Solo mis carriers</option>
-                                <option value="red_extendida" {{ if and .old (eq .old.Audiencia "red_extendida") }}selected{{ end }}>Red Extendida</option>
+                                <option value="load_board"    {{ if and .old (eq .old.Audiencia "load_board") }}selected{{ end }}>Pública · Visible para todos los choferes</option>
+                                <option value="red_privada"   {{ if and .old (eq .old.Audiencia "red_privada") }}selected{{ end }}>Solo mi red privada de choferes</option>
                             </select>
                         </div>
                     </div>
@@ -514,7 +513,6 @@
     updateProgress();
 })();
 </script>
-
 
 
 

@@ -45,6 +45,11 @@ func (s *CargaService) GetAllWithFilters(filters map[string]string, page, perPag
 			query = query.Where("chofer_id = ?", choferID)
 		}
 	}
+	if driverBoardID := filters["driver_board_id"]; driverBoardID != "" {
+		if _, err := strconv.ParseUint(driverBoardID, 10, 32); err == nil {
+			query = query.Where("(chofer_id = ? OR (chofer_id IS NULL AND estado = ? AND (audiencia = ? OR (audiencia = ? AND empresa_id IN (SELECT empresa_id FROM red_choferes WHERE chofer_id = ?)))))", driverBoardID, models.CargaPublicada, models.AudienciaLoadBoard, models.AudienciaRedPrivada, driverBoardID)
+		}
+	}
 	if empresaID := filters["empresa_id"]; empresaID != "" {
 		if _, err := strconv.ParseUint(empresaID, 10, 32); err == nil {
 			query = query.Where("empresa_id = ?", empresaID)
@@ -125,6 +130,7 @@ func (s *CargaService) AcceptLoadService(id string, choferID uint) error {
 		Where("id = ?", id).
 		Where("estado = ?", "publicada").
 		Where("chofer_id IS NULL").
+		Where("(audiencia = ? OR (audiencia = ? AND EXISTS (SELECT 1 FROM red_choferes WHERE red_choferes.empresa_id = cargas.empresa_id AND red_choferes.chofer_id = ?)))", models.AudienciaLoadBoard, models.AudienciaRedPrivada, choferID).
 		Update(map[string]interface{}{
 			"chofer_id": choferID,
 			"estado":    "asignada",

@@ -1,0 +1,17 @@
+<div class="tf-page-header">
+  <div><h1><i class="bi bi-people-fill"></i> Mi red de choferes</h1><p>Elige qué conductores podrán ver y aceptar las cargas privadas de tu empresa.</p></div>
+  <a href="/choferes?orden=puntaje" class="btn btn-secondary">Buscar choferes</a>
+</div>
+{{ if .flash_success }}<div class="alert alert-success">{{ .flash_success }}</div>{{ end }}
+{{ if .flash_error }}<div class="alert alert-danger">{{ .flash_error }}</div>{{ end }}
+<section class="tf-filters"><div class="tf-filters__body"><form method="GET" action="/red-choferes"><div class="tf-filters__grid"><div class="tf-field"><label class="form-label">Buscar conductores disponibles</label><input class="form-control" name="q" value="{{ .query }}" placeholder="Nombre o correo"></div></div><div class="tf-filters__actions"><button class="btn btn-primary">Buscar</button><a class="btn btn-secondary" href="/red-choferes">Limpiar</a></div></form></div></section>
+<section class="tf-table-card"><header class="tf-table-card__header"><h2>Choferes disponibles</h2><span class="tf-table-card__count">{{ .total }}</span></header>
+  <div class="table-responsive"><table class="tf-table"><thead><tr><th>Chofer</th><th>Empresa</th><th>Valoración</th><th>Acción</th></tr></thead><tbody>
+  {{ range .drivers }}<tr><td class="tf-cell-title">{{ if .User }}{{ .User.Name }}{{ else }}Chofer #{{ .ID }}{{ end }}</td><td>{{ if .Empresa }}{{ .Empresa.NombreLegal }}{{ else }}—{{ end }}</td><td><strong>{{ printf "%.1f" .RatingAverage }} ★</strong><small class="tf-cell-subtitle">{{ .RatingCount }} calificaciones</small></td><td>{{ if index $.memberIDs .ID }}<form action="/red-choferes/{{ .ID }}/remove" method="POST"><input type="hidden" name="_csrf" value="{{ $.csrfToken }}"><button class="btn btn-outline-danger btn-sm">Quitar de mi red</button></form>{{ else }}<form action="/red-choferes/{{ .ID }}" method="POST"><input type="hidden" name="_csrf" value="{{ $.csrfToken }}"><button class="btn btn-primary btn-sm">Añadir a mi red</button></form>{{ end }}</td></tr>{{ else }}<tr><td colspan="4">No hay conductores disponibles para este filtro.</td></tr>{{ end }}
+  </tbody></table></div>
+</section>
+<section class="tf-table-card" style="margin-top:1.5rem"><header class="tf-table-card__header"><h2>Mi red privada</h2><span class="tf-table-card__count">{{ len .members }}</span></header>
+  <div class="table-responsive"><table class="tf-table"><thead><tr><th>Chofer</th><th>Valoración actual</th><th>Desde</th></tr></thead><tbody>
+  {{ range .members }}<tr><td>{{ if and .Chofer .Chofer.User }}{{ .Chofer.User.Name }}{{ else }}Chofer #{{ .ChoferID }}{{ end }}</td><td>{{ if .Chofer }}{{ printf "%.1f" .Chofer.RatingAverage }} ★ ({{ .Chofer.RatingCount }}){{ else }}—{{ end }}</td><td>{{ .CreatedAt.Format "02/01/2006" }}</td></tr>{{ else }}<tr><td colspan="3">Aún no has añadido choferes.</td></tr>{{ end }}
+  </tbody></table></div>
+</section>

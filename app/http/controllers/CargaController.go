@@ -2,12 +2,14 @@ package controllers
 
 import (
 	"fmt"
+	"goravel/app/community"
 	"goravel/app/facades"
 	"goravel/app/models"
 	"goravel/app/requests"
 	"goravel/app/services"
 	"log"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gofiber/fiber/v3"
@@ -95,7 +97,7 @@ func (c *CargaController) Index(ctx fiber.Ctx) error {
 			log.Printf("No se pudo resolver perfil chofer user_id=%d: %v", userID, err)
 			return ctx.SendStatus(fiber.StatusForbidden)
 		}
-		filters["chofer_id"] = strconv.FormatUint(uint64(ch.ID), 10)
+		filters["driver_board_id"] = strconv.FormatUint(uint64(ch.ID), 10)
 	}
 
 	page, _ := strconv.Atoi(ctx.Query("page", "1"))
@@ -150,12 +152,13 @@ func (c *CargaController) Show(ctx fiber.Ctx) error {
 		carga.DestinoDireccion.Latitud != nil && carga.DestinoDireccion.Longitud != nil
 
 	return ctx.Render("dashboard/show", fiber.Map{
-		"title":     "Detalle de Carga",
-		"load":      carga,
-		"csrfToken": csrf.TokenFromContext(ctx),
-		"hasMap":    hasMap,
-		"role":      role,
-		"userID":    userID,
+		"title":        "Detalle de Carga",
+		"load":         carga,
+		"csrfToken":    csrf.TokenFromContext(ctx),
+		"hasMap":       hasMap,
+		"role":         role,
+		"userID":       userID,
+		"alreadyRated": services.NewDriverCommunityService().HasLoadRating(carga.ID),
 	}, "layouts/base")
 }
 
@@ -171,16 +174,12 @@ func (c *CargaController) canAccessCarga(carga *models.Carga, userID uint, role 
 		}
 		return carga.PublicadorID == pub.ID
 	case "chofer":
-		// Abierta: cualquier chofer la puede ver
-		if carga.Estado == "publicada" {
-			return true
-		}
-		// Asignada a este chofer
 		ch, err := c.choferService.GetByUserID(userID)
 		if err != nil {
 			return false
 		}
-		return carga.ChoferID != nil && *carga.ChoferID == ch.ID
+		member := services.NewDriverCommunityService().IsCompanyMember(carga.EmpresaID, ch.ID)
+		return community.DriverCanSeeLoad(string(carga.Estado), string(carga.Audiencia), carga.ChoferID != nil && *carga.ChoferID == ch.ID, member)
 	}
 	return false
 }
@@ -274,9 +273,18 @@ func (c *CargaController) Store(ctx fiber.Ctx) error {
 		tarifaKm = &val
 	}
 
-	audiencia := models.Audiencia(req.Audiencia)
+	audiencia := models.Audiencia(strings.TrimSpace(req.Audiencia))
 	if audiencia == "" {
 		audiencia = models.AudienciaLoadBoard
+	}
+	if err := community.ValidateAudience(string(audiencia)); err != nil {
+		return ctx.Redirect().To("/loads/create?flash_error=Selecciona+una+audiencia+v%C3%A1lida")
+	}
+	if audiencia == models.AudienciaRedPrivada {
+		members, err := facades.Orm().Query().Model(&models.RedChofer{}).Where("empresa_id = ?", publicador.EmpresaID).Count()
+		if err != nil || members == 0 {
+			return ctx.Redirect().To("/loads/create?flash_error=A%C3%B1ade+choferes+a+tu+red+antes+de+publicar+en+privado")
+		}
 	}
 
 	carga := models.Carga{
@@ -369,6 +377,22 @@ func (c *CargaController) Update(ctx fiber.Ctx) error {
 	if err := ctx.Bind().Body(&req); err != nil {
 		return ctx.Redirect().To("/loads/" + id + "/edit?flash_error=Datos inválidos")
 	}
+	audience := models.Audiencia(strings.TrimSpace(req.Audiencia))
+	if audience == "" {
+		audience = models.AudienciaLoadBoard
+	}
+	if err := community.ValidateAudience(string(audience)); err != nil {
+		return ctx.Redirect().To("/loads/" + id + "/edit?flash_error=Audiencia+inv%C3%A1lida")
+	}
+	if audience == models.AudienciaRedPrivada {
+		if existing.EmpresaID == 0 {
+			return ctx.Redirect().To("/loads/" + id + "/edit?flash_error=La+empresa+no+tiene+una+red+privada")
+		}
+		members, countErr := facades.Orm().Query().Model(&models.RedChofer{}).Where("empresa_id = ?", existing.EmpresaID).Count()
+		if countErr != nil || members == 0 {
+			return ctx.Redirect().To("/loads/" + id + "/edit?flash_error=A%C3%B1ade+choferes+a+tu+red+antes+de+publicar+en+privado")
+		}
+	}
 
 	fechaRecogida, _ := time.Parse("2006-01-02T15:04", req.FechaRecogida)
 	var fechaEntrega *time.Time
@@ -400,7 +424,7 @@ func (c *CargaController) Update(ctx fiber.Ctx) error {
 		"tarifa_total":         req.TarifaTotal,
 		"tarifa_por_km":        tarifaKm,
 		"moneda":               req.Moneda,
-		"audiencia":            req.Audiencia,
+		"audiencia":            audience,
 	}
 
 	if err := c.cargaService.Update(id, updates); err != nil {
@@ -499,7 +523,6 @@ func (c *CargaController) AssignChofer(ctx fiber.Ctx) error {
 	if err != nil {
 		return ctx.Redirect().To("/loads?flash_error=Carga no encontrada")
 	}
-
 	if !c.canEditCarga(carga, userID, role) {
 		return ctx.Redirect().To("/loads?flash_error=No autorizado")
 	}
@@ -509,9 +532,40 @@ func (c *CargaController) AssignChofer(ctx fiber.Ctx) error {
 	if err != nil {
 		return ctx.Redirect().To("/loads/" + ctx.Params("id") + "?flash_error=Chofer inválido")
 	}
+	if carga.Audiencia == models.AudienciaRedPrivada && !services.NewDriverCommunityService().IsCompanyMember(carga.EmpresaID, uint(choferID)) {
+		return ctx.Redirect().To("/loads/" + ctx.Params("id") + "?flash_error=Solo+puedes+asignar+choferes+de+tu+red+privada")
+	}
 
 	if err := c.cargaService.AssignChofer(ctx.Params("id"), uint(choferID)); err != nil {
 		return ctx.Redirect().To("/loads/" + ctx.Params("id") + "?flash_error=Error al asignar")
 	}
 	return ctx.Redirect().To("/loads/" + ctx.Params("id") + "?flash_success=Chofer asignado")
+}
+
+func (c *CargaController) RateDriver(ctx fiber.Ctx) error {
+	userID, err := c.getCurrentUserID(ctx)
+	if err != nil {
+		return ctx.Redirect().To("/login")
+	}
+	role, _ := session.FromContext(ctx).Get("role").(string)
+	if role != "publicador" {
+		return ctx.SendStatus(fiber.StatusForbidden)
+	}
+	profile, err := c.publicadorService.GetByUserID(userID)
+	if err != nil {
+		return ctx.SendStatus(fiber.StatusForbidden)
+	}
+	load, err := c.cargaService.GetByID(ctx.Params("id"))
+	if err != nil || load.PublicadorID != profile.ID {
+		return ctx.SendStatus(fiber.StatusNotFound)
+	}
+	score, err := strconv.Atoi(ctx.FormValue("puntaje"))
+	if err != nil {
+		return ctx.Redirect().To("/loads/" + ctx.Params("id") + "?flash_error=Puntaje+inv%C3%A1lido")
+	}
+	comment := strings.TrimSpace(ctx.FormValue("comentario"))
+	if err := services.NewDriverCommunityService().RateCompletedLoad(load.ID, profile.ID, score, comment); err != nil {
+		return ctx.Redirect().To("/loads/" + ctx.Params("id") + "?flash_error=No+se+pudo+registrar+la+calificaci%C3%B3n")
+	}
+	return ctx.Redirect().To("/loads/" + ctx.Params("id") + "?flash_success=Chofer+calificado")
 }
