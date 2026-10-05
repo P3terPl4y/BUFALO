@@ -222,29 +222,8 @@ func (c *CargaController) Store(ctx fiber.Ctx) error {
 		}, "layouts/base")
 	}
 
-	rules := map[string]any{
-		"numero_referencia":    "required|min:3|max:50",
-		"origen_direccion_id":  "required|integer",
-		"destino_direccion_id": "required|integer",
-		"fecha_recogida":       "required",
-		"tipo_carga":           "required|in:FTL,LTL",
-		"tipo_equipo":          "required|in:dry_van,flatbed,reefer,step_deck,double_drop,lowboy,cargo_van,box_truck,power_only",
-		"peso_kg":              "required|numeric|min:0.01",
-		"distancia_km":         "required|numeric|min:0.01",
-		"tarifa_total":         "required|numeric|min:0.01",
-		"moneda":               "required|in:CUP,MLC,USD,EUR",
-	}
-	validator, err := facades.Validation().Make(ctx.Context(), req, rules)
-	if err != nil || validator.Fails() {
-		errs := map[string]string{}
-		if validator != nil {
-			for field, fieldErrors := range validator.Errors().All() {
-				for _, msg := range fieldErrors {
-					errs[field] = msg
-					break
-				}
-			}
-		}
+	errs, valid := validateCargaInput(ctx, req)
+	if !valid {
 		return ctx.Render("dashboard/create", fiber.Map{
 			"title":        "Nueva Carga",
 			"flash_error":  "Error de validación",
@@ -261,9 +240,11 @@ func (c *CargaController) Store(ctx fiber.Ctx) error {
 	}
 	var fechaEntrega *time.Time
 	if req.FechaEntrega != "" {
-		if t, err := time.Parse("2006-01-02T15:04", req.FechaEntrega); err == nil {
-			fechaEntrega = &t
+		t, parseErr := time.Parse("2006-01-02T15:04", req.FechaEntrega)
+		if parseErr != nil || t.Before(fechaRecogida) {
+			return ctx.Redirect().To("/loads/create?flash_error=Fecha+de+entrega+inv%C3%A1lida")
 		}
+		fechaEntrega = &t
 	}
 
 	// tarifa_por_km
@@ -377,6 +358,9 @@ func (c *CargaController) Update(ctx fiber.Ctx) error {
 	if err := ctx.Bind().Body(&req); err != nil {
 		return ctx.Redirect().To("/loads/" + id + "/edit?flash_error=Datos inválidos")
 	}
+	if _, valid := validateCargaInput(ctx, req); !valid {
+		return ctx.Redirect().To("/loads/" + id + "/edit?flash_error=Revisa+los+datos+de+la+carga")
+	}
 	audience := models.Audiencia(strings.TrimSpace(req.Audiencia))
 	if audience == "" {
 		audience = models.AudienciaLoadBoard
@@ -394,12 +378,17 @@ func (c *CargaController) Update(ctx fiber.Ctx) error {
 		}
 	}
 
-	fechaRecogida, _ := time.Parse("2006-01-02T15:04", req.FechaRecogida)
+	fechaRecogida, err := time.Parse("2006-01-02T15:04", req.FechaRecogida)
+	if err != nil {
+		return ctx.Redirect().To("/loads/" + id + "/edit?flash_error=Fecha+de+recogida+inv%C3%A1lida")
+	}
 	var fechaEntrega *time.Time
 	if req.FechaEntrega != "" {
-		if t, err := time.Parse("2006-01-02T15:04", req.FechaEntrega); err == nil {
-			fechaEntrega = &t
+		t, parseErr := time.Parse("2006-01-02T15:04", req.FechaEntrega)
+		if parseErr != nil || t.Before(fechaRecogida) {
+			return ctx.Redirect().To("/loads/" + id + "/edit?flash_error=Fecha+de+entrega+inv%C3%A1lida")
 		}
+		fechaEntrega = &t
 	}
 
 	tarifaKm := req.TarifaPorKm
@@ -432,6 +421,38 @@ func (c *CargaController) Update(ctx fiber.Ctx) error {
 		return ctx.Redirect().To("/loads/" + id + "/edit?flash_error=Error al actualizar")
 	}
 	return ctx.Redirect().To(fmt.Sprintf("/loads/%s?flash_success=Carga actualizada correctamente", id))
+}
+
+func cargaValidationRules() map[string]any {
+	return map[string]any{
+		"numero_referencia":    "required|min:3|max:50",
+		"origen_direccion_id":  "required|integer",
+		"destino_direccion_id": "required|integer",
+		"fecha_recogida":       "required",
+		"tipo_carga":           "required|in:" + strings.Join(models.TiposCargaDisponibles(), ","),
+		"tipo_equipo":          "required|in:" + strings.Join(models.TiposEquipoDisponibles(), ","),
+		"peso_kg":              "required|numeric|min:0.01",
+		"distancia_km":         "required|numeric|min:0.01",
+		"tarifa_total":         "required|numeric|min:0.01",
+		"moneda":               "required|in:CUP,MLC,USD,EUR",
+	}
+}
+
+func validateCargaInput(ctx fiber.Ctx, req any) (map[string]string, bool) {
+	validator, err := facades.Validation().Make(ctx.Context(), req, cargaValidationRules())
+	if err != nil || validator == nil || validator.Fails() {
+		errors := map[string]string{"tipo_carga": "Selecciona un tipo de carga válido."}
+		if validator != nil {
+			for field, fieldErrors := range validator.Errors().All() {
+				for _, message := range fieldErrors {
+					errors[field] = message
+					break
+				}
+			}
+		}
+		return errors, false
+	}
+	return nil, true
 }
 
 // ─────────────────────────────────────────────────────────────

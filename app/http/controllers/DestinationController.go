@@ -32,6 +32,17 @@ func canManageAddress(d *models.Direccion, userID uint, role string) bool {
 	return d.OwnerID != nil && *d.OwnerID == userID
 }
 
+func validCoordinatePair(latitude, longitude *float64) bool {
+	if latitude == nil && longitude == nil {
+		return true
+	}
+	if latitude == nil || longitude == nil {
+		return false
+	}
+	return !math.IsNaN(*latitude) && !math.IsInf(*latitude, 0) && *latitude >= -90 && *latitude <= 90 &&
+		!math.IsNaN(*longitude) && !math.IsInf(*longitude, 0) && *longitude >= -180 && *longitude <= 180
+}
+
 func (c *DireccionController) authorized(ctx fiber.Ctx, d *models.Direccion) bool {
 	userID, role := currentUser(ctx)
 	return canManageAddress(d, userID, role)
@@ -79,10 +90,10 @@ func (c *DireccionController) Show(ctx fiber.Ctx) error {
 func (c *DireccionController) Create(ctx fiber.Ctx) error {
 	sess := session.FromContext(ctx)
 	return ctx.Render("direcciones/create", fiber.Map{
-		"title":     "Nueva Dirección",
+		"title":       "Nueva Dirección",
 		"flash_error": ctx.Query("flash_error"),
-		"csrfToken": csrf.TokenFromContext(ctx),
-		"role":      sess.Get("role"),
+		"csrfToken":   csrf.TokenFromContext(ctx),
+		"role":        sess.Get("role"),
 	}, "layouts/base")
 }
 
@@ -93,10 +104,6 @@ func (c *DireccionController) Store(ctx fiber.Ctx) error {
 		log.Printf("[Direccion.Store] bind error: %v", err)
 		return ctx.Redirect().To("/direcciones/create?flash_error=Datos inválidos")
 	}
-
-	// Log del payload para diagnóstico
-	log.Printf("[Direccion.Store] payload: ciudad=%q provincia=%q pais=%q lat=%v lng=%v",
-		req.Ciudad, req.EstadoProvincia, req.Pais, req.Latitud, req.Longitud)
 
 	rules := map[string]any{
 		"ciudad":           "required|min:2|max:100",
@@ -118,11 +125,8 @@ func (c *DireccionController) Store(ctx fiber.Ctx) error {
 
 	// Convertir lat/lng string → *float64
 
-	if req.Latitud != nil && (math.IsNaN(*req.Latitud) || math.IsInf(*req.Latitud, 0) || *req.Latitud < -90 || *req.Latitud > 90) {
-		return ctx.Redirect().To("/direcciones/create?flash_error=Latitud inválida")
-	}
-	if req.Longitud != nil && (math.IsNaN(*req.Longitud) || math.IsInf(*req.Longitud, 0) || *req.Longitud < -180 || *req.Longitud > 180) {
-		return ctx.Redirect().To("/direcciones/create?flash_error=Longitud inválida")
+	if !validCoordinatePair(req.Latitud, req.Longitud) {
+		return ctx.Redirect().To("/direcciones/create?flash_error=Las+coordenadas+deben+ser+un+par+v%C3%A1lido")
 	}
 	pais := req.Pais
 	if pais == "" {
@@ -174,10 +178,7 @@ func (c *DireccionController) Update(ctx fiber.Ctx) error {
 	if err != nil || validator.Fails() {
 		return fiber.ErrBadRequest
 	}
-	if req.Latitud != nil && (math.IsNaN(*req.Latitud) || math.IsInf(*req.Latitud, 0) || *req.Latitud < -90 || *req.Latitud > 90) {
-		return fiber.ErrBadRequest
-	}
-	if req.Longitud != nil && (math.IsNaN(*req.Longitud) || math.IsInf(*req.Longitud, 0) || *req.Longitud < -180 || *req.Longitud > 180) {
+	if !validCoordinatePair(req.Latitud, req.Longitud) {
 		return fiber.ErrBadRequest
 	}
 	updates := map[string]interface{}{"calle": strPtr(req.Calle), "ciudad": req.Ciudad, "estado_provincia": req.EstadoProvincia, "codigo_postal": strPtr(req.CodigoPostal), "pais": req.Pais, "latitud": req.Latitud, "longitud": req.Longitud}

@@ -1,0 +1,76 @@
+<section class="tf-page-header">
+    <div>
+        <p class="text-muted mb-1"><a href="/admin/">Administración</a></p>
+        <h1><i class="bi bi-graph-up-arrow"></i> Métricas del sistema</h1>
+        <p class="text-muted">Indicadores globales actualizados al cargar esta página: {{ .metricsAt }}</p>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+        <a class="btn btn-outline-success" href="/admin/metrics/export?format=csv"><i class="bi bi-filetype-csv"></i> CSV</a>
+        <a class="btn btn-outline-success" href="/admin/metrics/export?format=excel"><i class="bi bi-file-earmark-excel"></i> Excel (.xlsx)</a>
+        <a class="btn btn-outline-danger" href="/admin/metrics/export?format=pdf"><i class="bi bi-file-earmark-pdf"></i> PDF</a>
+        <button class="btn btn-outline-primary" type="button" onclick="window.location.reload()"><i class="bi bi-arrow-clockwise"></i> Actualizar métricas</button>
+    </div>
+</section>
+
+<section class="tf-home__section" aria-labelledby="usersMetricTitle">
+    <h2 class="tf-home__section-title" id="usersMetricTitle"><i class="bi bi-people"></i> Usuarios y actividad</h2>
+    <div class="tf-home-stats tf-home-stats--3">
+        <article class="tf-home-stat"><span class="tf-home-stat__icon tf-home-stat__icon--primary"><i class="bi bi-people"></i></span><div class="tf-home-stat__body"><span class="tf-home-stat__label">Cuentas totales</span><p class="tf-home-stat__value">{{ .totalUsers }}</p></div></article>
+        <article class="tf-home-stat"><span class="tf-home-stat__icon tf-home-stat__icon--success"><i class="bi bi-person-check"></i></span><div class="tf-home-stat__body"><span class="tf-home-stat__label">Conectados recientemente</span><p class="tf-home-stat__value">{{ .connectedUsers }}</p><small>Actividad autenticada en los últimos {{ .onlineWindow }}</small></div></article>
+        <article class="tf-home-stat"><span class="tf-home-stat__icon tf-home-stat__icon--warning"><i class="bi bi-person-dash"></i></span><div class="tf-home-stat__body"><span class="tf-home-stat__label">Activos sin actividad reciente</span><p class="tf-home-stat__value">{{ .disconnectedUsers }}</p></div></article>
+        <article class="tf-home-stat"><span class="tf-home-stat__icon tf-home-stat__icon--info"><i class="bi bi-person-check-fill"></i></span><div class="tf-home-stat__body"><span class="tf-home-stat__label">Cuentas habilitadas</span><p class="tf-home-stat__value">{{ .activeUsers }}</p></div></article>
+        <article class="tf-home-stat"><span class="tf-home-stat__icon tf-home-stat__icon--danger"><i class="bi bi-person-x"></i></span><div class="tf-home-stat__body"><span class="tf-home-stat__label">Cuentas deshabilitadas</span><p class="tf-home-stat__value">{{ .inactiveUsers }}</p></div></article>
+    </div>
+    <p class="small text-muted mt-2">La presencia se calcula por actividad autenticada reciente en esta instancia; no representa conexiones TCP ni sesiones abiertas en otras instancias. El conteo se reinicia al reiniciar el proceso.</p>
+    <div class="table-responsive mt-3"><table class="table table-striped align-middle"><caption class="visually-hidden">Usuarios por rol</caption><thead><tr><th scope="col">Rol</th><th scope="col">Cuentas</th></tr></thead><tbody>
+        {{ range .roles }}<tr><th scope="row">{{ .Rol }}</th><td>{{ .Total }}</td></tr>{{ else }}<tr><td colspan="2">No hay usuarios.</td></tr>{{ end }}
+    </tbody></table></div>
+</section>
+
+<section class="tf-home__section" aria-labelledby="entitiesMetricTitle">
+    <h2 class="tf-home__section-title" id="entitiesMetricTitle"><i class="bi bi-diagram-3"></i> Entidades y red</h2>
+    <div class="tf-home-stats tf-home-stats--3">
+        <article class="tf-home-stat"><span class="tf-home-stat__icon tf-home-stat__icon--info"><i class="bi bi-building"></i></span><div class="tf-home-stat__body"><span class="tf-home-stat__label">Empresas</span><p class="tf-home-stat__value">{{ .totalCompanies }}</p></div></article>
+        <article class="tf-home-stat"><span class="tf-home-stat__icon tf-home-stat__icon--success"><i class="bi bi-truck"></i></span><div class="tf-home-stat__body"><span class="tf-home-stat__label">Perfiles de chofer</span><p class="tf-home-stat__value">{{ .totalDrivers }}</p></div></article>
+        <article class="tf-home-stat"><span class="tf-home-stat__icon tf-home-stat__icon--warning"><i class="bi bi-person-workspace"></i></span><div class="tf-home-stat__body"><span class="tf-home-stat__label">Perfiles de publicador</span><p class="tf-home-stat__value">{{ .totalPublishers }}</p></div></article>
+        <article class="tf-home-stat"><span class="tf-home-stat__icon tf-home-stat__icon--primary"><i class="bi bi-geo-alt"></i></span><div class="tf-home-stat__body"><span class="tf-home-stat__label">Direcciones</span><p class="tf-home-stat__value">{{ .totalAddresses }}</p></div></article>
+        <article class="tf-home-stat"><span class="tf-home-stat__icon tf-home-stat__icon--info"><i class="bi bi-people-fill"></i></span><div class="tf-home-stat__body"><span class="tf-home-stat__label">Vínculos en redes de choferes</span><p class="tf-home-stat__value">{{ .totalNetworkMemberships }}</p></div></article>
+        <article class="tf-home-stat"><span class="tf-home-stat__icon tf-home-stat__icon--warning"><i class="bi bi-star-half"></i></span><div class="tf-home-stat__body"><span class="tf-home-stat__label">Calificaciones</span><p class="tf-home-stat__value">{{ .totalRatings }}</p></div></article>
+    </div>
+</section>
+
+<section class="tf-home__section" aria-labelledby="loadsMetricTitle">
+    <h2 class="tf-home__section-title" id="loadsMetricTitle"><i class="bi bi-box-seam"></i> Cargas <span class="badge bg-secondary">{{ .totalLoads }} totales</span></h2>
+    <div class="table-responsive"><table class="table table-striped align-middle"><thead><tr><th scope="col">Estado</th><th scope="col">Cantidad</th></tr></thead><tbody>
+        {{ range .loadStates }}<tr><th scope="row">{{ .Estado }}</th><td>{{ .Total }}</td></tr>{{ else }}<tr><td colspan="2">No hay cargas registradas.</td></tr>{{ end }}
+    </tbody></table></div>
+</section>
+
+<section class="tf-home__section" aria-labelledby="invoiceMetricTitle">
+    <h2 class="tf-home__section-title" id="invoiceMetricTitle"><i class="bi bi-receipt"></i> Facturas <span class="badge bg-secondary">{{ .totalInvoices }} totales</span></h2>
+    <div class="table-responsive"><table class="table table-striped align-middle"><thead><tr><th scope="col">Estado</th><th scope="col">Cantidad</th></tr></thead><tbody>
+        {{ range .invoiceStates }}<tr><th scope="row">{{ .Estado }}</th><td>{{ .Total }}</td></tr>{{ else }}<tr><td colspan="2">No hay facturas registradas.</td></tr>{{ end }}
+    </tbody></table></div>
+    <div class="row g-4 mt-1">
+        <div class="col-12"><h3 class="h5">Facturas asociadas a empresas</h3><p class="small text-muted">Cuenta una factura una sola vez por empresa, aunque la empresa figure como emisor y receptor.</p><div class="table-responsive"><table class="table table-sm table-hover align-middle"><thead><tr><th scope="col">Empresa</th><th scope="col">Facturas</th></tr></thead><tbody>{{ range .invoicesByCompany }}<tr><th scope="row">{{ .Nombre }}</th><td>{{ .Total }}</td></tr>{{ else }}<tr><td colspan="2">No hay empresas.</td></tr>{{ end }}</tbody></table></div></div>
+        <div class="col-12 col-xl-6"><h3 class="h5">Facturas por chofer asociado</h3><div class="table-responsive"><table class="table table-sm table-hover align-middle"><thead><tr><th scope="col">Chofer</th><th scope="col">Facturas</th></tr></thead><tbody>{{ range .invoicesByDriver }}<tr><th scope="row">{{ .Nombre }}</th><td>{{ .Total }}</td></tr>{{ else }}<tr><td colspan="2">No hay choferes.</td></tr>{{ end }}</tbody></table></div></div>
+        <div class="col-12 col-xl-6"><h3 class="h5">Facturas por publicador asociado</h3><div class="table-responsive"><table class="table table-sm table-hover align-middle"><thead><tr><th scope="col">Publicador</th><th scope="col">Facturas</th></tr></thead><tbody>{{ range .invoicesByPublisher }}<tr><th scope="row">{{ .Nombre }}</th><td>{{ .Total }}</td></tr>{{ else }}<tr><td colspan="2">No hay publicadores.</td></tr>{{ end }}</tbody></table></div></div>
+    </div>
+</section>
+
+<section class="tf-home__section" id="metricsHealth" aria-labelledby="metricsHealthTitle">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3"><div><h2 class="tf-home__section-title mb-1" id="metricsHealthTitle"><i class="bi bi-heart-pulse"></i> Salud y rendimiento</h2><p class="text-muted mb-0">Datos del proceso actual; PostgreSQL y Redis se prueban por conectividad TCP.</p></div><span id="metricsHealthStatus" class="badge bg-secondary" role="status">Consultando…</span></div>
+    <div class="tf-home-stats tf-home-stats--3">
+        <article class="tf-home-stat"><div class="tf-home-stat__body"><span class="tf-home-stat__label">PostgreSQL</span><p class="tf-home-stat__value" id="metricsPostgres">—</p><small id="metricsPostgresLatency">—</small></div></article>
+        <article class="tf-home-stat"><div class="tf-home-stat__body"><span class="tf-home-stat__label">Redis</span><p class="tf-home-stat__value" id="metricsRedis">—</p><small id="metricsRedisLatency">—</small></div></article>
+        <article class="tf-home-stat"><div class="tf-home-stat__body"><span class="tf-home-stat__label">Tiempo activo</span><p class="tf-home-stat__value" id="metricsUptime">—</p></div></article>
+        <article class="tf-home-stat"><div class="tf-home-stat__body"><span class="tf-home-stat__label">Solicitudes desde inicio</span><p class="tf-home-stat__value" id="metricsRequests">—</p><small id="metricsRequestRate">—</small></div></article>
+        <article class="tf-home-stat"><div class="tf-home-stat__body"><span class="tf-home-stat__label">Latencia media / p95 aprox.</span><p class="tf-home-stat__value" id="metricsLatency">—</p><small id="metricsP95">—</small></div></article>
+        <article class="tf-home-stat"><div class="tf-home-stat__body"><span class="tf-home-stat__label">Errores HTTP 5xx</span><p class="tf-home-stat__value" id="metricsErrors">—</p><small id="metricsErrorRate">—</small></div></article>
+        <article class="tf-home-stat"><div class="tf-home-stat__body"><span class="tf-home-stat__label">Memoria heap</span><p class="tf-home-stat__value" id="metricsHeap">—</p><small id="metricsHeapAlloc">—</small></div></article>
+        <article class="tf-home-stat"><div class="tf-home-stat__body"><span class="tf-home-stat__label">Goroutines / GOMAXPROCS</span><p class="tf-home-stat__value" id="metricsGoroutines">—</p><small id="metricsGC">—</small></div></article>
+    </div>
+    <p class="small text-muted mt-3 mb-0" id="metricsHealthChecked">La telemetría del proceso se reinicia en cada despliegue. La conectividad TCP no valida credenciales ni ejecuta consultas.</p>
+</section>
+
+<script src="/js/admin-metrics.js" defer></script>

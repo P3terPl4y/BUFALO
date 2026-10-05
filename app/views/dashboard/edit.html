@@ -100,8 +100,12 @@
                 <div class="tf-col-6 tf-field">
                     <label for="tipo_carga" class="form-label">Tipo de carga <span class="req">*</span></label>
                     <select class="form-select" id="tipo_carga" name="tipo_carga" required>
-                        <option value="FTL" {{ if eq .load.TipoCarga "FTL" }}selected{{ end }}>FTL</option>
-                        <option value="LTL" {{ if eq .load.TipoCarga "LTL" }}selected{{ end }}>LTL</option>
+                        <option value="FTL" {{ if eq .load.TipoCarga "FTL" }}selected{{ end }}>FTL · Carga completa</option>
+                        <option value="LTL" {{ if eq .load.TipoCarga "LTL" }}selected{{ end }}>LTL · Carga parcial</option>
+                        <option value="parcel" {{ if eq .load.TipoCarga "parcel" }}selected{{ end }}>Paquetería</option>
+                        <option value="bulk" {{ if eq .load.TipoCarga "bulk" }}selected{{ end }}>Granel seco</option>
+                        <option value="liquid_bulk" {{ if eq .load.TipoCarga "liquid_bulk" }}selected{{ end }}>Granel líquido</option>
+                        <option value="oversized" {{ if eq .load.TipoCarga "oversized" }}selected{{ end }}>Carga sobredimensionada</option>
                     </select>
                 </div>
                 <div class="tf-col-12 tf-field">

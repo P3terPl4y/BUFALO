@@ -17,5 +17,7 @@ func Migrations() []schema.Migration {
 		&migrations.M20260917043858CreateDireccionesTable{},
 		&migrations.M20261003000001FixDireccionCoordinatePrecision{},
 		&migrations.M20261003000002AddDriverProfilesNetworksAndRatings{},
+		&migrations.M20261005000001AssociateInvoicesWithRoleProfiles{},
+		&migrations.M20261005000002BackfillInvoiceRoleProfiles{},
 	}
 }

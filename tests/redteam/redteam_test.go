@@ -682,7 +682,7 @@ func seedFixture(t *testing.T, n int) fixture {
 	if err := facades.Orm().Query().Create(load); err != nil {
 		t.Fatal(err)
 	}
-	invoice := &models.Factura{CargaID: load.ID, EmisorID: brokerA.ID, ReceptorID: carrier.ID, NumeroFactura: "RT-INV-0001", FechaEmision: now, Subtotal: 100, Impuestos: 10, Moneda: models.MonedaUSD}
+	invoice := &models.Factura{CargaID: load.ID, EmisorID: &brokerA.ID, ReceptorID: &carrier.ID, PublicadorID: &ownerProfile.ID, EmisorTipo: models.EmisorFacturaPublicador, NumeroFactura: "RT-INV-0001", FechaEmision: now, Subtotal: 100, Impuestos: 10, Moneda: models.MonedaUSD}
 	if err := services.NewFacturaService().Create(invoice); err != nil {
 		t.Fatalf("create red-team invoice: %v", err)
 	}

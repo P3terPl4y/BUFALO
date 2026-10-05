@@ -12,11 +12,11 @@ Se incorpora `app/billing` como paquete de reglas independiente del servidor y l
 
 | Prioridad | Problema previo | Cambio y límite |
 |---|---|---|
-| Crítica | Facturas comparaban empresa con ID de usuario; listado usaba roles de empresa y no de usuario. Edición, pago y cancelación no comprobaban pertenencia. | Lectura limitada a empresa emisora para publicador y receptora para chofer; escritura solo empresa emisora o admin. Usuario, rol, empresa y actividad se consultan en BD. La autorización es por empresa, no por creador individual. |
+| Crítica | Facturas comparaban empresa con ID de usuario; listado usaba roles de empresa y no de usuario. Edición, pago y cancelación no comprobaban pertenencia. | Una migración agrega vínculo explícito al perfil publicador y permite empresa emisora/receptora nula. Lectura por perfil asociado; escribir solo puede quien emitió el documento, sea publicador o chofer. La empresa deja de ser requisito de autorización. |
 | Crítica | Total recibido del navegador; impuestos negativos, NaN, infinito y fechas incoherentes no se rechazaban sistemáticamente. | Validación común en servicio; total derivado del subtotal más impuestos; centavos y redondeo decimal half-up. Se conserva float64 en modelos por compatibilidad: conviene migrar la representación del dominio a decimal o unidades menores. |
 | Alta | Pago directo de borradores y sobreescritura de pagos existentes. | Máquina de estados, fecha y método de pago completos; rechazo de transiciones inválidas y protección contra concurrencia mediante estado en WHERE y filas afectadas. No demuestra ausencia de todas las carreras posibles. |
 | Alta | Borrado físico de documentos de facturación. | Cancelación conserva fila e identidad; facturas pagadas no se editan ni cancelan. No hay notas de crédito ni devoluciones. |
-| Alta | Creación sin comprobar relación carga/empresas/conductor. | Requiere carga entregada, emisor igual a empresa de carga y receptor igual a empresa del chofer asignado. Chofer se deriva de carga. La política de facturar solo cargas entregadas es una decisión conservadora de esta implementación. |
+| Alta | Creación sin comprobar relación carga/empresas/conductor. | Requiere carga entregada y que el perfil emisor pertenezca a la carga (publicador) o esté asignado a ella (chofer). Los perfiles broker y chofer se derivan de la carga; los IDs de empresa se guardan solo cuando existen. La política de facturar cargas entregadas se conserva. |
 | Alta | No existían `facturas/index`, `show`, `create`, `edit`. | Se crean vistas y se incorpora emisión explícita. Interfaz básica; faltan selección guiada y exportación. |
 | Crítica | La sesión confiaba en estado y rol almacenados, incluso tras revocación del usuario; además no se verificaba el error de renovar sesión al autenticar. | El middleware consulta la cuenta en BD, refresca el rol, revoca sesiones de cuentas desactivadas/eliminadas y responde 503 sin borrar sesión si falla la BD; login falla cerrado ante error de regeneración. Pruebas funcionales cubren degradación y desactivación. |
 | Alta | Direcciones dereferenciaban `OwnerID` sin validar nulos y respondían éxito cuando un usuario ajeno no podía borrarlas. | Comprobación común owner/admin, denegación segura para datos legacy sin owner y validación/rango de coordenadas para alta/edición. Pruebas unitarias de autorización. |
@@ -30,14 +30,14 @@ Se incorpora `app/billing` como paquete de reglas independiente del servidor y l
 
 ## Ciclo implementado
 
-1. Publicador/admin crea borrador para carga entregada con empresas coincidentes. Número de factura y carga mantienen unicidad por los índices existentes.
+1. Publicador o chofer crea borrador para una carga entregada que le pertenece o está asignada a su perfil. La factura queda asociada a ambos perfiles participantes y registra cuál fue el emisor. Los IDs de empresa son opcionales y se derivan del contexto de carga cuando están disponibles. Número de factura y carga mantienen unicidad por los índices existentes.
 2. Solo borradores admiten actualización de importes y moneda. Total se recalcula en servidor; empresa, carga y número permanecen estables.
 3. `POST /facturas/:id/emitir` pasa borrador a emitida.
 4. Emitida o vencida admite registro de un pago completo, método y fecha. Repetir el pago falla en servicio.
 5. Borrador, emitida o vencida admite cancelación; se conserva el registro. Pagada y cancelada son terminales.
 6. El dominio permite emitida → vencida cuando vence. Todavía no hay tarea programada ni ruta pública para automatizar esa transición.
 
-El usuario debe tener empresa asociada para facturar. El formulario solicita IDs explícitos; errores de servicio se muestran de forma genérica. No existen pagos parciales, conciliación bancaria, factura PDF, envío de correo, numeración fiscal automática, conceptos múltiples, porcentajes fiscales configurables ni historial de eventos.
+La factura no requiere empresa para quedar asociada a sus perfiles; el modelo de empresa asociado al perfil profesional todavía la requiere. El formulario ya no acepta IDs de empresa ni de otros perfiles como fuente de autorización. Errores de servicio se muestran de forma genérica. No existen pagos parciales, conciliación bancaria, factura PDF, envío de correo, numeración fiscal automática, conceptos múltiples, porcentajes fiscales configurables ni historial de eventos.
 
 ## Hallazgos pendientes por prioridad
 
@@ -86,3 +86,9 @@ El último comando compila y ejecuta la comprobación estática sin ejecutar los
 - Log de la ejecución completa final: `/tmp/bufalo-final-pass.log`. La base de pruebas aislada permanece en `/tmp/bufalo-audit-pg`; el servidor PostgreSQL se detiene tras validar.
 
 Se corrigió durante la revisión un error introducido en la plantilla de paginación que inicialmente impedía cargar todas las vistas. La nueva prueba `TestAllTemplatesLoad` verifica este tipo de fallo. No se presenta una ejecución anterior fallida como éxito ni se ocultaron pruebas mediante skips.
+
+## Actualización de asociación por perfil (5 de octubre de 2026)
+
+La migración `20261005000001_associate_invoices_with_role_profiles` vuelve nulos `emisor_id` y `receptor_id`, agrega `publicador_id` y `emisor_tipo`, y completa las asociaciones de facturas existentes con el publicador y el chofer de su carga. El despliegue debe ejecutar esta migración antes de levantar código que use el nuevo modelo. El rollback se detiene si existen facturas sin alguna empresa asociada, porque el esquema antiguo no podía representarlas.
+
+La lista restringe por `publicador_id` o `chofer_id`; el detalle permite lectura a ambos perfiles participantes. La escritura queda limitada al emisor registrado en `emisor_tipo`. Se añadió cobertura unitaria para empresa ausente, separación entre perfiles de una misma empresa y emisor chofer. En esta sesión pasaron las pruebas unitarias de `app/billing`, `app/viewhelpers` y `app/http/middleware`, además de compilar los binarios de tests de controladores, servicios y red team. La suite con PostgreSQL no se pudo ejecutar porque el puerto local `55441` no tenía un servidor escuchando; la migración aún requiere aplicación y verificación en una base aislada antes de desplegar.

@@ -60,6 +60,10 @@
                             <option value="">Todos</option>
                             <option value="FTL" {{ if eq .filters.tipo_carga "FTL" }}selected{{ end }}>FTL</option>
                             <option value="LTL" {{ if eq .filters.tipo_carga "LTL" }}selected{{ end }}>LTL</option>
+                            <option value="parcel" {{ if eq .filters.tipo_carga "parcel" }}selected{{ end }}>Paquetería</option>
+                            <option value="bulk" {{ if eq .filters.tipo_carga "bulk" }}selected{{ end }}>Granel seco</option>
+                            <option value="liquid_bulk" {{ if eq .filters.tipo_carga "liquid_bulk" }}selected{{ end }}>Granel líquido</option>
+                            <option value="oversized" {{ if eq .filters.tipo_carga "oversized" }}selected{{ end }}>Sobredimensionada</option>
                         </select>
                     </div>
 
@@ -285,4 +289,3 @@
     </section>
 
 </div>
-

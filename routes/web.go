@@ -1,8 +1,11 @@
 package routes
 
 import (
+	"time"
+
 	"goravel/app/http/controllers"
 	"goravel/app/http/middleware"
+	"goravel/app/monitoring"
 
 	"github.com/gofiber/fiber/v3"
 )
@@ -63,6 +66,13 @@ func SetupWebRoutes(app *fiber.App, limiterOverride ...fiber.Handler) {
 	// ── Generales ──
 	protected.Get("/home", authCtrl.ShowHome)
 	protected.Get("/logout", authCtrl.Logout)
+	protected.Get("/presence/heartbeat", func(ctx fiber.Ctx) error {
+		if userID, ok := ctx.Locals("user_id").(uint); ok {
+			monitoring.RecordUserActivity(userID, time.Now())
+		}
+		ctx.Set("Cache-Control", "no-store, private")
+		return ctx.SendStatus(fiber.StatusNoContent)
+	})
 	protected.Get("/profile", userCtrl.Show)
 	protected.Get("/profile/edit", userCtrl.Edit)
 	protected.Post("/profile/update", userCtrl.Update)
@@ -90,6 +100,7 @@ func SetupWebRoutes(app *fiber.App, limiterOverride ...fiber.Handler) {
 	protected.Get("/publicadores/:id<int>", publicadorCtrl.Show)
 
 	protected.Get("/facturas", facturaCtrl.Index)
+	protected.Get("/facturas/export", both, facturaCtrl.Export)
 	protected.Get("/facturas/:id<int>", facturaCtrl.Show)
 
 	// ═══════════════════════════════════════════════════════════
@@ -154,17 +165,17 @@ func SetupWebRoutes(app *fiber.App, limiterOverride ...fiber.Handler) {
 	protected.Post("/publicadores/:id<int>/delete", pub, publicadorCtrl.Delete)
 
 	// ═══════════════════════════════════════════════════════════
-	// FACTURAS — escritura (publicador + admin)
+	// FACTURAS — escritura por el perfil emisor (publicador o chofer)
 	// ═══════════════════════════════════════════════════════════
-	protected.Get("/facturas/create", pub, facturaCtrl.Create)
-	protected.Post("/facturas", pub, facturaCtrl.Store)
-	protected.Get("/facturas/:id<int>/edit", pub, facturaCtrl.Edit)
-	protected.Put("/facturas/:id<int>", pub, facturaCtrl.Update)
-	protected.Delete("/facturas/:id<int>", pub, facturaCtrl.Delete)
-	protected.Post("/facturas/:id<int>", pub, facturaCtrl.Update)
-	protected.Post("/facturas/:id<int>/delete", pub, facturaCtrl.Delete)
-	protected.Post("/facturas/:id<int>/emitir", pub, facturaCtrl.Emitir)
-	protected.Post("/facturas/:id<int>/pagar", pub, facturaCtrl.MarcarPagada)
+	protected.Get("/facturas/create", both, facturaCtrl.Create)
+	protected.Post("/facturas", both, facturaCtrl.Store)
+	protected.Get("/facturas/:id<int>/edit", both, facturaCtrl.Edit)
+	protected.Put("/facturas/:id<int>", both, facturaCtrl.Update)
+	protected.Delete("/facturas/:id<int>", both, facturaCtrl.Delete)
+	protected.Post("/facturas/:id<int>", both, facturaCtrl.Update)
+	protected.Post("/facturas/:id<int>/delete", both, facturaCtrl.Delete)
+	protected.Post("/facturas/:id<int>/emitir", both, facturaCtrl.Emitir)
+	protected.Post("/facturas/:id<int>/pagar", both, facturaCtrl.MarcarPagada)
 
 	// ═══════════════════════════════════════════════════════════
 	// ADMIN — todo el panel
@@ -173,6 +184,9 @@ func SetupWebRoutes(app *fiber.App, limiterOverride ...fiber.Handler) {
 
 	// Dashboard
 	admin.Get("/", adminCtrl.Dashboard)
+	admin.Get("/metrics", adminCtrl.Metrics)
+	admin.Get("/metrics/export", adminCtrl.MetricsExport)
+	admin.Get("/health", adminCtrl.HealthMetrics)
 
 	// ── Users ──
 	admin.Get("/users", adminCtrl.UsersIndex)
@@ -214,6 +228,7 @@ func SetupWebRoutes(app *fiber.App, limiterOverride ...fiber.Handler) {
 
 	// ── Facturas ──
 	admin.Get("/facturas", adminCtrl.FacturasIndex)
+	admin.Get("/facturas/export", facturaCtrl.Export)
 	admin.Get("/facturas/:id<int>", adminCtrl.FacturasShow)
 	admin.Post("/facturas/:id<int>", adminCtrl.FacturasUpdate)
 	admin.Post("/facturas/:id<int>/delete", adminCtrl.FacturasDelete)

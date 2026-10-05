@@ -33,6 +33,7 @@ func (a *AuthController) ShowHome(ctx fiber.Ctx) error {
 	data := fiber.Map{
 		"title":        "Inicio",
 		"user":         user,
+		"role":         user.Role,
 		"isAdmin":      user.Role == "admin",
 		"isPublicador": user.Role == "publicador",
 		"isChofer":     user.Role == "chofer",

@@ -24,14 +24,38 @@ func TestFacturaHTTPAuthorizationAndLifecycle(t *testing.T) {
 	owner.EmpresaID = &emisor.ID
 	owner.IsActive = true
 	other := tests.NewUserPublicador("invoice-other@test.local")
-	other.EmpresaID = &receptor.ID
+	other.EmpresaID = &emisor.ID
 	other.IsActive = true
-	for _, u := range []*models.User{owner, other} {
+	driverUser := tests.NewUserChofer("invoice-driver@test.local")
+	driverUser.EmpresaID = &receptor.ID
+	peerDriverUser := tests.NewUserChofer("invoice-peer@test.local")
+	peerDriverUser.EmpresaID = &receptor.ID
+	for _, u := range []*models.User{owner, other, driverUser, peerDriverUser} {
 		if err := facades.Orm().Query().Create(u); err != nil {
 			t.Fatal(err)
 		}
 	}
-	f := &models.Factura{CargaID: 1, EmisorID: emisor.ID, ReceptorID: receptor.ID, NumeroFactura: "HTTP-001", FechaEmision: time.Now(), Subtotal: 100, Total: 100, Moneda: models.MonedaUSD, Estado: models.FacturaBorrador}
+	ownerProfile := tests.NewPublicadorProfile()
+	ownerProfile.UserID, ownerProfile.EmpresaID = owner.ID, emisor.ID
+	otherProfile := tests.NewPublicadorProfile()
+	otherProfile.NumeroLicenciaBroker = "BRK-OTHER"
+	otherProfile.UserID, otherProfile.EmpresaID = other.ID, emisor.ID
+	for _, profile := range []*models.Publicador{ownerProfile, otherProfile} {
+		if err := facades.Orm().Query().Create(profile); err != nil {
+			t.Fatal(err)
+		}
+	}
+	driverProfile := tests.NewChoferProfile()
+	driverProfile.UserID, driverProfile.EmpresaID = driverUser.ID, receptor.ID
+	peerDriverProfile := tests.NewChoferProfile()
+	peerDriverProfile.NumeroLicencia = "LIC-PEER"
+	peerDriverProfile.UserID, peerDriverProfile.EmpresaID = peerDriverUser.ID, receptor.ID
+	for _, profile := range []*models.Chofer{driverProfile, peerDriverProfile} {
+		if err := facades.Orm().Query().Create(profile); err != nil {
+			t.Fatal(err)
+		}
+	}
+	f := &models.Factura{CargaID: 1, EmisorID: &emisor.ID, ReceptorID: &receptor.ID, PublicadorID: &ownerProfile.ID, ChoferID: &driverProfile.ID, EmisorTipo: models.EmisorFacturaPublicador, NumeroFactura: "HTTP-001", FechaEmision: time.Now(), Subtotal: 100, Total: 100, Moneda: models.MonedaUSD, Estado: models.FacturaBorrador}
 	if err := facades.Orm().Query().Create(f); err != nil {
 		t.Fatal(err)
 	}
@@ -85,6 +109,17 @@ func TestFacturaHTTPAuthorizationAndLifecycle(t *testing.T) {
 	}
 	if code := request("POST", "/pagar", "metodo_pago=transferencia"); code < 300 || code >= 400 {
 		t.Fatalf("pay: %d", code)
+	}
+	active = driverUser
+	if code := request("GET", "", ""); code != 200 {
+		t.Fatalf("associated driver show: %d", code)
+	}
+	if code := request("GET", "/edit", ""); code != 403 {
+		t.Fatalf("non-issuer driver edit: %d", code)
+	}
+	active = peerDriverUser
+	if code := request("GET", "", ""); code != 403 {
+		t.Fatalf("peer driver in same carrier company: %d", code)
 	}
 	var saved models.Factura
 	if err := facades.Orm().Query().Where("id = ?", f.ID).First(&saved); err != nil {

@@ -8,7 +8,8 @@ import (
 )
 
 func invoice() *models.Factura {
-	return &models.Factura{CargaID: 1, EmisorID: 10, ReceptorID: 20, NumeroFactura: "INV-001", FechaEmision: time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC), Moneda: models.MonedaUSD, Subtotal: 100.10, Impuestos: 20.20, Estado: models.FacturaBorrador}
+	emisor, receptor, publicador := uint(10), uint(20), uint(40)
+	return &models.Factura{CargaID: 1, EmisorID: &emisor, ReceptorID: &receptor, PublicadorID: &publicador, EmisorTipo: models.EmisorFacturaPublicador, NumeroFactura: "INV-001", FechaEmision: time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC), Moneda: models.MonedaUSD, Subtotal: 100.10, Impuestos: 20.20, Estado: models.FacturaBorrador}
 }
 func TestAmounts(t *testing.T) {
 	f := invoice()
@@ -40,6 +41,19 @@ func TestInvalidData(t *testing.T) {
 		if Validate(f) == nil {
 			t.Errorf("case %d accepted", i)
 		}
+	}
+}
+
+func TestInvoiceCanOmitCompanyAssociations(t *testing.T) {
+	f := invoice()
+	f.EmisorID = nil
+	f.ReceptorID = nil
+	if err := Validate(f); err != nil {
+		t.Fatalf("profile-linked invoice without companies rejected: %v", err)
+	}
+	f.PublicadorID = nil
+	if err := Validate(f); err == nil {
+		t.Fatal("invoice without company or role-profile association accepted")
 	}
 }
 func TestLifecycle(t *testing.T) {
@@ -81,18 +95,28 @@ func TestAllTransitions(t *testing.T) {
 }
 func TestAccess(t *testing.T) {
 	f := invoice()
-	emisor, receptor, other := uint(10), uint(20), uint(99)
+	publicador, otherPublicador := uint(40), uint(41)
+	driver, peerDriver := uint(30), uint(31)
+	f.ChoferID = &driver
 	cases := []struct {
-		role        string
-		empresa     *uint
-		write, want bool
-	}{{"admin", nil, true, true}, {"publicador", &emisor, true, true}, {"publicador", &other, true, false}, {"chofer", &receptor, false, true}, {"chofer", &receptor, true, false}, {"publicador", nil, false, false}, {"broker", &emisor, false, false}}
+		role                   string
+		publicadorID, choferID uint
+		write, want            bool
+	}{{"admin", 0, 0, true, true}, {"publicador", publicador, 0, true, true}, {"publicador", otherPublicador, 0, true, false}, {"chofer", 0, driver, false, true}, {"chofer", 0, peerDriver, false, false}, {"chofer", 0, driver, true, false}, {"publicador", 0, 0, false, false}, {"broker", publicador, 0, false, false}}
 	for _, c := range cases {
-		if got := CanAccess(10, c.role, c.empresa, f, c.write); got != c.want {
+		if got := CanAccess(10, c.role, c.publicadorID, c.choferID, f, c.write); got != c.want {
 			t.Errorf("%+v got %v", c, got)
 		}
 	}
-	if CanAccess(0, "admin", nil, f, true) {
+	driverIssued := *f
+	driverIssued.EmisorTipo = models.EmisorFacturaChofer
+	if !CanAccess(10, "chofer", 0, driver, &driverIssued, true) {
+		t.Fatal("associated driver should be able to manage its own invoice")
+	}
+	if CanAccess(10, "publicador", publicador, 0, &driverIssued, true) {
+		t.Fatal("publisher must not manage an invoice issued by a driver")
+	}
+	if CanAccess(0, "admin", 0, 0, f, true) {
 		t.Fatal("anonymous admin")
 	}
 }

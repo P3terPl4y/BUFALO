@@ -11,20 +11,21 @@ import (
 	"time"
 )
 
-func CanAccess(userID uint, role string, empresaID *uint, f *models.Factura, write bool) bool {
+func CanAccess(userID uint, role string, publicadorID, choferID uint, f *models.Factura, write bool) bool {
 	if userID == 0 || f == nil {
 		return false
 	}
 	if role == "admin" {
 		return true
 	}
-	if empresaID == nil || *empresaID == 0 {
-		return false
-	}
 	if write {
-		return role == "publicador" && *empresaID == f.EmisorID
+		if role == "publicador" {
+			return publicadorID != 0 && f.EmisorTipo == models.EmisorFacturaPublicador && f.PublicadorID != nil && *f.PublicadorID == publicadorID
+		}
+		return role == "chofer" && choferID != 0 && f.EmisorTipo == models.EmisorFacturaChofer && f.ChoferID != nil && *f.ChoferID == choferID
 	}
-	return (role == "publicador" && *empresaID == f.EmisorID) || (role == "chofer" && *empresaID == f.ReceptorID)
+	return (role == "publicador" && publicadorID != 0 && f.PublicadorID != nil && *f.PublicadorID == publicadorID) ||
+		(role == "chofer" && choferID != 0 && f.ChoferID != nil && *f.ChoferID == choferID)
 }
 
 // Validate normalizes amounts to database precision and derives the total.
@@ -33,8 +34,18 @@ func Validate(f *models.Factura) error {
 		return errors.New("factura requerida")
 	}
 	f.NumeroFactura = strings.TrimSpace(f.NumeroFactura)
-	if f.CargaID == 0 || f.EmisorID == 0 || f.ReceptorID == 0 || f.EmisorID == f.ReceptorID || len(f.NumeroFactura) < 3 || len(f.NumeroFactura) > 50 {
+	if f.CargaID == 0 || len(f.NumeroFactura) < 3 || len(f.NumeroFactura) > 50 ||
+		(f.EmisorID != nil && *f.EmisorID == 0) || (f.ReceptorID != nil && *f.ReceptorID == 0) ||
+		(f.EmisorID != nil && f.ReceptorID != nil && *f.EmisorID == *f.ReceptorID) ||
+		(f.PublicadorID == nil && f.ChoferID == nil) ||
+		(f.PublicadorID != nil && *f.PublicadorID == 0) || (f.ChoferID != nil && *f.ChoferID == 0) {
 		return errors.New("identificadores o número inválidos")
+	}
+	if f.EmisorTipo != models.EmisorFacturaPublicador && f.EmisorTipo != models.EmisorFacturaChofer {
+		return errors.New("perfil emisor inválido")
+	}
+	if (f.EmisorTipo == models.EmisorFacturaPublicador && f.PublicadorID == nil) || (f.EmisorTipo == models.EmisorFacturaChofer && f.ChoferID == nil) {
+		return errors.New("la factura debe estar asociada al perfil que la emite")
 	}
 	if f.FechaEmision.IsZero() || (f.FechaVencimiento != nil && f.FechaVencimiento.Before(f.FechaEmision)) {
 		return errors.New("fechas inválidas")

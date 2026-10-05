@@ -6,6 +6,7 @@ package models
 
 // ── Empresa ──
 type TipoEmpresa string
+
 const (
 	TipoBroker    TipoEmpresa = "broker"
 	TipoCarrier   TipoEmpresa = "carrier"
@@ -15,6 +16,7 @@ const (
 )
 
 type EstadoEmpresa string
+
 const (
 	EmpresaActiva     EstadoEmpresa = "activo"
 	EmpresaInactiva   EstadoEmpresa = "inactivo"
@@ -26,6 +28,7 @@ const (
 
 // ── Chofer ──
 type EstadoChofer string
+
 const (
 	ChoferDisponible EstadoChofer = "disponible"
 	ChoferEnViaje    EstadoChofer = "en_viaje"
@@ -34,6 +37,7 @@ const (
 
 // ── Publicador ──
 type EstadoPublicador string
+
 const (
 	PublicadorActivo     EstadoPublicador = "activo"
 	PublicadorInactivo   EstadoPublicador = "inactivo"
@@ -42,12 +46,31 @@ const (
 
 // ── Carga ──
 type TipoCarga string
+
 const (
-	CargaFTL TipoCarga = "FTL"
-	CargaLTL TipoCarga = "LTL"
+	CargaFTL        TipoCarga = "FTL"
+	CargaLTL        TipoCarga = "LTL"
+	CargaParcel     TipoCarga = "parcel"
+	CargaBulk       TipoCarga = "bulk"
+	CargaLiquidBulk TipoCarga = "liquid_bulk"
+	CargaOversized  TipoCarga = "oversized"
 )
 
+func EsTipoCargaValido(value string) bool {
+	switch TipoCarga(value) {
+	case CargaFTL, CargaLTL, CargaParcel, CargaBulk, CargaLiquidBulk, CargaOversized:
+		return true
+	default:
+		return false
+	}
+}
+
+func TiposCargaDisponibles() []string {
+	return []string{string(CargaFTL), string(CargaLTL), string(CargaParcel), string(CargaBulk), string(CargaLiquidBulk), string(CargaOversized)}
+}
+
 type TipoEquipo string
+
 const (
 	EquipoDryVan     TipoEquipo = "dry_van"
 	EquipoFlatbed    TipoEquipo = "flatbed"
@@ -60,7 +83,21 @@ const (
 	EquipoPowerOnly  TipoEquipo = "power_only"
 )
 
+func EsTipoEquipoValido(value string) bool {
+	switch TipoEquipo(value) {
+	case EquipoDryVan, EquipoFlatbed, EquipoReefer, EquipoStepDeck, EquipoDoubleDrop, EquipoLowboy, EquipoCargoVan, EquipoBoxTruck, EquipoPowerOnly:
+		return true
+	default:
+		return false
+	}
+}
+
+func TiposEquipoDisponibles() []string {
+	return []string{string(EquipoDryVan), string(EquipoFlatbed), string(EquipoReefer), string(EquipoStepDeck), string(EquipoDoubleDrop), string(EquipoLowboy), string(EquipoCargoVan), string(EquipoBoxTruck), string(EquipoPowerOnly)}
+}
+
 type EstadoCarga string
+
 const (
 	CargaPublicada  EstadoCarga = "publicada"
 	CargaNegociando EstadoCarga = "negociando"
@@ -71,6 +108,7 @@ const (
 )
 
 type Audiencia string
+
 const (
 	AudienciaLoadBoard    Audiencia = "load_board"
 	AudienciaRedPrivada   Audiencia = "red_privada"
@@ -78,6 +116,7 @@ const (
 )
 
 type Moneda string
+
 const (
 	MonedaCUP Moneda = "CUP"
 	MonedaMLC Moneda = "MLC"
@@ -87,10 +126,11 @@ const (
 
 // ── Factura ──
 type EstadoFactura string
+
 const (
-	FacturaBorrador EstadoFactura = "borrador"
-	FacturaEmitida  EstadoFactura = "emitida"
-	FacturaPagada   EstadoFactura = "pagada"
-	FacturaVencida  EstadoFactura = "vencida"
+	FacturaBorrador  EstadoFactura = "borrador"
+	FacturaEmitida   EstadoFactura = "emitida"
+	FacturaPagada    EstadoFactura = "pagada"
+	FacturaVencida   EstadoFactura = "vencida"
 	FacturaCancelada EstadoFactura = "cancelada"
 )

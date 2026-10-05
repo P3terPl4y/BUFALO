@@ -57,6 +57,10 @@
                                 <option value="LTL" {{ if and .old (eq .old.TipoCarga "LTL") }}selected{{ end }}>
                                     LTL · Partial
                                 </option>
+                                <option value="parcel" {{ if and .old (eq .old.TipoCarga "parcel") }}selected{{ end }}>Paquetería</option>
+                                <option value="bulk" {{ if and .old (eq .old.TipoCarga "bulk") }}selected{{ end }}>Granel seco</option>
+                                <option value="liquid_bulk" {{ if and .old (eq .old.TipoCarga "liquid_bulk") }}selected{{ end }}>Granel líquido</option>
+                                <option value="oversized" {{ if and .old (eq .old.TipoCarga "oversized") }}selected{{ end }}>Carga sobredimensionada</option>
                             </select>
                             {{ if .errors.tipo_carga }}
                             <small class="tf-field-error">{{ .errors.tipo_carga }}</small>

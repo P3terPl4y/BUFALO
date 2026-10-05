@@ -46,6 +46,43 @@ func currentUser(ctx fiber.Ctx) (uint, string) {
 	return userID, role
 }
 
+func canUseCompanyAddress(direccion *models.Direccion, userID uint, role string) bool {
+	if direccion == nil {
+		return true // company address is optional
+	}
+	return canManageAddress(direccion, userID, role)
+}
+
+func optionalAddressID(addressID *uint) *uint {
+	if addressID == nil || *addressID == 0 {
+		return nil
+	}
+	return addressID
+}
+
+func (c *EmpresaController) companyAddresses(userID uint, role string) []models.Direccion {
+	var addresses []models.Direccion
+	var err error
+	if role == "admin" {
+		addresses, err = c.direccionService.GetAll()
+	} else {
+		addresses, err = c.direccionService.GetOwnedByUserID(userID)
+	}
+	if err != nil {
+		log.Printf("Error obteniendo direcciones disponibles para empresa: %v", err)
+		return []models.Direccion{}
+	}
+	return addresses
+}
+
+func (c *EmpresaController) addressCanBeAssigned(addressID *uint, userID uint, role string) bool {
+	if addressID == nil || *addressID == 0 {
+		return true
+	}
+	direccion, err := c.direccionService.GetByID(strconv.FormatUint(uint64(*addressID), 10))
+	return err == nil && canUseCompanyAddress(direccion, userID, role)
+}
+
 // ─────────────────────────────────────────────────────────────
 // Index
 // ─────────────────────────────────────────────────────────────
@@ -66,13 +103,13 @@ func (c *EmpresaController) Index(ctx fiber.Ctx) error {
 	}
 
 	return ctx.Render("empresas/index", fiber.Map{
-		"title":   "Empresas",
+		"title":    "Empresas",
 		"empresas": list,
-		"total":   total,
-		"page":    page,
-		"perPage": perPage,
-		"filters": filters,
-		"role":    role,
+		"total":    total,
+		"page":     page,
+		"perPage":  perPage,
+		"filters":  filters,
+		"role":     role,
 	}, "layouts/base")
 }
 
@@ -96,7 +133,7 @@ func (c *EmpresaController) Show(ctx fiber.Ctx) error {
 		"title":     "Detalle Empresa",
 		"empresa":   e,
 		"choferes":  choferes,
-		 "userID":    userID, 
+		"userID":    userID,
 		"csrfToken": csrf.TokenFromContext(ctx),
 		"role":      role,
 	}, "layouts/base")
@@ -106,9 +143,9 @@ func (c *EmpresaController) Show(ctx fiber.Ctx) error {
 // Create
 // ─────────────────────────────────────────────────────────────
 func (c *EmpresaController) Create(ctx fiber.Ctx) error {
-	_, role := currentUser(ctx)
+	userID, role := currentUser(ctx)
 
-	dests, _ := c.direccionService.GetAll()
+	dests := c.companyAddresses(userID, role)
 
 	return ctx.Render("empresas/create", fiber.Map{
 		"title":        "Nueva Empresa",
@@ -155,6 +192,9 @@ func (c *EmpresaController) Store(ctx fiber.Ctx) error {
 	if err != nil || validator.Fails() {
 		return ctx.Redirect().To("/empresas/create?flash_error=Error de validación")
 	}
+	if !c.addressCanBeAssigned(req.DireccionID, userID, role) {
+		return ctx.Redirect().To("/empresas/create?flash_error=La+direcci%C3%B3n+no+te+pertenece")
+	}
 
 	// ── OwnerID = quien la crea ──
 	ownerID := userID
@@ -169,13 +209,13 @@ func (c *EmpresaController) Store(ctx fiber.Ctx) error {
 		Telefono:        strPtr(req.Telefono),
 		Email:           strPtr(req.Email),
 		SitioWeb:        strPtr(req.SitioWeb),
-		DireccionID:	 req.DireccionID,
+		DireccionID:     optionalAddressID(req.DireccionID),
 		CreditScore:     req.CreditScore,
 		DaysToPay:       &req.DaysToPay,
 		OwnerID:         &ownerID,
 		Estado:          models.EstadoEmpresa(req.Estado),
 	}
-	
+
 	if err := c.service.Create(&e); err != nil {
 		log.Printf("Error creando empresa: %v", err)
 		return ctx.Redirect().To("/empresas/create?flash_error=Error al guardar")
@@ -202,13 +242,13 @@ func (c *EmpresaController) Edit(ctx fiber.Ctx) error {
 		return ctx.Redirect().To("/empresas?flash_error=No autorizado")
 	}
 
-	dests, _ := c.direccionService.GetAll()
+	dests := c.companyAddresses(userID, role)
 
 	return ctx.Render("empresas/edit", fiber.Map{
 		"title":        "Editar Empresa",
 		"empresa":      e,
 		"destinations": dests,
-		 "userID":    userID, 
+		"userID":       userID,
 		"csrfToken":    csrf.TokenFromContext(ctx),
 		"role":         role,
 	}, "layouts/base")
@@ -238,6 +278,18 @@ func (c *EmpresaController) Update(ctx fiber.Ctx) error {
 	if err := ctx.Bind().Body(&req); err != nil {
 		return ctx.Redirect().To("/empresas/" + id + "/edit?flash_error=Datos inválidos")
 	}
+	if role != "admin" {
+		expected := "broker"
+		if role == "chofer" {
+			expected = "carrier"
+		}
+		if req.Tipo != expected {
+			return ctx.Redirect().To("/empresas/" + id + "/edit?flash_error=Tipo+de+empresa+no+permitido+para+tu+rol")
+		}
+	}
+	if !c.addressCanBeAssigned(req.DireccionID, userID, role) {
+		return ctx.Redirect().To("/empresas/" + id + "/edit?flash_error=La+direcci%C3%B3n+no+te+pertenece")
+	}
 
 	// 4. Validación
 	rules := map[string]any{
@@ -249,7 +301,7 @@ func (c *EmpresaController) Update(ctx fiber.Ctx) error {
 	if err != nil || validator.Fails() {
 		return ctx.Redirect().To("/empresas/" + id + "/edit?flash_error=Error de validación")
 	}
-	
+
 	// 5. Whitelist de updates (NO se toca OwnerID, ni ID, ni CreatedAt)
 	updates := map[string]interface{}{
 		"tipo":             req.Tipo,
@@ -258,18 +310,13 @@ func (c *EmpresaController) Update(ctx fiber.Ctx) error {
 		"tax_id":           strPtr(req.TaxID),
 		"mc_number":        strPtr(req.MCNumber),
 		"dot_number":       strPtr(req.DOTNumber),
-		"direccion_id":     req.DireccionID,
+		"direccion_id":     optionalAddressID(req.DireccionID),
 		"telefono":         strPtr(req.Telefono),
 		"email":            strPtr(req.Email),
 		"sitio_web":        strPtr(req.SitioWeb),
 		"credit_score":     req.CreditScore,
 		"days_to_pay":      req.DaysToPay,
 		"estado":           req.Estado,
-	}
-if req.DireccionID != nil && *req.DireccionID > 0 {
-		updates["direccion_id"] = uintToUUID(*req.DireccionID)
-	} else {
-		updates["direccion_id"] = nil
 	}
 	if err := c.service.Update(id, updates); err != nil {
 		log.Printf("Error actualizando empresa %s: %v", id, err)

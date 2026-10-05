@@ -4,9 +4,12 @@ import (
 	"fmt"
 	"goravel/app/facades"
 	"goravel/app/models"
+	"goravel/app/monitoring"
 	"goravel/app/requests"
 	"goravel/app/services"
 	"log"
+	"math"
+	"os"
 	"strconv"
 	"time"
 
@@ -107,6 +110,55 @@ func (c *AdminController) Dashboard(ctx fiber.Ctx) error {
 	}, "layouts/base")
 }
 
+// HealthMetrics exposes aggregate process metrics and dependency reachability
+// only to the administrator route group. It never returns connection details.
+func (c *AdminController) HealthMetrics(ctx fiber.Ctx) error {
+	dbHost := os.Getenv("DB_HOST")
+	if dbHost == "" {
+		dbHost = "localhost"
+	}
+	redisHost := os.Getenv("REDIS_HOST")
+	if redisHost == "" {
+		redisHost = "127.0.0.1"
+	}
+	dbPort, _ := strconv.Atoi(os.Getenv("DB_PORT"))
+	if dbPort <= 0 {
+		dbPort = 5432
+	}
+	redisPort, _ := strconv.Atoi(os.Getenv("REDIS_PORT"))
+	if redisPort <= 0 {
+		redisPort = 6379
+	}
+	dbOK, dbLatency := monitoring.CheckTCP(dbHost, dbPort)
+	redisOK, redisLatency := monitoring.CheckTCP(redisHost, redisPort)
+
+	status := "ok"
+	if !dbOK || !redisOK {
+		status = "degraded"
+	}
+	ctx.Set("Cache-Control", "no-store, private")
+	return ctx.JSON(fiber.Map{
+		"status":     status,
+		"checked_at": time.Now().UTC().Format(time.RFC3339),
+		"dependencies": fiber.Map{
+			"postgres_tcp": fiber.Map{"status": componentStatus(dbOK), "latency_ms": roundMetric(dbLatency)},
+			"redis_tcp":    fiber.Map{"status": componentStatus(redisOK), "latency_ms": roundMetric(redisLatency)},
+		},
+		"runtime": monitoring.Snapshot(),
+	})
+}
+
+func componentStatus(available bool) string {
+	if available {
+		return "available"
+	}
+	return "unavailable"
+}
+
+func roundMetric(value float64) float64 {
+	return math.Round(value*100) / 100
+}
+
 // ═══════════════════════════════════════════════════════════════
 // USERS
 // ═══════════════════════════════════════════════════════════════
@@ -147,7 +199,7 @@ func (c *AdminController) UsersIndex(ctx fiber.Ctx) error {
 		"totalPages": totalPages,
 		"filters":    filters,
 		"role":       sess.Get("role"),
-		"csrfToken":  csrf.TokenFromContext(ctx),  
+		"csrfToken":  csrf.TokenFromContext(ctx),
 	}, "layouts/base")
 }
 
@@ -276,24 +328,24 @@ func (c *AdminController) UsersStore(ctx fiber.Ctx) error {
 	}
 
 	user := models.User{
-		Name:     req.Name,
-		Email:    req.Email,
-		Password: hashed,
-		Role:     req.Role,
-		IsActive: true,
-		Address:  req.Address,
-		City:     req.City,
-		State:    req.State,
-		Country:  req.Country,
-		PostalCode: req.PostalCode,
-		Latitude: req.Latitude,
-		Longitude: req.Longitude,
-		Radius:   req.Radius,
-		Phone:    strPtr(req.Phone),
-		WhatsApp: strPtr(req.WhatsApp),
+		Name:          req.Name,
+		Email:         req.Email,
+		Password:      hashed,
+		Role:          req.Role,
+		IsActive:      true,
+		Address:       req.Address,
+		City:          req.City,
+		State:         req.State,
+		Country:       req.Country,
+		PostalCode:    req.PostalCode,
+		Latitude:      req.Latitude,
+		Longitude:     req.Longitude,
+		Radius:        req.Radius,
+		Phone:         strPtr(req.Phone),
+		WhatsApp:      strPtr(req.WhatsApp),
 		AvailableFrom: parseTime(req.AvailableFrom),
 		AvailableTo:   parseTime(req.AvailableTo),
-		Notes:    req.Notes,
+		Notes:         req.Notes,
 	}
 	if adminID > 0 {
 		user.CreatedBy = &adminID
@@ -392,14 +444,30 @@ func (c *AdminController) UsersUpdate(ctx fiber.Ctx) error {
 		}
 	}
 	// Ubicación
-	if req.Address != "" { updates["address"] = req.Address }
-	if req.City != "" { updates["city"] = req.City }
-	if req.State != "" { updates["state"] = req.State }
-	if req.Country != "" { updates["country"] = req.Country }
-	if req.PostalCode != "" { updates["postal_code"] = req.PostalCode }
-	if req.Latitude != 0 { updates["latitude"] = req.Latitude }
-	if req.Longitude != 0 { updates["longitude"] = req.Longitude }
-	if req.Radius != 0 { updates["radius"] = req.Radius }
+	if req.Address != "" {
+		updates["address"] = req.Address
+	}
+	if req.City != "" {
+		updates["city"] = req.City
+	}
+	if req.State != "" {
+		updates["state"] = req.State
+	}
+	if req.Country != "" {
+		updates["country"] = req.Country
+	}
+	if req.PostalCode != "" {
+		updates["postal_code"] = req.PostalCode
+	}
+	if req.Latitude != 0 {
+		updates["latitude"] = req.Latitude
+	}
+	if req.Longitude != 0 {
+		updates["longitude"] = req.Longitude
+	}
+	if req.Radius != 0 {
+		updates["radius"] = req.Radius
+	}
 
 	if err := c.userService.Update(user.ID, updates); err != nil {
 		log.Printf("Error al actualizar usuario: %v", err)
@@ -472,10 +540,14 @@ func (c *AdminController) EmpresasIndex(ctx fiber.Ctx) error {
 	}
 
 	prevPage := page - 1
-	if prevPage < 1 { prevPage = 1 }
+	if prevPage < 1 {
+		prevPage = 1
+	}
 	totalPages := int((total + int64(perPage) - 1) / int64(perPage))
 	nextPage := page + 1
-	if nextPage > totalPages { nextPage = totalPages }
+	if nextPage > totalPages {
+		nextPage = totalPages
+	}
 
 	return ctx.Render("admin/empresas/index", fiber.Map{
 		"title":      "Empresas",
@@ -566,10 +638,14 @@ func (c *AdminController) ChoferesIndex(ctx fiber.Ctx) error {
 	}
 
 	prevPage := page - 1
-	if prevPage < 1 { prevPage = 1 }
+	if prevPage < 1 {
+		prevPage = 1
+	}
 	totalPages := int((total + int64(perPage) - 1) / int64(perPage))
 	nextPage := page + 1
-	if nextPage > totalPages { nextPage = totalPages }
+	if nextPage > totalPages {
+		nextPage = totalPages
+	}
 
 	return ctx.Render("admin/choferes/index", fiber.Map{
 		"title":      "Choferes",
@@ -615,8 +691,12 @@ func (c *AdminController) ChoferesUpdate(ctx fiber.Ctx) error {
 	}
 
 	parseDate := func(s string) *time.Time {
-		if s == "" { return nil }
-		if t, err := time.Parse("2006-01-02", s); err == nil { return &t }
+		if s == "" {
+			return nil
+		}
+		if t, err := time.Parse("2006-01-02", s); err == nil {
+			return &t
+		}
 		return nil
 	}
 
@@ -668,10 +748,14 @@ func (c *AdminController) PublicadoresIndex(ctx fiber.Ctx) error {
 	}
 
 	prevPage := page - 1
-	if prevPage < 1 { prevPage = 1 }
+	if prevPage < 1 {
+		prevPage = 1
+	}
 	totalPages := int((total + int64(perPage) - 1) / int64(perPage))
 	nextPage := page + 1
-	if nextPage > totalPages { nextPage = totalPages }
+	if nextPage > totalPages {
+		nextPage = totalPages
+	}
 
 	return ctx.Render("admin/publicadores/index", fiber.Map{
 		"title":        "Publicadores",
@@ -717,8 +801,12 @@ func (c *AdminController) PublicadoresUpdate(ctx fiber.Ctx) error {
 	}
 
 	parseDate := func(s string) *time.Time {
-		if s == "" { return nil }
-		if t, err := time.Parse("2006-01-02", s); err == nil { return &t }
+		if s == "" {
+			return nil
+		}
+		if t, err := time.Parse("2006-01-02", s); err == nil {
+			return &t
+		}
 		return nil
 	}
 
@@ -755,11 +843,11 @@ func (c *AdminController) PublicadoresDelete(ctx fiber.Ctx) error {
 
 func (c *AdminController) CargasIndex(ctx fiber.Ctx) error {
 	filters := map[string]string{
-		"status":      ctx.Query("status"),
-		"tipo_equipo": ctx.Query("tipo_equipo"),
-		"tipo_carga":  ctx.Query("tipo_carga"),
+		"status":        ctx.Query("status"),
+		"tipo_equipo":   ctx.Query("tipo_equipo"),
+		"tipo_carga":    ctx.Query("tipo_carga"),
 		"publicador_id": ctx.Query("publicador_id"),
-		"chofer_id":   ctx.Query("chofer_id"),
+		"chofer_id":     ctx.Query("chofer_id"),
 	}
 	page, _ := strconv.Atoi(ctx.Query("page", "1"))
 	perPage, _ := strconv.Atoi(ctx.Query("per_page", "15"))
@@ -770,10 +858,14 @@ func (c *AdminController) CargasIndex(ctx fiber.Ctx) error {
 	}
 
 	prevPage := page - 1
-	if prevPage < 1 { prevPage = 1 }
+	if prevPage < 1 {
+		prevPage = 1
+	}
 	totalPages := int((total + int64(perPage) - 1) / int64(perPage))
 	nextPage := page + 1
-	if nextPage > totalPages { nextPage = totalPages }
+	if nextPage > totalPages {
+		nextPage = totalPages
+	}
 
 	return ctx.Render("admin/cargas/index", fiber.Map{
 		"title":      "Cargas",
@@ -885,11 +977,11 @@ func (c *AdminController) DireccionesDelete(ctx fiber.Ctx) error {
 
 func (c *AdminController) FacturasIndex(ctx fiber.Ctx) error {
 	filters := map[string]string{
-		"estado":       ctx.Query("estado"),
-		"emisor_id":    ctx.Query("emisor_id"),
-		"receptor_id":  ctx.Query("receptor_id"),
-		"fecha_desde":  ctx.Query("fecha_desde"),
-		"fecha_hasta":  ctx.Query("fecha_hasta"),
+		"estado":      ctx.Query("estado"),
+		"emisor_id":   ctx.Query("emisor_id"),
+		"receptor_id": ctx.Query("receptor_id"),
+		"fecha_desde": ctx.Query("fecha_desde"),
+		"fecha_hasta": ctx.Query("fecha_hasta"),
 	}
 	page, _ := strconv.Atoi(ctx.Query("page", "1"))
 	perPage, _ := strconv.Atoi(ctx.Query("per_page", "15"))
@@ -900,10 +992,14 @@ func (c *AdminController) FacturasIndex(ctx fiber.Ctx) error {
 	}
 
 	prevPage := page - 1
-	if prevPage < 1 { prevPage = 1 }
+	if prevPage < 1 {
+		prevPage = 1
+	}
 	totalPages := int((total + int64(perPage) - 1) / int64(perPage))
 	nextPage := page + 1
-	if nextPage > totalPages { nextPage = totalPages }
+	if nextPage > totalPages {
+		nextPage = totalPages
+	}
 
 	return ctx.Render("admin/facturas/index", fiber.Map{
 		"title":      "Facturas",

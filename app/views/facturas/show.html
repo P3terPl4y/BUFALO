@@ -6,7 +6,7 @@
             <p>Detalle de la factura · Referencia #{{ .factura.ID }}</p>
         </div>
         {{ if eq (printf "%s" .factura.Estado) "borrador" }}
-        {{ if or (eq .role "publicador") (eq .role "admin") }}<a href="/facturas/{{ .factura.ID }}/edit" class="btn btn-secondary"><i class="bi bi-pencil-square"></i> Editar borrador</a>{{ end }}
+        {{ if or (eq .role "admin") (and (eq .role "publicador") (eq (printf "%s" .factura.EmisorTipo) "publicador")) (and (eq .role "chofer") (eq (printf "%s" .factura.EmisorTipo) "chofer")) }}<a href="/facturas/{{ .factura.ID }}/edit" class="btn btn-secondary"><i class="bi bi-pencil-square"></i> Editar borrador</a>{{ end }}
         {{ end }}
     </header>
 
@@ -31,8 +31,11 @@
         <section class="tf-info-block" aria-labelledby="invoice-data-title">
             <header class="tf-info-block__head"><i class="bi bi-file-earmark-text tf-info-block__icon"></i><div class="tf-info-block__text"><h2 id="invoice-data-title">Datos de la factura</h2><p>Partes y fechas del documento.</p></div></header>
             <div class="tf-info-block__body"><dl class="tf-info-list">
-                <div class="tf-info-list__row"><dt>Emisor</dt><dd>{{ if .factura.Emisor }}{{ .factura.Emisor.NombreLegal }}{{ else }}Empresa #{{ .factura.EmisorID }}{{ end }}</dd></div>
-                <div class="tf-info-list__row"><dt>Receptor</dt><dd>{{ if .factura.Receptor }}{{ .factura.Receptor.NombreLegal }}{{ else }}Empresa #{{ .factura.ReceptorID }}{{ end }}</dd></div>
+                <div class="tf-info-list__row"><dt>Perfil emisor</dt><dd>{{ if eq (printf "%s" .factura.EmisorTipo) "publicador" }}Broker/publicador{{ else }}Chofer/carrier{{ end }}</dd></div>
+                <div class="tf-info-list__row"><dt>Emisor (empresa)</dt><dd>{{ if .factura.Emisor }}{{ .factura.Emisor.NombreLegal }}{{ else if .factura.EmisorID }}Empresa #{{ deref .factura.EmisorID }}{{ else }}Sin empresa asociada{{ end }}</dd></div>
+                <div class="tf-info-list__row"><dt>Receptor (empresa)</dt><dd>{{ if .factura.Receptor }}{{ .factura.Receptor.NombreLegal }}{{ else if .factura.ReceptorID }}Empresa #{{ deref .factura.ReceptorID }}{{ else }}Sin empresa asociada{{ end }}</dd></div>
+                <div class="tf-info-list__row"><dt>Broker asociado</dt><dd>{{ if .factura.Publicador }}{{ if .factura.Publicador.User }}{{ .factura.Publicador.User.Name }}{{ else }}Perfil #{{ .factura.Publicador.ID }}{{ end }}{{ else if .factura.PublicadorID }}Perfil #{{ deref .factura.PublicadorID }}{{ else }}—{{ end }}</dd></div>
+                <div class="tf-info-list__row"><dt>Chofer asociado</dt><dd>{{ if .factura.Chofer }}{{ if .factura.Chofer.User }}{{ .factura.Chofer.User.Name }}{{ else }}Perfil #{{ .factura.Chofer.ID }}{{ end }}{{ else if .factura.ChoferID }}Perfil #{{ deref .factura.ChoferID }}{{ else }}—{{ end }}</dd></div>
                 <div class="tf-info-list__row"><dt>Fecha de emisión</dt><dd>{{ .factura.FechaEmision.Format "02/01/2006" }}</dd></div>
                 <div class="tf-info-list__row"><dt>Vencimiento</dt><dd>{{ if .factura.FechaVencimiento }}{{ .factura.FechaVencimiento.Format "02/01/2006" }}{{ else }}Sin fecha de vencimiento{{ end }}</dd></div>
                 <div class="tf-info-list__row"><dt>Carga asociada</dt><dd>#{{ .factura.CargaID }}</dd></div>
@@ -52,7 +55,7 @@
         </section>
     </div>
 
-    {{ if or (eq .role "publicador") (eq .role "admin") }}
+    {{ if or (eq .role "admin") (and (eq .role "publicador") (eq (printf "%s" .factura.EmisorTipo) "publicador")) (and (eq .role "chofer") (eq (printf "%s" .factura.EmisorTipo) "chofer")) }}
     <section class="tf-table-card" aria-labelledby="invoice-actions-title">
         <header class="tf-table-card__header"><h2 class="tf-table-card__title" id="invoice-actions-title"><i class="bi bi-lightning-charge"></i> Próxima acción</h2></header>
         <div class="tf-form-block__body tf-invoice-actions">

@@ -100,6 +100,7 @@
                  data-dropoff-lat="{{ .load.DestinoDireccion.Latitud }}"
                  data-dropoff-lng="{{ .load.DestinoDireccion.Longitud }}"
                  data-dropoff-city="{{ .load.DestinoDireccion.Ciudad }}"></div>
+            <p id="route-map-status" class="tf-map-route-status" role="status" aria-live="polite">Las coordenadas se consultan en OSRM con datos de OpenStreetMap para estimar la ruta; no incluye tráfico en tiempo real.</p>
         </div>
     </section>
     {{ end }}
@@ -119,6 +120,7 @@
 </div>
 
 {{ if .hasMap }}
+<script src="/js/load-route.js"></script>
 <script>
 (function () {
     const el = document.getElementById('route-map');
@@ -127,7 +129,11 @@
     const pickup  = [parseFloat(el.dataset.pickupLat), parseFloat(el.dataset.pickupLng)];
     const dropoff = [parseFloat(el.dataset.dropoffLat), parseFloat(el.dataset.dropoffLng)];
 
-    if ([...pickup, ...dropoff].some(v => isNaN(v) || v === 0)) return;
+    if (![pickup[0], dropoff[0]].every(v => Number.isFinite(v) && v >= -90 && v <= 90) ||
+        ![pickup[1], dropoff[1]].every(v => Number.isFinite(v) && v >= -180 && v <= 180)) {
+        document.getElementById('route-map-status').textContent = 'Las coordenadas guardadas no son válidas.';
+        return;
+    }
 
     const map = L.map(el, { center: [21.5218, -77.7812], zoom: 7 });
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -145,7 +151,12 @@
     L.marker(dropoff, { icon: icon('dropoff') }).addTo(map)
         .bindPopup('<strong>Entrega</strong><small>' + (el.dataset.dropoffCity || '') + '</small>');
 
-    L.polyline([pickup, dropoff], { color: '#D5001C', weight: 4, opacity: .85 }).addTo(map);
+    if (window.BufaloRoadRoute) {
+        window.BufaloRoadRoute.draw(map, pickup, dropoff, document.getElementById('route-map-status'));
+    } else {
+        L.polyline([pickup, dropoff], { color: '#D5001C', weight: 3, dashArray: '8, 8' }).addTo(map);
+        document.getElementById('route-map-status').textContent = 'No se pudo cargar el cálculo de ruta; se muestra la línea directa.';
+    }
     map.fitBounds(L.latLngBounds([pickup, dropoff]), { padding: [50, 50], maxZoom: 12 });
 
     setTimeout(() => map.invalidateSize(), 250);

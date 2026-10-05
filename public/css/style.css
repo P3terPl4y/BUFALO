@@ -1254,6 +1254,7 @@ input[type="number"],input[type="datetime-local"]{font-variant-numeric:tabular-n
 /* 30. LOAD MAP — NO TOCAR (usado por register/show) */
 .tf-info-block__body--map{padding:0;overflow:hidden}
 #route-map{width:100%;height:440px;background:var(--tf-surface-3);position:relative;z-index:1}
+.tf-map-route-status{margin:0;padding:10px 14px;color:var(--tf-text-muted);font-size:var(--tf-fs-xs);background:var(--tf-surface-2);border-top:1px solid var(--tf-border)}
 .tf-info-block__head .btn[data-map-recenter]{margin-left:auto;flex-shrink:0}
 .tf-map-pin{position:relative;width:34px;height:34px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);display:grid;place-items:center;border:3px solid #fff;box-shadow:0 4px 12px rgba(0,0,0,.35);transition:transform var(--tf-dur) var(--tf-ease)}
 .tf-map-pin:hover{transform:rotate(-45deg) scale(1.1)}

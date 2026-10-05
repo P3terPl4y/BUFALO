@@ -3,6 +3,7 @@ package controllers
 import (
 	"fmt"
 	"goravel/app/billing"
+	"goravel/app/exports"
 	"goravel/app/facades"
 	"goravel/app/models"
 	"goravel/app/requests"
@@ -29,25 +30,11 @@ func NewFacturaController() *FacturaController {
 }
 
 func (c *FacturaController) Index(ctx fiber.Ctx) error {
-	user, err := c.currentUser(ctx)
+	filters, err := c.invoiceFiltersForCurrentUser(ctx)
 	if err != nil {
 		return fiber.ErrForbidden
 	}
-	role := user.Role
-	filters := map[string]string{"estado": ctx.Query("estado"), "fecha_desde": ctx.Query("fecha_desde"), "fecha_hasta": ctx.Query("fecha_hasta")}
-	if role != "admin" {
-		if user.EmpresaID == nil || *user.EmpresaID == 0 {
-			return fiber.ErrForbidden
-		}
-		if role == "publicador" {
-			filters["emisor_id"] = strconv.FormatUint(uint64(*user.EmpresaID), 10)
-		} else if role == "chofer" {
-			filters["receptor_id"] = strconv.FormatUint(uint64(*user.EmpresaID), 10)
-		} else {
-			return fiber.ErrForbidden
-		}
-	}
-
+	role, _ := session.FromContext(ctx).Get("role").(string)
 	page, _ := strconv.Atoi(ctx.Query("page", "1"))
 	perPage, _ := strconv.Atoi(ctx.Query("per_page", "10"))
 	if page < 1 {
@@ -67,17 +54,100 @@ func (c *FacturaController) Index(ctx fiber.Ctx) error {
 	}
 
 	return ctx.Render("facturas/index", fiber.Map{
-		"title":       "Facturas",
-		"facturas":    list,
-		"total":       total,
-		"page":        page,
-		"perPage":     perPage,
+		"title": "Facturas", "facturas": list, "total": total, "page": page, "perPage": perPage,
 		"hasNext":     int64(page)*int64(perPage) < total,
 		"flash_error": ctx.Query("flash_error"), "flash_success": ctx.Query("flash_success"),
-		"filters": filters,
-		"role":    role,
+		"filters": filters, "role": role,
 	}, "layouts/base")
+}
 
+func (c *FacturaController) invoiceFiltersForCurrentUser(ctx fiber.Ctx) (map[string]string, error) {
+	user, err := c.currentUser(ctx)
+	if err != nil {
+		return nil, err
+	}
+	filters := map[string]string{
+		"estado": ctx.Query("estado"), "emisor_id": ctx.Query("emisor_id"), "receptor_id": ctx.Query("receptor_id"),
+		"fecha_desde": ctx.Query("fecha_desde"), "fecha_hasta": ctx.Query("fecha_hasta"),
+	}
+	switch user.Role {
+	case "admin":
+	case "publicador":
+		publicador, err := c.publicadorForUser(user)
+		if err != nil {
+			return nil, err
+		}
+		filters["publicador_id"] = strconv.FormatUint(uint64(publicador.ID), 10)
+	case "chofer":
+		chofer, err := c.choferForUser(user)
+		if err != nil {
+			return nil, err
+		}
+		filters["chofer_id"] = strconv.FormatUint(uint64(chofer.ID), 10)
+	default:
+		return nil, fiber.ErrForbidden
+	}
+	return filters, nil
+}
+
+func (c *FacturaController) Export(ctx fiber.Ctx) error {
+	filters, err := c.invoiceFiltersForCurrentUser(ctx)
+	if err != nil {
+		return fiber.ErrForbidden
+	}
+	const pageSize = 100
+	const maxExportRows = 10000
+	rows, total, err := c.service.GetAllWithFilters(filters, 1, pageSize)
+	if err != nil {
+		log.Printf("Error preparando exportación de facturas: %v", err)
+		return fiber.ErrInternalServerError
+	}
+	if total > maxExportRows {
+		return ctx.Status(fiber.StatusRequestEntityTooLarge).SendString("La exportación supera 10000 facturas; aplica filtros de fecha o estado.")
+	}
+	for page := 2; int64((page-1)*pageSize) < total; page++ {
+		next, _, pageErr := c.service.GetAllWithFilters(filters, page, pageSize)
+		if pageErr != nil {
+			log.Printf("Error paginando exportación de facturas: %v", pageErr)
+			return fiber.ErrInternalServerError
+		}
+		rows = append(rows, next...)
+	}
+	data := make([][]exports.Cell, 0, len(rows))
+	for _, invoice := range rows {
+		publisherName, driverName := "", ""
+		if invoice.Publicador != nil && invoice.Publicador.User != nil {
+			publisherName = invoice.Publicador.User.Name
+		}
+		if invoice.Chofer != nil && invoice.Chofer.User != nil {
+			driverName = invoice.Chofer.User.Name
+		}
+		issuerName, recipientName := "", ""
+		if invoice.Emisor != nil {
+			issuerName = invoice.Emisor.NombreLegal
+		}
+		if invoice.Receptor != nil {
+			recipientName = invoice.Receptor.NombreLegal
+		}
+		data = append(data, []exports.Cell{
+			{Value: invoice.NumeroFactura}, {Value: invoice.FechaEmision.Format("2006-01-02")},
+			{Value: string(invoice.Estado)}, {Value: fmt.Sprintf("%.2f", invoice.Subtotal), Numeric: true},
+			{Value: fmt.Sprintf("%.2f", invoice.Impuestos), Numeric: true}, {Value: fmt.Sprintf("%.2f", invoice.Total), Numeric: true},
+			{Value: string(invoice.Moneda)}, {Value: strconv.FormatUint(uint64(invoice.CargaID), 10), Numeric: true},
+			{Value: issuerName}, {Value: recipientName}, {Value: publisherName}, {Value: driverName},
+		})
+	}
+	body, contentType, extension, err := exports.Render(exports.Report{
+		Title: "Facturas BUFALO", Headers: []string{"Número", "Fecha de emisión", "Estado", "Subtotal", "Impuestos", "Total", "Moneda", "Carga ID", "Empresa emisora", "Empresa receptora", "Publicador", "Chofer"}, Rows: data,
+	}, ctx.Query("format"))
+	if err != nil {
+		return fiber.ErrBadRequest
+	}
+	filename := "bufalo-facturas-" + time.Now().Format("20060102-150405") + "." + extension
+	ctx.Set("Content-Type", contentType)
+	ctx.Set("Content-Disposition", `attachment; filename="`+filename+`"`)
+	ctx.Set("Cache-Control", "no-store, private")
+	return ctx.Send(body)
 }
 
 func (c *FacturaController) Show(ctx fiber.Ctx) error {
@@ -102,7 +172,11 @@ func (c *FacturaController) Create(ctx fiber.Ctx) error {
 		if err != nil {
 			return fiber.ErrNotFound
 		}
-		if err := c.authorize(ctx, &models.Factura{EmisorID: carga.EmpresaID}, true); err != nil {
+		draft, err := c.invoiceForCurrentIssuer(ctx, carga)
+		if err != nil {
+			return fiber.ErrForbidden
+		}
+		if err := c.authorize(ctx, draft, true); err != nil {
 			return err
 		}
 	}
@@ -121,8 +195,6 @@ func (c *FacturaController) Store(ctx fiber.Ctx) error {
 	}
 	rules := map[string]any{
 		"carga_id":       "required|integer",
-		"emisor_id":      "required|integer",
-		"receptor_id":    "required|integer",
 		"numero_factura": "required|min:3|max:50",
 		"fecha_emision":  "required",
 		"subtotal":       "required|numeric|min:0",
@@ -147,11 +219,13 @@ func (c *FacturaController) Store(ctx fiber.Ctx) error {
 		}
 	}
 
+	user, err := c.currentUser(ctx)
+	if err != nil {
+		return fiber.ErrForbidden
+	}
 	f := models.Factura{
 		CargaID:          req.CargaID,
-		EmisorID:         req.EmisorID,
-		ReceptorID:       req.ReceptorID,
-		ChoferID:         req.ChoferID,
+		EmisorTipo:       models.TipoEmisorFactura(user.Role),
 		NumeroFactura:    req.NumeroFactura,
 		FechaEmision:     fechaEmision,
 		FechaVencimiento: fechaVenc,
@@ -163,6 +237,29 @@ func (c *FacturaController) Store(ctx fiber.Ctx) error {
 		Moneda:           models.Moneda(req.Moneda),
 		Estado:           models.FacturaBorrador,
 		MetodoPago:       strPtr(req.MetodoPago),
+	}
+	switch user.Role {
+	case "publicador":
+		profile, err := c.publicadorForUser(user)
+		if err != nil {
+			return fiber.ErrForbidden
+		}
+		f.PublicadorID = &profile.ID
+	case "chofer":
+		profile, err := c.choferForUser(user)
+		if err != nil {
+			return fiber.ErrForbidden
+		}
+		f.ChoferID = &profile.ID
+	case "admin":
+		load, err := c.cargaService.GetByID(strconv.FormatUint(uint64(req.CargaID), 10))
+		if err != nil || load.PublicadorID == 0 {
+			return fiber.ErrBadRequest
+		}
+		f.EmisorTipo = models.EmisorFacturaPublicador
+		f.PublicadorID = &load.PublicadorID
+	default:
+		return fiber.ErrForbidden
 	}
 	if err := c.authorize(ctx, &f, true); err != nil {
 		return err
@@ -269,10 +366,60 @@ func (c *FacturaController) currentUser(ctx fiber.Ctx) (*models.User, error) {
 }
 func (c *FacturaController) authorize(ctx fiber.Ctx, f *models.Factura, write bool) error {
 	user, err := c.currentUser(ctx)
-	if err != nil || !billing.CanAccess(user.ID, user.Role, user.EmpresaID, f, write) {
+	if err != nil {
+		return fiber.ErrForbidden
+	}
+	var publicadorID, choferID uint
+	if user.Role == "publicador" {
+		profile, err := c.publicadorForUser(user)
+		if err != nil {
+			return fiber.ErrForbidden
+		}
+		publicadorID = profile.ID
+	} else if user.Role == "chofer" {
+		chofer, err := c.choferForUser(user)
+		if err != nil {
+			return fiber.ErrForbidden
+		}
+		choferID = chofer.ID
+	}
+	if !billing.CanAccess(user.ID, user.Role, publicadorID, choferID, f, write) {
 		return fiber.ErrForbidden
 	}
 	return nil
+}
+
+func (c *FacturaController) publicadorForUser(user *models.User) (*models.Publicador, error) {
+	if user == nil || user.ID == 0 {
+		return nil, fiber.ErrForbidden
+	}
+	return services.NewPublicadorService().GetByUserID(user.ID)
+}
+
+func (c *FacturaController) invoiceForCurrentIssuer(ctx fiber.Ctx, carga *models.Carga) (*models.Factura, error) {
+	user, err := c.currentUser(ctx)
+	if err != nil || carga == nil {
+		return nil, fiber.ErrForbidden
+	}
+	f := &models.Factura{PublicadorID: &carga.PublicadorID, ChoferID: carga.ChoferID}
+	switch user.Role {
+	case "publicador":
+		f.EmisorTipo = models.EmisorFacturaPublicador
+	case "chofer":
+		f.EmisorTipo = models.EmisorFacturaChofer
+	case "admin":
+		f.EmisorTipo = models.EmisorFacturaPublicador
+	default:
+		return nil, fiber.ErrForbidden
+	}
+	return f, nil
+}
+
+func (c *FacturaController) choferForUser(user *models.User) (*models.Chofer, error) {
+	if user == nil || user.ID == 0 {
+		return nil, fiber.ErrForbidden
+	}
+	return services.NewChoferService().GetByUserID(user.ID)
 }
 func (c *FacturaController) Emitir(ctx fiber.Ctx) error {
 	f, err := c.service.GetByID(ctx.Params("id"))

@@ -3,6 +3,11 @@
         <div class="tf-loads-header__left">
             <div class="tf-loads-header__icon"><i class="bi bi-receipt"></i></div>
             <div><h1>Facturas</h1><p>Todas las facturas del sistema</p></div>
+            <div class="d-flex flex-wrap gap-2">
+                <a class="btn btn-outline-success" href="/admin/facturas/export?format=csv&amp;estado={{ .filters.estado }}&amp;emisor_id={{ .filters.emisor_id }}&amp;receptor_id={{ .filters.receptor_id }}&amp;fecha_desde={{ .filters.fecha_desde }}&amp;fecha_hasta={{ .filters.fecha_hasta }}"><i class="bi bi-filetype-csv"></i> CSV</a>
+                <a class="btn btn-outline-success" href="/admin/facturas/export?format=excel&amp;estado={{ .filters.estado }}&amp;emisor_id={{ .filters.emisor_id }}&amp;receptor_id={{ .filters.receptor_id }}&amp;fecha_desde={{ .filters.fecha_desde }}&amp;fecha_hasta={{ .filters.fecha_hasta }}"><i class="bi bi-file-earmark-excel"></i> Excel (.xlsx)</a>
+                <a class="btn btn-outline-danger" href="/admin/facturas/export?format=pdf&amp;estado={{ .filters.estado }}&amp;emisor_id={{ .filters.emisor_id }}&amp;receptor_id={{ .filters.receptor_id }}&amp;fecha_desde={{ .filters.fecha_desde }}&amp;fecha_hasta={{ .filters.fecha_hasta }}"><i class="bi bi-file-earmark-pdf"></i> PDF</a>
+            </div>
         </div>
     </header>
 

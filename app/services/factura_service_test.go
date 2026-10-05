@@ -14,6 +14,15 @@ func TestFacturaPersistenceLifecycle(t *testing.T) {
 	tests.ResetDB(t)
 	emisor := tests.SeedEmpresa(t, "broker", "Emisor")
 	receptor := tests.SeedEmpresa(t, "carrier", "Receptor")
+	brokerUser := tests.NewUserPublicador("billing-broker@test.local")
+	if err := facades.Orm().Query().Create(brokerUser); err != nil {
+		t.Fatal(err)
+	}
+	broker := tests.NewPublicadorProfile()
+	broker.UserID, broker.EmpresaID = brokerUser.ID, emisor.ID
+	if err := facades.Orm().Query().Create(broker); err != nil {
+		t.Fatal(err)
+	}
 	user := tests.NewUserChofer("billing@test.local")
 	if err := facades.Orm().Query().Create(user); err != nil {
 		t.Fatal(err)
@@ -24,14 +33,14 @@ func TestFacturaPersistenceLifecycle(t *testing.T) {
 	if err := facades.Orm().Query().Create(driver); err != nil {
 		t.Fatal(err)
 	}
-	load := &models.Carga{NumeroReferencia: "BILL-LOAD", PublicadorID: 1, EmpresaID: emisor.ID, ChoferID: &driver.ID, OrigenDireccionID: 1, DestinoDireccionID: 2, FechaRecogida: time.Now(), TipoCarga: models.CargaFTL, TipoEquipo: models.EquipoDryVan, Estado: models.CargaEntregada, Moneda: models.MonedaUSD}
+	load := &models.Carga{NumeroReferencia: "BILL-LOAD", PublicadorID: broker.ID, EmpresaID: emisor.ID, ChoferID: &driver.ID, OrigenDireccionID: 1, DestinoDireccionID: 2, FechaRecogida: time.Now(), TipoCarga: models.CargaFTL, TipoEquipo: models.EquipoDryVan, Estado: models.CargaEntregada, Moneda: models.MonedaUSD}
 	if err := facades.Orm().Query().Create(load); err != nil {
 		t.Fatal(err)
 	}
 	svc := services.NewFacturaService()
-	f := &models.Factura{CargaID: load.ID, EmisorID: emisor.ID, ReceptorID: receptor.ID, NumeroFactura: "BILL-001", FechaEmision: time.Now(), Subtotal: 100, Impuestos: 20, Total: 999, Moneda: models.MonedaUSD}
+	f := &models.Factura{CargaID: load.ID, EmisorTipo: models.EmisorFacturaPublicador, PublicadorID: &broker.ID, NumeroFactura: "BILL-001", FechaEmision: time.Now(), Subtotal: 100, Impuestos: 20, Total: 999, Moneda: models.MonedaUSD}
 	wrong := *f
-	wrong.ReceptorID = emisor.ID
+	wrong.PublicadorID = tests.PtrUint(999999)
 	if svc.Create(&wrong) == nil {
 		t.Fatal("mismatched parties accepted")
 	}
@@ -44,7 +53,7 @@ func TestFacturaPersistenceLifecycle(t *testing.T) {
 		t.Fatal(err)
 	}
 	id := fmt.Sprint(f.ID)
-	if f.Total != 120 || f.Estado != models.FacturaBorrador || f.ChoferID == nil || *f.ChoferID != driver.ID {
+	if f.Total != 120 || f.Estado != models.FacturaBorrador || f.ChoferID == nil || *f.ChoferID != driver.ID || f.EmisorID == nil || *f.EmisorID != emisor.ID || f.ReceptorID == nil || *f.ReceptorID != receptor.ID {
 		t.Fatalf("incorrect invoice %+v", f)
 	}
 	duplicate := *f
@@ -80,11 +89,25 @@ func TestFacturaPersistenceLifecycle(t *testing.T) {
 	if svc.MarcarPagada("999999", "transferencia") == nil {
 		t.Fatal("nonexistent invoice paid")
 	}
+	loadForDriver := *load
+	loadForDriver.ID = 0
+	loadForDriver.NumeroReferencia = "BILL-LOAD-DRIVER"
+	if err := facades.Orm().Query().Create(&loadForDriver); err != nil {
+		t.Fatal(err)
+	}
+	driverInvoice := &models.Factura{CargaID: loadForDriver.ID, ChoferID: &driver.ID, EmisorTipo: models.EmisorFacturaChofer, NumeroFactura: "BILL-DRIVER-001", FechaEmision: time.Now(), Subtotal: 50, Moneda: models.MonedaUSD}
+	if err := svc.Create(driverInvoice); err != nil {
+		t.Fatalf("driver-issued invoice rejected: %v", err)
+	}
+	if driverInvoice.PublicadorID == nil || *driverInvoice.PublicadorID != broker.ID || driverInvoice.ChoferID == nil || *driverInvoice.ChoferID != driver.ID {
+		t.Fatalf("invoice participants were not associated: %+v", driverInvoice)
+	}
 }
 
 func TestFacturaCancelPreservesRecord(t *testing.T) {
 	tests.ResetDB(t)
-	f := &models.Factura{CargaID: 1, EmisorID: 1, ReceptorID: 2, NumeroFactura: "CANCEL-001", FechaEmision: time.Now(), Subtotal: 100, Total: 100, Moneda: models.MonedaUSD, Estado: models.FacturaBorrador}
+	publicadorID := uint(1)
+	f := &models.Factura{CargaID: 1, PublicadorID: &publicadorID, EmisorTipo: models.EmisorFacturaPublicador, NumeroFactura: "CANCEL-001", FechaEmision: time.Now(), Subtotal: 100, Total: 100, Moneda: models.MonedaUSD, Estado: models.FacturaBorrador}
 	if err := facades.Orm().Query().Create(f); err != nil {
 		t.Fatal(err)
 	}

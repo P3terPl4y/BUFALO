@@ -131,6 +131,11 @@
     <section class="tf-home__section">
         <h2 class="tf-home__section-title"><i class="bi bi-lightning-charge-fill"></i> Administrar</h2>
         <div class="tf-home-actions">
+            <a href="/admin/metrics" class="tf-action-tile tf-action-tile--primary">
+                <span class="tf-action-tile__icon"><i class="bi bi-graph-up-arrow"></i></span>
+                <span class="tf-action-tile__body"><strong>Métricas del sistema</strong><small>Usuarios, cargas, facturas y salud</small></span>
+                <span class="tf-action-tile__arrow"><i class="bi bi-arrow-right"></i></span>
+            </a>
             <a href="/admin/users" class="tf-action-tile tf-action-tile--primary">
                 <span class="tf-action-tile__icon"><i class="bi bi-people"></i></span>
                 <span class="tf-action-tile__body">
@@ -188,6 +193,31 @@
                 <span class="tf-action-tile__arrow"><i class="bi bi-arrow-right"></i></span>
             </a>
         </div>
+    </section>
+
+    <section class="tf-home__section" id="systemHealth" aria-labelledby="systemHealthTitle">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+            <div>
+                <h2 class="tf-home__section-title mb-1" id="systemHealthTitle"><i class="bi bi-activity"></i> Salud y rendimiento</h2>
+                <p class="text-muted mb-0">Métricas agregadas del proceso desde su último inicio.</p>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <span id="systemHealthStatus" class="badge bg-secondary" role="status">Consultando…</span>
+                <button type="button" class="btn btn-outline-secondary btn-sm" id="refreshSystemHealth"><i class="bi bi-arrow-clockwise"></i> Actualizar</button>
+            </div>
+        </div>
+
+        <div class="tf-home-stats tf-home-stats--3">
+            <div class="tf-home-stat"><span class="tf-home-stat__icon tf-home-stat__icon--success"><i class="bi bi-hdd-network"></i></span><div class="tf-home-stat__body"><span class="tf-home-stat__label">PostgreSQL · TCP</span><p class="tf-home-stat__value" id="healthPostgres">—</p><small id="healthPostgresLatency">—</small></div></div>
+            <div class="tf-home-stat"><span class="tf-home-stat__icon tf-home-stat__icon--info"><i class="bi bi-database-check"></i></span><div class="tf-home-stat__body"><span class="tf-home-stat__label">Redis · TCP</span><p class="tf-home-stat__value" id="healthRedis">—</p><small id="healthRedisLatency">—</small></div></div>
+            <div class="tf-home-stat"><span class="tf-home-stat__icon tf-home-stat__icon--primary"><i class="bi bi-clock-history"></i></span><div class="tf-home-stat__body"><span class="tf-home-stat__label">Tiempo activo</span><p class="tf-home-stat__value" id="healthUptime">—</p><small>desde el último inicio</small></div></div>
+            <div class="tf-home-stat"><span class="tf-home-stat__icon tf-home-stat__icon--primary"><i class="bi bi-arrow-left-right"></i></span><div class="tf-home-stat__body"><span class="tf-home-stat__label">Solicitudes</span><p class="tf-home-stat__value" id="healthRequests">—</p><small id="healthRequestRate">—</small></div></div>
+            <div class="tf-home-stat"><span class="tf-home-stat__icon tf-home-stat__icon--warning"><i class="bi bi-speedometer2"></i></span><div class="tf-home-stat__body"><span class="tf-home-stat__label">Latencia HTTP</span><p class="tf-home-stat__value" id="healthLatency">—</p><small id="healthP95">p95: —</small></div></div>
+            <div class="tf-home-stat"><span class="tf-home-stat__icon tf-home-stat__icon--danger"><i class="bi bi-exclamation-triangle"></i></span><div class="tf-home-stat__body"><span class="tf-home-stat__label">Errores HTTP 5xx</span><p class="tf-home-stat__value" id="healthErrors">—</p><small id="healthErrorRate">—</small></div></div>
+            <div class="tf-home-stat"><span class="tf-home-stat__icon tf-home-stat__icon--info"><i class="bi bi-memory"></i></span><div class="tf-home-stat__body"><span class="tf-home-stat__label">Memoria del heap</span><p class="tf-home-stat__value" id="healthHeap">—</p><small id="healthHeapAlloc">reservada en heap: —</small></div></div>
+            <div class="tf-home-stat"><span class="tf-home-stat__icon tf-home-stat__icon--primary"><i class="bi bi-cpu"></i></span><div class="tf-home-stat__body"><span class="tf-home-stat__label">Goroutines</span><p class="tf-home-stat__value" id="healthGoroutines">—</p><small id="healthGC">GOMAXPROCS: — · GC: —</small></div></div>
+        </div>
+        <p class="text-muted small mt-2 mb-0" id="healthCheckedAt">Actualización cada 15 segundos. La verificación de dependencias mide conectividad TCP, no autenticación ni consultas SQL. La latencia p95 es aproximada por intervalos.</p>
     </section>
 
     <!-- ÚLTIMOS REGISTROS -->
@@ -248,3 +278,61 @@
     </div>
 
 </div>
+
+<script>
+(function () {
+    const text = (id, value) => {
+        const node = document.getElementById(id);
+        if (node) node.textContent = value;
+    };
+    const number = (value, digits = 1) => Number(value || 0).toFixed(digits);
+    const duration = (seconds) => {
+        seconds = Math.max(0, Number(seconds || 0));
+        const hours = Math.floor(seconds / 3600);
+        const minutes = Math.floor((seconds % 3600) / 60);
+        const rest = Math.floor(seconds % 60);
+        return hours ? `${hours} h ${minutes} min` : minutes ? `${minutes} min ${rest} s` : `${rest} s`;
+    };
+    const labelStatus = (id, state, latencyId, latency) => {
+        text(id, state === 'available' ? 'Disponible' : 'No disponible');
+        text(latencyId, `${number(latency, 2)} ms de conexión`);
+    };
+    async function refreshHealth() {
+        try {
+            const response = await fetch('/admin/health', { credentials: 'same-origin', headers: { Accept: 'application/json' }, cache: 'no-store' });
+            if (!response.ok) throw new Error('No se pudo consultar la salud del sistema');
+            const data = await response.json();
+            const runtime = data.runtime || {};
+            const status = document.getElementById('systemHealthStatus');
+            if (status) {
+                status.textContent = data.status === 'ok' ? 'Operativo' : 'Degradado';
+                status.className = `badge ${data.status === 'ok' ? 'bg-success' : 'bg-danger'}`;
+            }
+            labelStatus('healthPostgres', data.dependencies.postgres_tcp.status, 'healthPostgresLatency', data.dependencies.postgres_tcp.latency_ms);
+            labelStatus('healthRedis', data.dependencies.redis_tcp.status, 'healthRedisLatency', data.dependencies.redis_tcp.latency_ms);
+            text('healthUptime', duration(runtime.uptime_seconds));
+            text('healthRequests', Number(runtime.requests || 0).toLocaleString('es'));
+            text('healthRequestRate', `${number(runtime.requests_per_minute, 2)} solicitudes/min (promedio desde inicio)`);
+            text('healthLatency', `${number(runtime.average_latency_ms, 2)} ms promedio`);
+            text('healthP95', `p95 aproximado: ${runtime.p95_latency || '—'}`);
+            text('healthErrors', Number(runtime.server_errors_5xx || 0).toLocaleString('es'));
+            text('healthErrorRate', `${number(runtime.error_rate_percent, 2)}% de solicitudes`);
+            text('healthHeap', `${number(runtime.heap_in_use_mb, 2)} MB en uso`);
+            text('healthHeapAlloc', `asignada: ${number(runtime.heap_alloc_mb, 2)} MB · total asignado: ${number(runtime.total_alloc_mb, 2)} MB`);
+            text('healthGoroutines', `${runtime.goroutines || 0}`);
+            text('healthGC', `GOMAXPROCS: ${runtime.gomaxprocs || 0} · GC: ${runtime.gc_cycles || 0}`);
+            text('healthCheckedAt', `Actualizado: ${new Date(data.checked_at).toLocaleString('es')} · actualización cada 15 s. TCP no verifica autenticación ni consultas SQL; p95 es aproximado por intervalos.`);
+        } catch (error) {
+            const status = document.getElementById('systemHealthStatus');
+            if (status) {
+                status.textContent = 'Sin datos';
+                status.className = 'badge bg-danger';
+            }
+            text('healthCheckedAt', error.message || 'No se pudieron actualizar las métricas.');
+        }
+    }
+    document.getElementById('refreshSystemHealth')?.addEventListener('click', refreshHealth);
+    refreshHealth();
+    window.setInterval(refreshHealth, 15000);
+})();
+</script>

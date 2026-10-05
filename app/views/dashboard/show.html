@@ -308,6 +308,7 @@
                  data-dropoff-lat="{{ .load.DestinoDireccion.Latitud }}"
                  data-dropoff-lng="{{ .load.DestinoDireccion.Longitud }}"
                  data-dropoff-city="{{ .load.DestinoDireccion.Ciudad }}"></div>
+            <p id="route-map-status" class="tf-map-route-status" role="status" aria-live="polite">Las coordenadas se consultan en OSRM con datos de OpenStreetMap para estimar la ruta; no incluye tráfico en tiempo real.</p>
             {{ else }}
             <div class="tf-map-empty">
                 <i class="bi bi-geo-alt"></i>
@@ -389,6 +390,7 @@
 
 </div>
 
+<script src="/js/load-route.js"></script>
 <script>
 (function () {
     const el = document.getElementById('route-map');
@@ -399,7 +401,9 @@
     const dropoffLat = parseFloat(el.dataset.dropoffLat);
     const dropoffLng = parseFloat(el.dataset.dropoffLng);
 
-    if ([pickupLat, pickupLng, dropoffLat, dropoffLng].some(v => isNaN(v) || v === 0)) {
+    if (![pickupLat, dropoffLat].every(v => Number.isFinite(v) && v >= -90 && v <= 90) ||
+        ![pickupLng, dropoffLng].every(v => Number.isFinite(v) && v >= -180 && v <= 180)) {
+        document.getElementById('route-map-status').textContent = 'Las coordenadas guardadas no son válidas.';
         el.outerHTML = '<div class="tf-map-empty"><i class="bi bi-geo-alt"></i>' +
                        '<h4>Coordenadas inválidas</h4></div>';
         return;
@@ -439,21 +443,11 @@
         .addTo(map)
         .bindPopup(`<strong>Entrega</strong><small>${escapeHtml(el.dataset.dropoffCity || '')}</small>`);
 
-    if (typeof L.Geodesic !== 'undefined') {
-        new L.Geodesic([pickup, dropoff], {
-            className: 'tf-route-line',
-            color: '#D5001C',
-            weight: 4,
-            opacity: 0.85,
-            steps: 60,
-        }).addTo(map);
+    if (window.BufaloRoadRoute) {
+        window.BufaloRoadRoute.draw(map, pickup, dropoff, document.getElementById('route-map-status'));
     } else {
-        L.polyline([pickup, dropoff], {
-            color: '#D5001C',
-            weight: 4,
-            opacity: 0.85,
-            dashArray: '10, 6',
-        }).addTo(map);
+        L.polyline([pickup, dropoff], { color: '#D5001C', weight: 3, dashArray: '8, 8' }).addTo(map);
+        document.getElementById('route-map-status').textContent = 'No se pudo cargar el cálculo de ruta; se muestra la línea directa.';
     }
 
     const bounds = L.latLngBounds([pickup, dropoff]);

@@ -4,9 +4,11 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"goravel/app/models"
+	"goravel/app/monitoring"
 	"goravel/app/viewhelpers"
 	"goravel/bootstrap"
 	"goravel/routes"
@@ -157,6 +159,7 @@ func main() {
 
 	// 1) Logger + Recover
 	appFiber.Use(logger.New())
+	appFiber.Use(monitoring.Middleware())
 	appFiber.Use(recover.New())
 
 	// 2) Helmet — cabeceras de seguridad
@@ -166,7 +169,7 @@ func main() {
 			"style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; " +
 			"img-src 'self' data: blob: https://*.tile.openstreetmap.org https://tile.openstreetmap.org; " +
 			"font-src 'self' https://cdn.jsdelivr.net; " +
-			"connect-src 'self' https://nominatim.openstreetmap.org; " + // ← NUEVO
+			"connect-src 'self' https://nominatim.openstreetmap.org https://router.project-osrm.org; " +
 			"frame-ancestors 'none';",
 		HSTSMaxAge:                31536000,
 		HSTSPreloadEnabled:        true,
@@ -219,11 +222,12 @@ func main() {
 		Extractor:      extractors.FromForm("_csrf"),
 		IdleTimeout:    30 * time.Minute,
 		Session:        sessionStore, // ← vincula el token a la sesión
-		TrustedOrigins: []string{
-			"https://mariana-flagless-inaudibly.ngrok-free.dev", // Tu URL de Ngrok
-			// O usa un patrón: "https://*.ngrok-free.dev"
-		},
+		TrustedOrigins: trustedOrigins(),
 	}))
+
+	appFiber.Get("/healthz", func(c fiber.Ctx) error {
+		return c.SendStatus(fiber.StatusOK)
+	})
 
 	// ── Archivos estáticos ──
 	log.Println("📁 Configurando archivos estáticos...")
@@ -238,6 +242,19 @@ func main() {
 	log.Println("✅ Rutas registradas")
 
 	// ── Arrancar ──
-	log.Println("🌐 Servidor iniciado en http://localhost:3000")
-	log.Fatal(appFiber.Listen(":3000"))
+	host := env("APP_HOST", "0.0.0.0")
+	port := envInt("APP_PORT", 3000)
+	address := host + ":" + strconv.Itoa(port)
+	log.Printf("🌐 Servidor iniciado en %s", address)
+	log.Fatal(appFiber.Listen(address))
+}
+
+func trustedOrigins() []string {
+	var origins []string
+	for _, origin := range strings.Split(os.Getenv("CSRF_TRUSTED_ORIGINS"), ",") {
+		if origin = strings.TrimSpace(origin); origin != "" {
+			origins = append(origins, origin)
+		}
+	}
+	return origins
 }

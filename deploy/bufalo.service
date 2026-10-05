@@ -1,0 +1,26 @@
+[Unit]
+Description=BUFALO logistics platform
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=peter
+Group=peter
+WorkingDirectory=/home/peter/BUFALO
+EnvironmentFile=/home/peter/BUFALO/.env
+Environment=APP_ENV=production
+Environment=APP_DEBUG=false
+Environment=APP_HOST=0.0.0.0
+Environment=APP_PORT=3000
+Environment=CSRF_TRUSTED_ORIGINS=https://bufalo.duohnson.com
+ExecStart=/home/peter/BUFALO/bin/bufalo
+Restart=on-failure
+RestartSec=3
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+
+[Install]
+WantedBy=multi-user.target

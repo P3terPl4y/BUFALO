@@ -36,6 +36,17 @@ func (c *UserController) getCurrentUserID(ctx fiber.Ctx) (uint, bool) {
 	return id, ok
 }
 
+func (c *UserController) getCurrentUser(ctx fiber.Ctx) (*models.User, error) {
+	if user, ok := ctx.Locals("authenticated_user").(*models.User); ok && user != nil && user.ID > 0 {
+		return user, nil
+	}
+	userID, ok := c.getCurrentUserID(ctx)
+	if !ok || userID == 0 {
+		return nil, fiber.ErrUnauthorized
+	}
+	return c.userService.GetByID(userID)
+}
+
 // Show - muestra el perfil del usuario autenticado
 func (c *UserController) Show(ctx fiber.Ctx) error {
 	userID, ok := c.getCurrentUserID(ctx)
@@ -43,14 +54,10 @@ func (c *UserController) Show(ctx fiber.Ctx) error {
 		return ctx.Redirect().To("/login")
 	}
 
-	user, err := c.userService.GetByID(userID)
-	if err != nil {
+	user, err := c.getCurrentUser(ctx)
+	if err != nil || user == nil {
 		log.Printf("Error al obtener perfil: %v", err)
-		return ctx.Render("profile/show", fiber.Map{
-			"title":       "Mi Perfil",
-			"flash_error": "Usuario no encontrado",
-			"role":        ctx.Locals("role"),
-		}, "layouts/base")
+		return ctx.Redirect().To("/login?flash_error=No+se+pudo+cargar+el+perfil")
 	}
 
 	return ctx.Render("profile/show", fiber.Map{
@@ -69,19 +76,15 @@ func (c *UserController) Show(ctx fiber.Ctx) error {
 
 // Edit - muestra el formulario de edición
 func (c *UserController) Edit(ctx fiber.Ctx) error {
-	userID, ok := c.getCurrentUserID(ctx)
+	_, ok := c.getCurrentUserID(ctx)
 	if !ok {
 		return ctx.Redirect().To("/login")
 	}
 
-	user, err := c.userService.GetByID(userID)
-	if err != nil {
+	user, err := c.getCurrentUser(ctx)
+	if err != nil || user == nil {
 		log.Printf("Error al obtener perfil: %v", err)
-		return ctx.Render("profile/edit", fiber.Map{
-			"title":       "Editar Perfil",
-			"flash_error": "Usuario no encontrado",
-			"role":        ctx.Locals("role"),
-		}, "layouts/base")
+		return ctx.Redirect().To("/login?flash_error=No+se+pudo+cargar+el+perfil")
 	}
 
 	return ctx.Render("profile/edit", fiber.Map{
@@ -99,7 +102,7 @@ func (c *UserController) Update(ctx fiber.Ctx) error {
 		return ctx.Redirect().To("/login")
 	}
 
-	user, err := c.userService.GetByID(userID)
+	user, err := c.getCurrentUser(ctx)
 	if err != nil {
 		return ctx.Redirect().To("/login")
 	}
@@ -250,8 +253,8 @@ func (c *UserController) UploadPhoto(ctx fiber.Ctx) error {
 	if !ok {
 		return ctx.Redirect().To("/login")
 	}
-	user, err := c.userService.GetByID(userID)
-	if err != nil {
+	user, err := c.getCurrentUser(ctx)
+	if err != nil || user == nil {
 		return ctx.Redirect().To("/profile/edit?flash_error=Usuario+no+encontrado")
 	}
 	file, err := ctx.FormFile("profile_photo")

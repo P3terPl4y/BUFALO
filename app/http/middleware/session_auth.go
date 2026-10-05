@@ -7,7 +7,9 @@ import (
 	frameworkerrors "github.com/goravel/framework/errors"
 	"goravel/app/facades"
 	"goravel/app/models"
+	"goravel/app/monitoring"
 	"log"
+	"time"
 )
 
 // SessionAuth treats the database account as authoritative on every request.
@@ -42,9 +44,13 @@ func SessionAuth() fiber.Handler {
 		}
 		sess.Set("role", user.Role)
 		sess.Set("is_active", user.IsActive)
+		// Keep the database-validated user for controllers in this request. This
+		// avoids a second lookup with unrelated preloads for the current profile.
+		c.Locals("authenticated_user", &user)
 		c.Locals("user_id", user.ID)
 		c.Locals("role", user.Role)
 		c.Locals("is_active", user.IsActive)
+		monitoring.RecordUserActivity(user.ID, time.Now())
 		return c.Next()
 	}
 }

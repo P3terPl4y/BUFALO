@@ -29,7 +29,8 @@ func (s *FacturaService) GetAllWithFilters(filters map[string]string, page, perP
 		With("Carga").
 		With("Emisor").
 		With("Receptor").
-		With("Chofer")
+		With("Publicador.User").
+		With("Chofer.User")
 
 	if estado := filters["estado"]; estado != "" {
 		query = query.Where("estado = ?", estado)
@@ -37,8 +38,14 @@ func (s *FacturaService) GetAllWithFilters(filters map[string]string, page, perP
 	if emisorID := filters["emisor_id"]; emisorID != "" {
 		query = query.Where("emisor_id = ?", emisorID)
 	}
+	if publicadorID := filters["publicador_id"]; publicadorID != "" {
+		query = query.Where("publicador_id = ?", publicadorID)
+	}
 	if receptorID := filters["receptor_id"]; receptorID != "" {
 		query = query.Where("receptor_id = ?", receptorID)
+	}
+	if choferID := filters["chofer_id"]; choferID != "" {
+		query = query.Where("chofer_id = ?", choferID)
 	}
 	if desde := filters["fecha_desde"]; desde != "" {
 		if t, err := time.Parse("2006-01-02", desde); err == nil {
@@ -68,7 +75,8 @@ func (s *FacturaService) GetByID(id string) (*models.Factura, error) {
 		With("Carga").
 		With("Emisor").
 		With("Receptor").
-		With("Chofer").
+		With("Publicador.User").
+		With("Chofer.User").
 		Where("id = ?", id).
 		First(&f)
 	if err != nil || f.ID == 0 {
@@ -85,10 +93,42 @@ func (s *FacturaService) Create(f *models.Factura) error {
 	if err := facades.Orm().Query().With("Chofer").Where("id = ?", f.CargaID).First(&carga); err != nil {
 		return err
 	}
-	if carga.ID == 0 || carga.EmpresaID != f.EmisorID || carga.Estado != models.CargaEntregada || carga.Chofer == nil || carga.Chofer.EmpresaID != f.ReceptorID {
-		return errors.New("la factura requiere una carga entregada y empresas coincidentes")
+	if carga.ID == 0 || carga.Estado != models.CargaEntregada || carga.PublicadorID == 0 {
+		return errors.New("la factura requiere una carga entregada con un publicador válido")
 	}
-	f.ChoferID = carga.ChoferID
+	var publicador models.Publicador
+	if err := facades.Orm().Query().Where("id = ?", carga.PublicadorID).First(&publicador); err != nil || publicador.ID == 0 {
+		return errors.New("el perfil publicador asociado a la carga no existe")
+	}
+	if carga.ChoferID != nil && (carga.Chofer == nil || carga.Chofer.ID != *carga.ChoferID) {
+		return errors.New("el perfil chofer asociado a la carga no existe")
+	}
+	if f.EmisorTipo == models.EmisorFacturaPublicador {
+		if f.PublicadorID == nil || *f.PublicadorID != carga.PublicadorID {
+			return errors.New("el publicador no pertenece a la carga")
+		}
+	} else if f.EmisorTipo == models.EmisorFacturaChofer {
+		if carga.ChoferID == nil || f.ChoferID == nil || *f.ChoferID != *carga.ChoferID {
+			return errors.New("el chofer no está asignado a la carga")
+		}
+	} else {
+		return errors.New("tipo de emisor inválido")
+	}
+
+	publicadorID, choferID := carga.PublicadorID, carga.ChoferID
+	f.PublicadorID = &publicadorID
+	f.ChoferID = choferID
+	emisorID := carga.EmpresaID
+	if emisorID > 0 {
+		f.EmisorID = &emisorID
+	} else {
+		f.EmisorID = nil
+	}
+	f.ReceptorID = nil
+	if carga.Chofer != nil && carga.Chofer.EmpresaID > 0 {
+		receptorID := carga.Chofer.EmpresaID
+		f.ReceptorID = &receptorID
+	}
 	f.Estado = models.FacturaBorrador
 	f.FechaPago = nil
 	f.MetodoPago = nil
