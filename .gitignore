@@ -9,6 +9,5 @@ storage
 tmp
 bin/bufalo
 
-# React/Capacitor mobile build outputs
-mobile/node_modules/
-mobile/dist/
+# Discontinued React/Capacitor mobile application
+/mobile/

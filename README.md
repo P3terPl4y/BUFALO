@@ -1,5 +1,5 @@
 # 🐃 BUFALO
-Plataforma de gestión logística y marketplace de cargas para Cuba, inspirada en DAT One. Conecta **publicadores** (brokers) con **choferes** (carriers) para publicar, negociar y asignar cargas.
+Plataforma de gestión logística y marketplace de cargas para Cuba. Conecta **publicadores** (brokers) con **choferes** (carriers) para publicar, negociar y asignar cargas.
 
 ---
 
@@ -20,7 +20,7 @@ Plataforma de gestión logística y marketplace de cargas para Cuba, inspirada e
 
 ## 🎯 Descripción general
 
-BUFALO es un **clon funcional de DAT One adaptado al mercado cubano**:
+BUFALO es una plataforma logística desarrollada para las necesidades de operaciones de carga en Cuba:
 
 - **Publicadores** (brokers) publican cargas con origen, destino, peso, tarifa y tipo de equipo.
 - **Choferes** (carriers) buscan cargas, se interesan, o las aceptan directamente.
@@ -60,7 +60,7 @@ Características clave:
 ## 📂 Estructura del proyecto
 
 ```
-DATClone/
+BUFALO/
 ├── main.go                          # Bootstrap de la app, middlewares, arranque
 ├── go.mod
 ├── go.sum
@@ -823,7 +823,7 @@ APP_KEY=base64:...
 
 DB_HOST=127.0.0.1
 DB_PORT=5432
-DB_DATABASE=datclone
+DB_DATABASE=bufalo
 DB_USERNAME=postgres
 DB_PASSWORD=postgres
 

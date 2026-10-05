@@ -31,7 +31,6 @@ func SetupWebRoutes(app *fiber.App, limiterOverride ...fiber.Handler) {
 	loadInterestCtrl := controllers.NewLoadInterestController()
 	userCtrl := controllers.NewUserController()
 	adminCtrl := controllers.NewAdminController()
-	mobileCtrl := controllers.NewMobileController()
 	communityCtrl := controllers.NewDriverCommunityController()
 
 	// ============================================================
@@ -53,15 +52,6 @@ func SetupWebRoutes(app *fiber.App, limiterOverride ...fiber.Handler) {
 	is_active := middleware.IsActiveUserHandler()
 	// Atajo para no repetir: todas las rutas cuelgan de un solo Use
 	protected := app.Group("", auth, is_active)
-
-	// API used by the installable React mobile client. CSRF remains enabled for
-	// all mutations; the client gets its short-lived token from this endpoint.
-	app.Get("/api/mobile/csrf", mobileCtrl.CSRF)
-	protected.Get("/api/mobile/me", mobileCtrl.Me)
-	protected.Get("/api/mobile/loads", mobileCtrl.Loads)
-	protected.Post("/api/mobile/loads/:id<int>/accept", mobileCtrl.Accept)
-	protected.Post("/api/mobile/loads/:id<int>/start-transit", mobileCtrl.StartTransit)
-	protected.Post("/api/mobile/loads/:id<int>/deliver", mobileCtrl.Deliver)
 
 	// ── Generales ──
 	protected.Get("/home", authCtrl.ShowHome)

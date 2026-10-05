@@ -1,7 +1,0 @@
-<?xml version='1.0' encoding='utf-8'?>
-<resources>
-    <string name="app_name">BUFALO Operaciones</string>
-    <string name="title_activity_main">BUFALO Operaciones</string>
-    <string name="package_name">com.p3terplay.bufalo</string>
-    <string name="custom_url_scheme">com.p3terplay.bufalo</string>
-</resources>
