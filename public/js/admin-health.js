@@ -39,12 +39,6 @@
         text('healthPageInfo', `Página ${page} de ${pages}`);
         node('healthPrev').disabled = page <= 1;
         node('healthNext').disabled = page >= pages;
-        const params = new URLSearchParams({ format: 'csv', tab, status, method, route: node('healthRouteFilter').value.trim() });
-        const csvExport = node('healthExportCSV'), excelExport = node('healthExportExcel');
-        if (!csvExport || !excelExport) return;
-        csvExport.href = `/admin/health/export?${params}`;
-        params.set('format', 'excel');
-        excelExport.href = `/admin/health/export?${params}`;
     }
     function renderTrend(points) {
         const chart = node('healthTrend');
@@ -112,7 +106,6 @@ text("healthOutbox", outbox.status === "unavailable" ? "Cola no disponible" : `$
     for (const id of ['healthStatusFilter', 'healthMethodFilter', 'healthRouteFilter']) node(id).addEventListener('input', () => { page = 1; renderRows(); });
     node('healthPrev').addEventListener('click', () => { page--; renderRows(); });
     node('healthNext').addEventListener('click', () => { page++; renderRows(); });
-    node('healthExportPDF')?.addEventListener('click', () => window.print());
     document.addEventListener('visibilitychange', () => { if (!document.hidden && !paused) refresh(); });
     refresh(); window.setInterval(() => { if (!paused && !document.hidden) refresh(); }, 15000);
 })();

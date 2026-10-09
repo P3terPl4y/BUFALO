@@ -134,7 +134,6 @@ func setupWebRoutes(app *fiber.App, counter middleware.RateCounter, sender func(
 
 	protected.Get("/facturas", facturaCtrl.Index)
 	protected.Get("/facturas/export", both, facturaCtrl.Export)
-	protected.Get("/facturas/disenador", both, facturaCtrl.Studio)
 	protected.Get("/facturas/:id<int>", facturaCtrl.Show)
 
 	// ═══════════════════════════════════════════════════════════
@@ -222,7 +221,6 @@ func setupWebRoutes(app *fiber.App, counter middleware.RateCounter, sender func(
 	admin.Get("/metrics/export", adminCtrl.MetricsExport)
 	admin.Get("/health", adminCtrl.HealthMetrics)
 	admin.Get("/health/data", adminCtrl.HealthMetrics)
-	admin.Get("/health/export", adminCtrl.HealthExport)
 
 	// ── Users ──
 	admin.Get("/users", adminCtrl.UsersIndex)
@@ -269,7 +267,6 @@ func setupWebRoutes(app *fiber.App, counter middleware.RateCounter, sender func(
 
 	// ── Facturas ──
 	admin.Get("/facturas", adminCtrl.FacturasIndex)
-	admin.Get("/facturas/disenador", facturaCtrl.Studio)
 	admin.Get("/facturas/export", facturaCtrl.Export)
 	admin.Get("/facturas/:id<int>", adminCtrl.FacturasShow)
 	admin.Get("/facturas/:id<int>/edit", adminCtrl.FacturasEdit)

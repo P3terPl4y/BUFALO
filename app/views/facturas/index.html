@@ -8,7 +8,6 @@
             <a class="btn btn-outline-success" href="/facturas/export?format=csv&amp;estado={{ .filters.estado }}&amp;fecha_desde={{ .filters.fecha_desde }}&amp;fecha_hasta={{ .filters.fecha_hasta }}"><i class="bi bi-filetype-csv"></i> CSV</a>
             <a class="btn btn-outline-success" href="/facturas/export?format=excel&amp;estado={{ .filters.estado }}&amp;fecha_desde={{ .filters.fecha_desde }}&amp;fecha_hasta={{ .filters.fecha_hasta }}"><i class="bi bi-file-earmark-excel"></i> Excel (.xlsx)</a>
             <a class="btn btn-outline-danger" href="/facturas/export?format=pdf&amp;estado={{ .filters.estado }}&amp;fecha_desde={{ .filters.fecha_desde }}&amp;fecha_hasta={{ .filters.fecha_hasta }}"><i class="bi bi-file-earmark-pdf"></i> PDF</a>
-            <a class="btn btn-outline-primary" href="/facturas/disenador"><i class="bi bi-magic"></i> Probar diseñador</a>
             {{ if or (eq .role "publicador") (eq .role "chofer") (eq .role "admin") }}<a class="btn btn-primary" href="/facturas/create"><i class="bi bi-plus-lg"></i> Crear borrador</a>{{ end }}
         </div>
     </header>

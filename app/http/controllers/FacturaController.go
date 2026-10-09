@@ -192,15 +192,6 @@ func (c *FacturaController) Create(ctx fiber.Ctx) error {
 	}, "layouts/base")
 }
 
-// Studio is an isolated invoice-layout sandbox. It never creates, edits or
-// emits a financial document; layouts remain local to the current browser.
-func (c *FacturaController) Studio(ctx fiber.Ctx) error {
-	ctx.Set("Cache-Control", "no-store, private")
-	return ctx.Render("admin/invoice_studio", fiber.Map{
-		"title": "Diseñador de facturas", "csrfToken": csrf.TokenFromContext(ctx),
-	}, "layouts/base")
-}
-
 func (c *FacturaController) Store(ctx fiber.Ctx) error {
 	var req requests.FacturaStoreRequest
 	if err := ctx.Bind().Body(&req); err != nil {
