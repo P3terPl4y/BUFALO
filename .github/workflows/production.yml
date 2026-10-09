@@ -111,8 +111,7 @@ jobs:
         run: CGO_ENABLED=0 go build -p 1 -trimpath -ldflags='-s -w' -o storage/release/bufalo .
       - name: Dependencies
         run: |
-          go install golang.org/x/vuln/cmd/govulncheck@v1.8.0
           ! go list -deps ./... | grep -E '^golang.org/x/crypto/openpgp($|/)'
-          sudo systemd-run --scope -p MemoryMax=2G -p MemorySwapMax=0 -p CPUQuota=100% env GOMEMLIMIT=512MiB GOMAXPROCS=2 GOFLAGS=-p=1 timeout 15m "$(go env GOPATH)/bin/govulncheck" ./...
+          sudo systemd-run --scope -p MemoryMax=2G -p MemorySwapMax=0 -p CPUQuota=100% env GOMEMLIMIT=512MiB GOMAXPROCS=2 GOFLAGS=-p=1 timeout 15m sh -c 'go install golang.org/x/vuln/cmd/govulncheck@v1.8.0 && "$(go env GOPATH)/bin/govulncheck" ./...'
       - name: Container build
         run: docker build -t bufalo:candidate .
