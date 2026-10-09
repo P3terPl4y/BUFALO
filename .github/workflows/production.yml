@@ -43,10 +43,44 @@ jobs:
         run: test -z "$(gofmt -l app bootstrap config database routes tests main.go)"
       - name: Static analysis
         run: go vet -p 1 ./...
-      - name: Acceptance
-        run: go test -p 1 -count=1 ./...
-      - name: Race detection
-        run: go test -race -p 1 ./app/services ./tests/feature ./tests/redteam
+      - name: Create isolated test databases
+        run: |
+          for database in \
+            bufalo_services_test bufalo_controllers_test bufalo_feature_test \
+            bufalo_redteam_test bufalo_unit_test bufalo_race_services_test \
+            bufalo_race_controllers_test; do
+            PGPASSWORD="$DB_PASSWORD" createdb --host "$DB_HOST" --port "$DB_PORT" --username "$DB_USERNAME" "$database"
+          done
+      - name: Acceptance — unit and infrastructure packages
+        run: go test -v -p 1 -count=1 . ./app/billing ./app/community ./app/dbresilience ./app/exports ./app/http/ingress ./app/http/middleware ./app/maildelivery ./app/models ./app/monitoring ./app/requests ./app/sessionstore ./app/viewhelpers ./routes ./tests
+      - name: Acceptance — services
+        env:
+          DB_DATABASE: bufalo_services_test
+        run: go test -v -p 1 -count=1 ./app/services
+      - name: Acceptance — controllers
+        env:
+          DB_DATABASE: bufalo_controllers_test
+        run: go test -v -p 1 -count=1 ./app/http/controllers
+      - name: Acceptance — feature journeys
+        env:
+          DB_DATABASE: bufalo_feature_test
+        run: go test -v -p 1 -count=1 ./tests/feature
+      - name: Acceptance — redteam
+        env:
+          DB_DATABASE: bufalo_redteam_test
+        run: go test -v -p 1 -count=1 ./tests/redteam
+      - name: Acceptance — unit services
+        env:
+          DB_DATABASE: bufalo_unit_test
+        run: go test -v -p 1 -count=1 ./tests/unit
+      - name: Race detection — services
+        env:
+          DB_DATABASE: bufalo_race_services_test
+        run: go test -race -p 1 -count=1 ./app/services
+      - name: Race detection — controllers
+        env:
+          DB_DATABASE: bufalo_race_controllers_test
+        run: go test -race -p 1 -count=1 ./app/http/controllers
       - name: Optimized binary
         run: CGO_ENABLED=0 go build -p 1 -trimpath -ldflags='-s -w' -o storage/release/bufalo .
       - name: Dependencies
