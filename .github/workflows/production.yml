@@ -83,7 +83,20 @@ jobs:
       - name: Acceptance — unit services
         env:
           DB_DATABASE: bufalo_unit_test
-        run: go test -v -p 1 -count=1 ./tests/unit
+        run: |
+          set +e
+          go test -v -p 1 -count=1 ./tests/unit > /tmp/bufalo-unit-tests.log 2>&1
+          result=$?
+          cat /tmp/bufalo-unit-tests.log
+          if [ "$result" -ne 0 ]; then
+            details="$(tail -n 12 /tmp/bufalo-unit-tests.log | tr '\n' ' ')"
+            details="${details//'%'/'%25'}"
+            details="${details//'\r'/'%0D'}"
+            details="${details//';'/'%3B'}"
+            details="${details//','/'%2C'}"
+            echo "::error title=Unit service tests failed::$details"
+          fi
+          exit "$result"
       - name: Race detection — services
         env:
           DB_DATABASE: bufalo_race_services_test
