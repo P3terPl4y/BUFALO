@@ -51,8 +51,19 @@ jobs:
             bufalo_race_controllers_test; do
             PGPASSWORD="$DB_PASSWORD" createdb --host "$DB_HOST" --port "$DB_PORT" --username "$DB_USERNAME" "$database"
           done
+      - name: Ensure isolated Redis test executable
+        run: |
+          if ! command -v redis-server >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y redis-server
+          fi
+          redis-server --version
       - name: Acceptance — unit and infrastructure packages
-        run: go test -v -p 1 -count=1 . ./app/billing ./app/community ./app/dbresilience ./app/exports ./app/http/ingress ./app/http/middleware ./app/maildelivery ./app/models ./app/monitoring ./app/requests ./app/sessionstore ./app/viewhelpers ./routes ./tests
+        run: go test -v -p 1 -count=1 . ./app/billing ./app/community ./app/dbresilience ./app/exports ./app/http/ingress ./app/maildelivery ./app/models ./app/monitoring ./app/requests ./app/viewhelpers ./routes ./tests
+      - name: Acceptance — middleware Redis integration
+        run: go test -v -p 1 -count=1 ./app/http/middleware
+      - name: Acceptance — session store Redis integration
+        run: go test -v -p 1 -count=1 ./app/sessionstore
       - name: Acceptance — services
         env:
           DB_DATABASE: bufalo_services_test
