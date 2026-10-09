@@ -61,3 +61,40 @@ los formularios/controladores, fuzzing de parsers y uploads, pruebas de caída y
 recuperación de PostgreSQL/Redis por endpoint, revisión completa de configuración
 de despliegue y análisis de dependencias. Los resultados acreditan los flujos
 probados y las pruebas de regresión indicadas, no ausencia total de vulnerabilidades.
+
+## Seguimiento de CI
+
+El 2026-10-09 GitHub Actions falló en `tests/unit`. La prueba de correo esperaba
+éxito aunque `EmailService` usa SMTP directamente y la variable `MAIL_MAILER=log`
+no afecta ese servicio. En el entorno local `.env` proporcionaba `MAIL_HOST`; el
+runner aislado no, así que el resultado dependía de la configuración de la máquina
+y podía contactar un servidor SMTP real. Se cambió la prueba para exigir un fallo
+seguro sin SMTP, se fija `MAIL_HOST` vacío en TestMain y CI, y la entrega válida se
+cubre con el servidor SMTP local de `app/maildelivery`. La suite unitaria pasó en
+un PostgreSQL temporal aislado.
+
+Los escaneos de CI anteriores terminaron con códigos 137 y 143; luego, el escaneo
+por paquetes de la versión anterior terminó con código 3 porque encontró avisos
+reales. El análisis local identificó 13 avisos en Go 1.26.8 y `golang.org/x/net`
+0.59.0, incluidos fallos de disponibilidad en HTTP y límites de memoria. Se
+actualizaron el toolchain a Go 1.26.9 y `golang.org/x/net` a 0.60.0; el release
+oficial de Go 1.26.9 incluye correcciones de seguridad en `net/http`, `crypto/tls`,
+`net/textproto`, `html/template` y `os`.
+
+Tras la actualización, `govulncheck -scan=package ./...` terminó con cero avisos:
+pico 171.536.384 bytes y 33,1 s. El análisis completo de símbolos también pasó:
+cero vulnerabilidades alcanzables, pico 1.505.312.768 bytes bajo el cgroup de
+2 GiB, 75,1 s de CPU y 76,2 s de duración. Reportó un aviso en un módulo requerido
+que no aparece importado ni alcanzado por el código; el chequeo de importaciones
+contra OpenPGP también sigue activo en CI. Se limitó el workflow para compilar el
+analizador dentro del cgroup, usar el modo por paquetes y mantener el máximo de
+2 GiB. El build de Docker y el workflow con las dependencias parcheadas quedan
+pendientes de validación remota.
+
+Con Go 1.26.9 pasaron localmente `go vet`, build optimizado, pruebas de servicios,
+controladores, journeys, redteam, unitarias, middleware con Redis, sesiones y
+paquetes de soporte; las bases de datos fueron temporales y se detuvieron tras las
+pruebas. La instancia de producción siguió respondiendo 200, con el mismo PID y
+aprox. 20 MiB de RAM mientras el análisis de seguridad se ejecutaba. El binario
+actual de producción aún debe reemplazarse por el candidato parcheado tras cerrar
+la validación remota y preflight.
