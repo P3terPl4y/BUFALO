@@ -18,6 +18,7 @@ func NewCargaService() *CargaService {
 // Listar con filtros
 // ─────────────────────────────────────────────────────────────
 func (s *CargaService) GetAllWithFilters(filters map[string]string, page, perPage int) ([]models.Carga, int64, error) {
+	page, perPage = NormalizePagination(page, perPage)
 	query := facades.Orm().Query().
 		Model(&models.Carga{}).
 		With("Publicador.User").
@@ -26,6 +27,9 @@ func (s *CargaService) GetAllWithFilters(filters map[string]string, page, perPag
 		With("OrigenDireccion").
 		With("DestinoDireccion")
 
+	if filters["active_work"] == "true" {
+		query = query.Where("estado IN ?", []string{"asignada", "en_transito"})
+	}
 	if status := filters["status"]; status != "" {
 		query = query.Where("estado = ?", status)
 	}
@@ -101,8 +105,8 @@ func (s *CargaService) GetByID(id string) (*models.Carga, error) {
 		With("Factura").
 		Where("id = ?", id).
 		First(&c)
-	if err != nil || c.ID == 0 {
-		return nil, errors.New("carga not found")
+	if lookupErr := recordError(err, c.ID, "carga"); lookupErr != nil {
+		return nil, lookupErr
 	}
 	return &c, nil
 }
@@ -111,14 +115,31 @@ func (s *CargaService) Create(c *models.Carga) error {
 	return facades.Orm().Query().Create(c)
 }
 
-func (s *CargaService) Update(id string, updates map[string]interface{}) error {
-	_, err := facades.Orm().Query().Model(&models.Carga{}).Where("id = ?", id).Update(updates)
-	return err
-}
-
 func (s *CargaService) Delete(id string) error {
-	_, err := facades.Orm().Query().Where("id = ?", id).Delete(&models.Carga{})
-	return err
+	tx, err := facades.Orm().Query().BeginTransaction()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	var load models.Carga
+	err = tx.Where("id = ?", id).LockForUpdate().First(&load)
+	if err := recordError(err, load.ID, "carga"); err != nil {
+		return err
+	}
+	if load.Estado != models.CargaPublicada || load.ChoferID != nil {
+		return ErrConflict
+	}
+	exists, err := tx.Model(&models.Factura{}).Where("carga_id = ?", load.ID).Exists()
+	if err != nil {
+		return err
+	}
+	if exists {
+		return ErrConflict
+	}
+	if _, err := tx.Where("id = ?", load.ID).Delete(&models.Carga{}); err != nil {
+		return err
+	}
+	return tx.Commit()
 }
 
 // ─────────────────────────────────────────────────────────────

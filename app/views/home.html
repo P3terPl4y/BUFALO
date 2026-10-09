@@ -85,7 +85,7 @@
                 <span class="bf-sidebar__icon"><i class="bi bi-person"></i></span>
                 <span class="bf-sidebar__label">Mi perfil</span>
             </a>
-            <a href="/config" class="bf-sidebar__link">
+            <a href="/profile/edit" class="bf-sidebar__link">
                 <span class="bf-sidebar__icon"><i class="bi bi-sliders"></i></span>
                 <span class="bf-sidebar__label">Configuración</span>
             </a>
@@ -93,7 +93,8 @@
     </aside>
 
     <!-- ─────────── MAIN: CONTENIDO ─────────── -->
-    <main class="bf-main">
+    {{ if .flash_error }}<p role="alert" class="alert alert-danger">{{ .flash_error }}</p>{{ end }}{{ if .flash_success }}<p role="status" class="alert alert-success">{{ .flash_success }}</p>{{ end }}
+<main class="bf-main">
 
         <!-- Welcome header -->
         <header class="bf-main__header">
@@ -147,7 +148,7 @@
                     </span>
                     <div class="tf-home-stat__body">
                         <span class="tf-home-stat__label">Asignadas</span>
-                        <p class="tf-home-stat__value">{{ len .cargasAsignadas }}</p>
+                        <p class="tf-home-stat__value">{{ if .isAdmin }}{{ .totalAsignadas }}{{ else }}{{ len .cargasAsignadas }}{{ end }}</p>
                     </div>
                 </div>
                 <div class="tf-home-stat">
@@ -156,7 +157,7 @@
                     </span>
                     <div class="tf-home-stat__body">
                         <span class="tf-home-stat__label">Entregadas</span>
-                        <p class="tf-home-stat__value">{{ len .cargasEntregadas }}</p>
+                        <p class="tf-home-stat__value">{{ if .isAdmin }}{{ .totalEntregadas }}{{ else }}{{ len .cargasEntregadas }}{{ end }}</p>
                     </div>
                 </div>
             </div>
@@ -186,7 +187,7 @@
                     </span>
                     <div class="tf-home-stat__body">
                         <span class="tf-home-stat__label">Asignadas</span>
-                        <p class="tf-home-stat__value">{{ len .cargasAsignadas }}</p>
+                        <p class="tf-home-stat__value">{{ if .isAdmin }}{{ .totalAsignadas }}{{ else }}{{ len .cargasAsignadas }}{{ end }}</p>
                     </div>
                 </div>
                 <div class="tf-home-stat">
@@ -195,7 +196,7 @@
                     </span>
                     <div class="tf-home-stat__body">
                         <span class="tf-home-stat__label">Entregadas</span>
-                        <p class="tf-home-stat__value">{{ len .cargasEntregadas }}</p>
+                        <p class="tf-home-stat__value">{{ if .isAdmin }}{{ .totalEntregadas }}{{ else }}{{ len .cargasEntregadas }}{{ end }}</p>
                     </div>
                 </div>
             </div>
@@ -217,9 +218,9 @@
             {{ if .cargasDisponibles }}
             <div class="bf-loads-grid">
                 {{ range .cargasDisponibles }}
-                <article class="tf-load-mini bf-load-card" onclick='window.location.href="loads/{{.ID}}"'>
+                <article class="tf-load-mini bf-load-card" >
                     <div class="tf-load-mini__top">
-                        <h4 class="tf-load-mini__title">{{ .NumeroReferencia }}</h4>
+                        <h4 class="tf-load-mini__title"><a href="/loads/{{ .ID }}">{{ .NumeroReferencia }}</a></h4>
                         <span class="tf-load-mini__id">#{{ .ID }}</span>
                     </div>
 
@@ -249,7 +250,7 @@
                         </span>
                     </div>
 
-                    {{ if or $.isChofer $.isAdmin }}
+                    {{ if $.isChofer }}
                     <form action="/loads/{{ .ID }}/accept" method="POST"
                           onsubmit="return confirm('¿Aceptar esta carga?')">
                         <input type="hidden" name="_csrf" value="{{ $.csrfToken }}">
@@ -259,19 +260,9 @@
                     </form>
                     {{ end }}
 
-                    {{ if and (eq .Estado "publicada") (or $.isChofer $.isAdmin) }}
-                    <details class="tf-load-mini__interest">
-                        <summary><i class="bi bi-hand-thumbs-up"></i> Me interesa esta carga</summary>
-                        <form action="/loads/{{ .ID }}/interest" method="POST"
-                              onsubmit="return confirm('¿Notificar al publicador?')">
-                            <input type="hidden" name="_csrf" value="{{ $.csrfToken }}">
-                            <textarea name="mgs" rows="2" class="form-control form-control-sm"
-                                      placeholder="Mensaje opcional…"></textarea>
-                            <button type="submit" class="btn btn-outline-primary btn-sm tf-w-full">
-                                <i class="bi bi-send"></i> Enviar interés
-                            </button>
-                        </form>
-                    </details>
+                    {{ if and (eq .Estado "publicada") ($.isChofer) }}
+                    <button type="button" class="btn btn-outline-primary btn-sm" aria-haspopup="dialog"
+                            data-load-interest="{{ .ID }}" data-load-reference="{{ .NumeroReferencia }}" data-csrf="{{ $.csrfToken }}">Me interesa</button>
                     {{ end }}
                 </article>
                 {{ end }}
@@ -350,5 +341,6 @@
      ══════════════════════════════════════════════════════════ -->
 
 
+<script src="/js/load-interest.js" defer></script>
 </body>
 </html>

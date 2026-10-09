@@ -3,6 +3,7 @@ package controllers
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"goravel/app/community"
 	"goravel/app/facades"
@@ -21,12 +22,20 @@ import (
 )
 
 type UserController struct {
-	userService *services.UserService
+	userService      *services.UserService
+	sendVerification func(string, string) error
+}
+
+func NewUserControllerWithVerificationSender(sender func(string, string) error) *UserController {
+	c := NewUserController()
+	c.sendVerification = sender
+	return c
 }
 
 func NewUserController() *UserController {
 	return &UserController{
-		userService: services.NewUserService(),
+		userService:      services.NewUserService(),
+		sendVerification: services.NewEmailService().SendEmailChangeConfirmation,
 	}
 }
 
@@ -119,6 +128,21 @@ func (c *UserController) Update(ctx fiber.Ctx) error {
 		}, "layouts/base")
 	}
 
+	req.Email = strings.ToLower(strings.TrimSpace(req.Email))
+	plainPassword, currentPassword := req.Password, req.CurrentPassword
+	req.Password, req.CurrentPassword = "", ""
+	changingEmail := req.Email != "" && req.Email != user.Email
+	if plainPassword != "" && (len(plainPassword) < 8 || len(plainPassword) > 72) {
+		return fiber.ErrBadRequest
+	}
+	if changingEmail || plainPassword != "" {
+		if len(currentPassword) > 72 || !user.CheckPassword(currentPassword) {
+			return ctx.Status(400).Render("profile/edit", fiber.Map{"title": "Editar perfil", "user": user, "role": user.Role, "csrfToken": csrf.TokenFromContext(ctx), "flash_error": "La contraseña actual es necesaria y debe ser correcta"}, "layouts/base")
+		}
+	}
+	if changingEmail && plainPassword != "" {
+		return ctx.Status(400).Render("profile/edit", fiber.Map{"title": "Editar perfil", "user": user, "role": user.Role, "csrfToken": csrf.TokenFromContext(ctx), "flash_error": "Cambia el correo y la contraseña por separado"}, "layouts/base")
+	}
 	// 2) Validación
 	rules := map[string]any{
 		"name":         "nullable|min:3|max:100",
@@ -169,26 +193,18 @@ func (c *UserController) Update(ctx fiber.Ctx) error {
 	if req.Name != "" {
 		updates["name"] = req.Name
 	}
-	if req.Email != "" && req.Email != user.Email {
-		count, _ := facades.Orm().Query().
-			Model(&models.User{}).
-			Where("email = ?", req.Email).
-			Where("id <> ?", user.ID).
-			Count()
-		if count > 0 {
-			return ctx.Render("profile/edit", fiber.Map{
-				"title":       "Editar Perfil",
-				"flash_error": "El email ya está registrado",
-				"user":        user,
-				"old":         req,
-				"role":        ctx.Locals("role"),
-				"csrfToken":   csrf.TokenFromContext(ctx),
-			}, "layouts/base")
+	if changingEmail {
+		exists, err := c.userService.EmailExists(req.Email, user.ID)
+		if err != nil {
+			return fiber.ErrServiceUnavailable
 		}
-		updates["email"] = req.Email
+		if exists {
+			return ctx.Status(400).Render("profile/edit", fiber.Map{"title": "Editar perfil", "user": user, "role": user.Role, "csrfToken": csrf.TokenFromContext(ctx), "flash_error": "El email ya está registrado"}, "layouts/base")
+		}
 	}
-	if req.Password != "" {
-		hashed, err := facades.Hash().Make(req.Password)
+
+	if plainPassword != "" {
+		hashed, err := facades.Hash().Make(plainPassword)
 		if err != nil {
 			return ctx.Render("profile/edit", fiber.Map{
 				"title":       "Editar Perfil",
@@ -231,8 +247,15 @@ func (c *UserController) Update(ctx fiber.Ctx) error {
 	}
 	updates["notes"] = req.Notes
 
+	// An omitted field must not erase existing profile data during a credential-only change.
+	for key := range updates {
+		if !ctx.Request().PostArgs().Has(key) {
+			delete(updates, key)
+		}
+	}
+
 	// 4) Persistir
-	if err := c.userService.Update(userID, updates); err != nil {
+	if err := services.UpdateProfileAtomically(user, updates); err != nil {
 		log.Printf("Error al actualizar perfil: %v", err)
 		return ctx.Render("profile/edit", fiber.Map{
 			"title":       "Editar Perfil",
@@ -244,6 +267,34 @@ func (c *UserController) Update(ctx fiber.Ctx) error {
 		}, "layouts/base")
 	}
 
+	if changingEmail {
+		payload, err := json.Marshal(services.EmailChange{Purpose: "email_change", UserID: userID, Email: req.Email, Stamp: user.CredentialStamp()})
+		if err != nil {
+			return fiber.ErrInternalServerError
+		}
+		verification := services.NewEmailVerificationService()
+		token, err := verification.Start(req.Email, string(payload))
+		if err != nil {
+			if !errors.Is(err, services.ErrRegistrationUnavailable) {
+				return fiber.ErrServiceUnavailable
+			}
+			return ctx.Redirect().To("/profile/edit?flash_error=Ya+existe+una+solicitud+pendiente+para+ese+correo")
+		}
+		link, err := registrationConfirmationURL(token)
+		if err == nil {
+			err = c.sendVerification(req.Email, link)
+		}
+		if err != nil {
+			if cancelErr := verification.Cancel(token); cancelErr != nil {
+				log.Printf("email change cancellation failed: %v", cancelErr)
+			}
+			return fiber.ErrServiceUnavailable
+		}
+		return ctx.Redirect().To("/profile?flash_success=Confirma+el+nuevo+correo;+el+actual+sigue+vigente")
+	}
+	if plainPassword != "" {
+		return ctx.Redirect().To("/login?flash_success=Contraseña+actualizada;+inicia+sesión+de+nuevo")
+	}
 	return ctx.Redirect().To("/profile?flash_success=Perfil actualizado correctamente")
 }
 

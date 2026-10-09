@@ -1,0 +1,32 @@
+[Unit]
+Description=BUFALO logistics platform
+After=network-online.target bufalo-redis-sessions.service bufalo-redis-traffic.service
+Requires=bufalo-redis-sessions.service bufalo-redis-traffic.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/peter/BUFALO
+EnvironmentFile=/home/peter/BUFALO/.env.production
+Environment=APP_ENV=production
+Environment=APP_DEBUG=false
+Environment=APP_HOST=127.0.0.1
+Environment=DDOS_MODE=enforce
+Environment=APP_PORT=3000
+Environment=CSRF_TRUSTED_ORIGINS=https://bufalo.duohnson.com
+ExecStart=/usr/bin/env APP_ENV=production APP_DEBUG=false /home/peter/BUFALO/bin/bufalo
+Restart=on-failure
+RestartSec=3
+TimeoutStopSec=35
+UMask=0077
+NoNewPrivileges=true
+Environment=GOMEMLIMIT=128MiB
+Environment=GOMAXPROCS=2
+MemoryHigh=384M
+MemoryMax=512M
+MemorySwapMax=0
+TasksMax=128
+CPUQuota=150%
+
+[Install]
+WantedBy=default.target

@@ -17,12 +17,22 @@ import (
 type Cell struct {
 	Value   string
 	Numeric bool
+	Style   int
 }
 
-type Report struct {
+// Section groups a report exactly as the corresponding screen groups its data.
+// Renderers can present the same model as print-ready HTML, CSV or XLSX.
+type Section struct {
 	Title   string
 	Headers []string
 	Rows    [][]Cell
+}
+
+type Report struct {
+	Title    string
+	Headers  []string
+	Rows     [][]Cell
+	Sections []Section
 }
 
 var ErrUnsupportedFormat = errors.New("formato de exportación no soportado")
@@ -47,17 +57,12 @@ func renderCSV(report Report) ([]byte, error) {
 	var out bytes.Buffer
 	out.Write([]byte{0xef, 0xbb, 0xbf}) // Excel detects UTF-8 reliably with a BOM.
 	w := csv.NewWriter(&out)
-	if err := w.Write(report.Headers); err != nil {
-		return nil, err
-	}
-	for _, row := range report.Rows {
-		record := make([]string, len(report.Headers))
-		for i := range record {
-			if i < len(row) {
-				record[i] = row[i].Value
-				if !row[i].Numeric || !validNumber(row[i].Value) {
-					record[i] = csvSafeText(record[i])
-				}
+	for _, row := range reportRows(report) {
+		record := make([]string, len(row))
+		for i, cell := range row {
+			record[i] = cell.Value
+			if !cell.Numeric || !validNumber(cell.Value) {
+				record[i] = csvSafeText(record[i])
 			}
 		}
 		if err := w.Write(record); err != nil {
@@ -66,6 +71,44 @@ func renderCSV(report Report) ([]byte, error) {
 	}
 	w.Flush()
 	return out.Bytes(), w.Error()
+}
+
+func reportRows(report Report) [][]Cell {
+	if len(report.Sections) == 0 {
+		rows := make([][]Cell, 0, len(report.Rows)+1)
+		headers := make([]Cell, len(report.Headers))
+		for i, title := range report.Headers {
+			headers[i] = Cell{Value: title, Style: 1}
+		}
+		rows = append(rows, headers)
+		return append(rows, report.Rows...)
+	}
+	width := 1
+	for _, section := range report.Sections {
+		width = max(width, len(section.Headers)+1)
+	}
+	rows := make([][]Cell, 0)
+	for _, section := range report.Sections {
+		title := make([]Cell, width)
+		title[0] = Cell{Value: section.Title, Style: 2}
+		rows = append(rows, title)
+		header := make([]Cell, width)
+		header[0] = Cell{Value: "Sección", Style: 1}
+		for i, value := range section.Headers {
+			header[i+1] = Cell{Value: value, Style: 1}
+		}
+		rows = append(rows, header)
+		for _, source := range section.Rows {
+			row := make([]Cell, width)
+			for i, cell := range source {
+				if i+1 < width {
+					row[i+1] = cell
+				}
+			}
+			rows = append(rows, row)
+		}
+	}
+	return rows
 }
 
 func csvSafeText(value string) string {
@@ -80,11 +123,12 @@ func renderXLSX(report Report) ([]byte, error) {
 	var out bytes.Buffer
 	archive := zip.NewWriter(&out)
 	files := []struct{ name, content string }{
-		{"[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/></Types>`},
+		{"[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>`},
 		{"_rels/.rels", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`},
 		{"xl/workbook.xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="` + xmlEscape(sheetName(report.Title)) + `" sheetId="1" r:id="rId1"/></sheets></workbook>`},
-		{"xl/_rels/workbook.xml.rels", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/></Relationships>`},
+		{"xl/_rels/workbook.xml.rels", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`},
 		{"xl/worksheets/sheet1.xml", renderWorksheet(report)},
+		{"xl/styles.xml", `<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="2"><font><sz val="11"/><name val="Aptos"/></font><font><b/><color rgb="FFFFFFFF"/><sz val="11"/><name val="Aptos"/></font></fonts><fills count="4"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF253746"/><bgColor indexed="64"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFFFC928"/><bgColor indexed="64"/></patternFill></fill></fills><borders count="2"><border/><border><bottom style="thin"><color rgb="FFE2E8F0"/></bottom></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="3"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/><xf numFmtId="0" fontId="1" fillId="2" borderId="1" applyFont="1" applyFill="1" applyBorder="1"/><xf numFmtId="0" fontId="0" fillId="3" borderId="1" applyFill="1" applyBorder="1"/></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`},
 	}
 	for _, file := range files {
 		entry, err := archive.Create(file.name)
@@ -105,28 +149,31 @@ func renderXLSX(report Report) ([]byte, error) {
 
 func renderWorksheet(report Report) string {
 	var out strings.Builder
-	out.WriteString(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>`)
+	rows := reportRows(report)
+	out.WriteString(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><sheetFormatPr defaultRowHeight="18"/><cols><col min="1" max="1" width="32" customWidth="1"/><col min="2" max="64" width="22" customWidth="1"/></cols><sheetData>`)
 	writeRow := func(rowNumber int, cells []Cell) {
 		fmt.Fprintf(&out, `<row r="%d">`, rowNumber)
 		for column, cell := range cells {
 			ref := columnName(column+1) + strconv.Itoa(rowNumber)
+			style := cell.Style
 			if cell.Numeric && validNumber(cell.Value) {
-				fmt.Fprintf(&out, `<c r="%s"><v>%s</v></c>`, ref, cell.Value)
+				if style > 0 {
+					fmt.Fprintf(&out, `<c r="%s" s="%d"><v>%s</v></c>`, ref, style, cell.Value)
+				} else {
+					fmt.Fprintf(&out, `<c r="%s"><v>%s</v></c>`, ref, cell.Value)
+				}
 			} else {
-				fmt.Fprintf(&out, `<c r="%s" t="inlineStr"><is><t xml:space="preserve">%s</t></is></c>`, ref, xmlEscape(cell.Value))
+				if style > 0 {
+					fmt.Fprintf(&out, `<c r="%s" s="%d" t="inlineStr"><is><t xml:space="preserve">%s</t></is></c>`, ref, style, xmlEscape(cell.Value))
+				} else {
+					fmt.Fprintf(&out, `<c r="%s" t="inlineStr"><is><t xml:space="preserve">%s</t></is></c>`, ref, xmlEscape(cell.Value))
+				}
 			}
 		}
 		out.WriteString(`</row>`)
 	}
-	header := make([]Cell, len(report.Headers))
-	for i, value := range report.Headers {
-		header[i] = Cell{Value: value}
-	}
-	writeRow(1, header)
-	for i, row := range report.Rows {
-		cells := make([]Cell, len(report.Headers))
-		copy(cells, row)
-		writeRow(i+2, cells)
+	for i, row := range rows {
+		writeRow(i+1, row)
 	}
 	out.WriteString(`</sheetData></worksheet>`)
 	return out.String()
@@ -177,15 +224,31 @@ func xmlEscape(value string) string {
 }
 
 func renderPDF(report Report) ([]byte, error) {
-	lines := []string{report.Title, strings.Join(report.Headers, " | ")}
-	for _, row := range report.Rows {
-		values := make([]string, len(report.Headers))
-		for i := range values {
-			if i < len(row) {
-				values[i] = row[i].Value
+	lines := []string{report.Title}
+	if len(report.Sections) > 0 {
+		for _, section := range report.Sections {
+			lines = append(lines, "", "--- "+section.Title+" ---", strings.Join(section.Headers, " | "))
+			for _, row := range section.Rows {
+				values := make([]string, len(section.Headers))
+				for i := range values {
+					if i < len(row) {
+						values[i] = row[i].Value
+					}
+				}
+				lines = append(lines, strings.Join(values, " | "))
 			}
 		}
-		lines = append(lines, strings.Join(values, " | "))
+	} else {
+		lines = append(lines, strings.Join(report.Headers, " | "))
+		for _, row := range report.Rows {
+			values := make([]string, len(report.Headers))
+			for i := range values {
+				if i < len(row) {
+					values[i] = row[i].Value
+				}
+			}
+			lines = append(lines, strings.Join(values, " | "))
+		}
 	}
 	wrapped := make([]string, 0, len(lines))
 	for _, line := range lines {

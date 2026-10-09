@@ -4,6 +4,10 @@ import (
 	"errors"
 	"goravel/app/facades"
 	"goravel/app/models"
+	"strings"
+
+	"github.com/goravel/framework/contracts/database/orm"
+	frameworkerrors "github.com/goravel/framework/errors"
 )
 
 type UserService struct{}
@@ -18,10 +22,14 @@ func NewUserService() *UserService {
 
 // Create inserta un usuario simple (sin empresa asociada).
 func (s *UserService) Create(user *models.User) error {
+	if user != nil {
+		user.Email = strings.ToLower(strings.TrimSpace(user.Email))
+	}
 	return facades.Orm().Query().Create(user)
 }
-// CreateWithRole crea User + (Empresa opcional) + (Chofer o Publicador) en un
-// solo flujo con rollback manual. Debe llamarse en lugar de CreateWithEmpresa
+
+// CreateWithRole crea User + (Empresa opcional) + (Chofer o Publicador) en una
+// transacción. Debe llamarse en lugar de CreateWithEmpresa
 // cuando el usuario tenga rol "chofer" o "publicador".
 func (s *UserService) CreateWithRole(
 	user *models.User,
@@ -29,28 +37,50 @@ func (s *UserService) CreateWithRole(
 	chofer *models.Chofer,
 	publicador *models.Publicador,
 ) error {
-	createdEmpresa := false
-	createdChofer := false
-	createdPublicador := false
+	tx, err := facades.Orm().Query().BeginTransaction()
+	if err != nil {
+		return err
+	}
+	defer func() { _ = tx.Rollback() }()
+	if err := s.CreateWithRoleInTransaction(tx, user, empresa, chofer, publicador); err != nil {
+		return err
+	}
+	return tx.Commit()
+}
 
-	rollback := func() {
-		if createdPublicador && publicador != nil {
-			_, _ = facades.Orm().Query().Where("id = ?", publicador.ID).Delete(&models.Publicador{})
+// CreateWithRoleInTransaction persists an account and its role profile inside
+// an existing transaction, allowing email-token consumption to be atomic.
+func (s *UserService) CreateWithRoleInTransaction(
+	tx orm.Query,
+	user *models.User,
+	empresa *models.Empresa,
+	chofer *models.Chofer,
+	publicador *models.Publicador,
+) error {
+	if user == nil {
+		return errors.New("user is required")
+	}
+	if tx == nil {
+		return errors.New("transaction is required")
+	}
+	user.Email = strings.ToLower(strings.TrimSpace(user.Email))
+	switch user.Role {
+	case "chofer":
+		if chofer == nil || publicador != nil {
+			return errors.New("exactly one chofer profile is required for role=chofer")
 		}
-		if createdChofer && chofer != nil {
-			_, _ = facades.Orm().Query().Where("id = ?", chofer.ID).Delete(&models.Chofer{})
+	case "publicador":
+		if publicador == nil || chofer != nil {
+			return errors.New("exactly one publicador profile is required for role=publicador")
 		}
-		if createdEmpresa && empresa != nil {
-			_, _ = facades.Orm().Query().Where("id = ?", empresa.ID).Delete(&models.Empresa{})
-		}
-		if user.ID > 0 {
-			_, _ = facades.Orm().Query().Where("id = ?", user.ID).Delete(&models.User{})
-		}
+	default:
+		return errors.New("unsupported user role")
 	}
 
 	// 1. Empresa (opcional)
+	createdEmpresa := false
 	if empresa != nil && empresa.ID == 0 {
-		if err := facades.Orm().Query().Create(empresa); err != nil {
+		if err := tx.Create(empresa); err != nil {
 			return err
 		}
 		createdEmpresa = true
@@ -60,56 +90,42 @@ func (s *UserService) CreateWithRole(
 	}
 
 	// 2. User
-	if err := facades.Orm().Query().Create(user); err != nil {
-    	rollback()
-    	return err
+	if err := tx.Create(user); err != nil {
+		return err
 	}
 
 	// 2.1 Si acabamos de crear la empresa, el creador es el owner
 	if createdEmpresa && empresa != nil {
-    	if _, err := facades.Orm().Query().
-      	  Model(&models.Empresa{}).
-          Where("id = ?", empresa.ID).
-          Update("owner_id", user.ID); err != nil {
-          rollback()
-          return err
-        }
-    	empresa.OwnerID = &user.ID // reflejarlo en memoria también
+		if _, err := tx.
+			Model(&models.Empresa{}).
+			Where("id = ?", empresa.ID).
+			Update("owner_id", user.ID); err != nil {
+			return err
+		}
+		empresa.OwnerID = &user.ID // reflejarlo en memoria también
 	}
 	// 3. Perfil de rol
 	switch user.Role {
 	case "chofer":
-		if chofer == nil {
-			rollback()
-			return errors.New("chofer profile is required for role=chofer")
-		}
 		chofer.UserID = user.ID
 		if empresa != nil {
 			empID := empresa.ID
 			chofer.EmpresaID = empID
 		}
-		if err := facades.Orm().Query().Create(chofer); err != nil {
-			rollback()
+		if err := tx.Create(chofer); err != nil {
 			return err
 		}
-		createdChofer = true
 		user.ChoferID = &chofer.ID
 
 	case "publicador":
-		if publicador == nil {
-			rollback()
-			return errors.New("publicador profile is required for role=publicador")
-		}
 		publicador.UserID = user.ID
 		if empresa != nil {
 			empID := empresa.ID
 			publicador.EmpresaID = empID
 		}
-		if err := facades.Orm().Query().Create(publicador); err != nil {
-			rollback()
+		if err := tx.Create(publicador); err != nil {
 			return err
 		}
-		createdPublicador = true
 		user.PublicadorID = &publicador.ID
 	}
 
@@ -122,46 +138,45 @@ func (s *UserService) CreateWithRole(
 		updates["publicador_id"] = *user.PublicadorID
 	}
 	if len(updates) > 0 {
-		if _, err := facades.Orm().Query().
+		if _, err := tx.
 			Model(&models.User{}).
 			Where("id = ?", user.ID).
 			Update(updates); err != nil {
-			rollback()
 			return err
 		}
 	}
 
 	return nil
 }
+
 // CreateWithEmpresa crea User + Empresa en una transacción.
 // Si algo falla, se revierte todo (empresa y usuario).
 // Si empresa == nil o empresa.ID != 0, solo se vincula.
 func (s *UserService) CreateWithEmpresa(user *models.User, empresa *models.Empresa) error {
-	// Rollback manual (compatible con cualquier versión de Goravel)
-	createdEmpresa := false
+	if user == nil {
+		return errors.New("user is required")
+	}
+	user.Email = strings.ToLower(strings.TrimSpace(user.Email))
+	tx, err := facades.Orm().Query().BeginTransaction()
+	if err != nil {
+		return err
+	}
+	defer func() { _ = tx.Rollback() }()
 
 	if empresa != nil && empresa.ID == 0 {
-		if err := facades.Orm().Query().Create(empresa); err != nil {
+		if err := tx.Create(empresa); err != nil {
 			return err
 		}
-		createdEmpresa = true
 	}
 
 	if empresa != nil {
 		user.EmpresaID = &empresa.ID
 	}
 
-	if err := facades.Orm().Query().Create(user); err != nil {
-		// Rollback: borrar la empresa que acabamos de crear
-		if createdEmpresa {
-			_, _ = facades.Orm().Query().
-				Where("id = ?", empresa.ID).
-				Delete(&models.Empresa{})
-		}
+	if err := tx.Create(user); err != nil {
 		return err
 	}
-
-	return nil
+	return tx.Commit()
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -174,8 +189,8 @@ func (s *UserService) GetByID(id uint) (*models.User, error) {
 		With("Empresa").
 		Where("id = ?", id).
 		First(&u)
-	if err != nil || u.ID == 0 {
-		return nil, errors.New("user not found")
+	if lookupErr := recordError(err, u.ID, "user"); lookupErr != nil {
+		return nil, lookupErr
 	}
 	return &u, nil
 }
@@ -186,14 +201,15 @@ func (s *UserService) GetByEmail(email string) (*models.User, error) {
 	err := facades.Orm().Query().
 		Where("email = ?", email).
 		First(&u)
-	if err != nil || u.ID == 0 {
-		return nil, errors.New("user not found")
+	if lookupErr := recordError(err, u.ID, "user"); lookupErr != nil {
+		return nil, lookupErr
 	}
 	return &u, nil
 }
 
 // GetAllWithFilters lista usuarios con filtros y paginación (panel admin).
 func (s *UserService) GetAllWithFilters(filters map[string]string, page, perPage int) ([]models.User, int64, error) {
+	page, perPage = NormalizePagination(page, perPage)
 	query := facades.Orm().Query().
 		Model(&models.User{}).
 		With("Empresa")
@@ -235,7 +251,7 @@ func (s *UserService) GetEmpresasByTipo(tipo string) ([]models.Empresa, error) {
 		Model(&models.Empresa{}).
 		Where("tipo = ?", tipo).
 		Where("estado = ?", "activo").
-		Order("nombre_legal asc").
+		Order("nombre_legal asc").Limit(100).
 		Find(&list)
 	return list, err
 }
@@ -246,6 +262,9 @@ func (s *UserService) GetEmpresasByTipo(tipo string) ([]models.Empresa, error) {
 
 // Update actualiza cualquier campo del User por ID (incluido EmpresaID).
 func (s *UserService) Update(id uint, updates map[string]interface{}) error {
+	if email, ok := updates["email"].(string); ok {
+		updates["email"] = strings.ToLower(strings.TrimSpace(email))
+	}
 	_, err := facades.Orm().Query().
 		Model(&models.User{}).
 		Where("id = ?", id).
@@ -273,14 +292,73 @@ func (s *UserService) ToggleActive(id uint, active bool) error {
 // ─────────────────────────────────────────────────────────────────
 
 func (s *UserService) Delete(id uint) error {
-	_, err := facades.Orm().Query().
-		Where("id = ?", id).
-		Delete(&models.User{})
-	return err
+	tx, err := facades.Orm().Query().BeginTransaction()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	if _, err := tx.Exec("SET LOCAL lock_timeout = '3s'"); err != nil {
+		return err
+	}
+	var user models.User
+	if err := tx.Where("id = ?", id).LockForUpdate().First(&user); err != nil {
+		return err
+	}
+	if err := recordError(nil, user.ID, "usuario"); err != nil {
+		return err
+	}
+	if user.Role == "admin" {
+		return errors.New("no se puede eliminar a un administrador")
+	}
+	var driver models.Chofer
+	if err := tx.Where("user_id = ?", id).LockForUpdate().First(&driver); err != nil && !errors.Is(err, frameworkerrors.OrmRecordNotFound) {
+		return err
+	}
+	var publisher models.Publicador
+	if err := tx.Where("user_id = ?", id).LockForUpdate().First(&publisher); err != nil && !errors.Is(err, frameworkerrors.OrmRecordNotFound) {
+		return err
+	}
+	// Keep commercial identities when referenced. Deactivation is the supported
+	// administrative action for an account with business history.
+	hasLoads, err := tx.Model(&models.Carga{}).Where("(chofer_id = ? AND ? > 0) OR (publicador_id = ? AND ? > 0)", driver.ID, driver.ID, publisher.ID, publisher.ID).Exists()
+	if err != nil {
+		return err
+	}
+	ownsCompany, err := tx.Model(&models.Empresa{}).Where("owner_id = ?", id).Exists()
+	if err != nil {
+		return err
+	}
+	ownsAddress, err := tx.Model(&models.Direccion{}).Where("owner_id = ?", id).Exists()
+	if err != nil {
+		return err
+	}
+	hasInvoices, err := tx.Model(&models.Factura{}).Where("(chofer_id = ? AND ? > 0) OR (publicador_id = ? AND ? > 0)", driver.ID, driver.ID, publisher.ID, publisher.ID).Exists()
+	if err != nil {
+		return err
+	}
+	if hasLoads || hasInvoices || ownsCompany || ownsAddress {
+		return errors.New("usuario con referencias comerciales; desactiva la cuenta")
+	}
+	if driver.ID != 0 {
+		if _, err := tx.Where("id = ?", driver.ID).Delete(&models.Chofer{}); err != nil {
+			return err
+		}
+	}
+	if publisher.ID != 0 {
+		if _, err := tx.Where("id = ?", publisher.ID).Delete(&models.Publicador{}); err != nil {
+			return err
+		}
+	}
+	if _, err := tx.Where("id = ?", id).Delete(&models.User{}); err != nil {
+		return err
+	}
+	return tx.Commit()
 }
+
 // EmailTaken verifica si un email ya está registrado en la tabla users.
 // Si excludeID > 0, excluye ese usuario de la verificación (útil en updates).
 func (s *UserService) EmailTaken(email string, excludeID uint) (bool, error) {
+	email = strings.ToLower(strings.TrimSpace(email))
 	query := facades.Orm().Query().
 		Model(&models.User{}).
 		Where("email = ?", email)
@@ -293,9 +371,11 @@ func (s *UserService) EmailTaken(email string, excludeID uint) (bool, error) {
 	}
 	return count > 0, nil
 }
+
 // EmailExists verifica si un email ya está registrado en la tabla users.
 // Si excludeID > 0, excluye ese usuario de la verificación (útil en updates).
 func (s *UserService) EmailExists(email string, excludeID uint) (bool, error) {
+	email = strings.ToLower(strings.TrimSpace(email))
 	query := facades.Orm().Query().
 		Model(&models.User{}).
 		Where("email = ?", email)
@@ -308,21 +388,22 @@ func (s *UserService) EmailExists(email string, excludeID uint) (bool, error) {
 	}
 	return count > 0, nil
 }
+
 // Al guardar User, exactamente uno de los dos FK debe estar seteado
 func ValidateUserRole(user *models.User) error {
-    hasPublicador := user.PublicadorID != nil
-    hasChofer := user.ChoferID != nil
-    if user.Role == "admin" {
-        if hasPublicador || hasChofer {
-            return errors.New("admin no debe tener perfil de rol")
-        }
-        return nil
-    }
-    if user.Role == "publicador" && (!hasPublicador || hasChofer) {
-        return errors.New("publicador requiere PublicadorID y no ChoferID")
-    }
-    if user.Role == "chofer" && (!hasChofer || hasPublicador) {
-        return errors.New("chofer requiere ChoferID y no PublicadorID")
-    }
-    return nil
+	hasPublicador := user.PublicadorID != nil
+	hasChofer := user.ChoferID != nil
+	if user.Role == "admin" {
+		if hasPublicador || hasChofer {
+			return errors.New("admin no debe tener perfil de rol")
+		}
+		return nil
+	}
+	if user.Role == "publicador" && (!hasPublicador || hasChofer) {
+		return errors.New("publicador requiere PublicadorID y no ChoferID")
+	}
+	if user.Role == "chofer" && (!hasChofer || hasPublicador) {
+		return errors.New("chofer requiere ChoferID y no PublicadorID")
+	}
+	return nil
 }

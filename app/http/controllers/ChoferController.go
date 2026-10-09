@@ -45,6 +45,8 @@ func (c *ChoferController) Index(ctx fiber.Ctx) error {
 	if role == "chofer" {
 		if chofer, err := c.service.GetByUserID(userID); err == nil {
 			filters["empresa_id"] = strconv.FormatUint(uint64(chofer.EmpresaID), 10)
+		} else {
+			return fiber.ErrServiceUnavailable
 		}
 	} else if eid := ctx.Query("empresa_id"); eid != "" {
 		filters["empresa_id"] = eid
@@ -52,10 +54,20 @@ func (c *ChoferController) Index(ctx fiber.Ctx) error {
 
 	page, _ := strconv.Atoi(ctx.Query("page", "1"))
 	perPage, _ := strconv.Atoi(ctx.Query("per_page", "10"))
+	page, perPage = services.NormalizePagination(page, perPage)
 
 	list, total, err := c.service.GetAllWithFilters(filters, page, perPage)
 	if err != nil {
 		log.Printf("Error listando choferes: %v", err)
+		return fiber.ErrServiceUnavailable
+	}
+	for i := range list {
+		if role != "admin" && list[i].UserID != userID {
+			list[i].NumeroLicencia = "Privado"
+			list[i].NumeroSeguro = "Privado"
+			list[i].FechaVencimientoLicencia = nil
+			list[i].FechaVencimientoSeguro = nil
+		}
 	}
 
 	return ctx.Render("choferes/index", fiber.Map{
@@ -81,11 +93,22 @@ func (c *ChoferController) Show(ctx fiber.Ctx) error {
 	}
 
 	chofer, err := c.service.GetByID(uint(id))
+	if services.IsInfrastructureError(err) {
+		return fiber.ErrServiceUnavailable
+	}
 	if err != nil {
-		return ctx.Render("dashboard/404", fiber.Map{
+		return ctx.Status(fiber.StatusNotFound).Render("dashboard/404", fiber.Map{
 			"title": "Chofer no encontrado",
 			"role":  sess.Get("role"),
 		}, "layouts/base")
+	}
+
+	viewerID, viewerRole := currentUser(ctx)
+	if viewerRole != "admin" && chofer.UserID != viewerID {
+		chofer.NumeroLicencia = "Privado"
+		chofer.NumeroSeguro = "Privado"
+		chofer.FechaVencimientoLicencia = nil
+		chofer.FechaVencimientoSeguro = nil
 	}
 
 	return ctx.Render("choferes/show", fiber.Map{
@@ -125,6 +148,9 @@ func (c *ChoferController) Edit(ctx fiber.Ctx) error {
 
 	// 1. Cargar PRIMERO
 	chofer, err := c.service.GetByID(uint(id))
+	if services.IsInfrastructureError(err) {
+		return fiber.ErrServiceUnavailable
+	}
 	if err != nil {
 		return ctx.Redirect().To("/choferes?flash_error=Chofer no encontrado")
 	}
@@ -157,6 +183,9 @@ func (c *ChoferController) Update(ctx fiber.Ctx) error {
 
 	// 1. Cargar
 	existing, err := c.service.GetByID(uint(id))
+	if services.IsInfrastructureError(err) {
+		return fiber.ErrServiceUnavailable
+	}
 	if err != nil {
 		return ctx.Redirect().To("/choferes?flash_error=Chofer no encontrado")
 	}
@@ -200,6 +229,13 @@ func (c *ChoferController) Update(ctx fiber.Ctx) error {
 		}, "layouts/base")
 	}
 
+	for _, date := range []string{req.FechaVencimientoLicencia, req.FechaVencimientoSeguro} {
+		if date != "" {
+			if _, err := time.Parse("2006-01-02", date); err != nil {
+				return fiber.ErrBadRequest
+			}
+		}
+	}
 	parseDate := func(s string) *time.Time {
 		if s == "" {
 			return nil
@@ -245,6 +281,9 @@ func (c *ChoferController) Delete(ctx fiber.Ctx) error {
 	}
 
 	chofer, err := c.service.GetByID(uint(id))
+	if services.IsInfrastructureError(err) {
+		return fiber.ErrServiceUnavailable
+	}
 	if err != nil {
 		return ctx.Redirect().To("/choferes?flash_error=Chofer no encontrado")
 	}

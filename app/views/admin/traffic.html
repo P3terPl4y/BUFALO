@@ -1,0 +1,23 @@
+<section class="tf-home__section" aria-labelledby="trafficTitle">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3"><div><h2 class="tf-home__section-title mb-1" id="trafficTitle"><i class="bi bi-shield-check"></i> Protección contra tráfico abusivo</h2><p class="text-muted mb-0" id="trafficPolicy">Consultando límites y capacidad…</p></div><span id="trafficMode" class="badge bg-secondary">Consultando…</span></div>
+    <div class="tf-home-stats tf-home-stats--3" aria-live="polite">
+        <article class="tf-home-stat"><div class="tf-home-stat__body"><span class="tf-home-stat__label">Rechazos por exceso de solicitudes</span><p class="tf-home-stat__value" id="trafficLimited">—</p><small>Respuestas 429 antes de procesar la petición</small></div></article>
+        <article class="tf-home-stat"><div class="tf-home-stat__body"><span class="tf-home-stat__label">Solicitudes rechazadas durante un baneo</span><p class="tf-home-stat__value" id="trafficBanned">—</p><small id="trafficBanPolicy">Bloqueos temporales progresivos</small></div></article>
+        <article class="tf-home-stat"><div class="tf-home-stat__body"><span class="tf-home-stat__label">Excesos detectados en observación</span><p class="tf-home-stat__value" id="trafficObserved">—</p><small>Solicitudes que habrían sido bloqueadas</small></div></article>
+        <article class="tf-home-stat"><div class="tf-home-stat__body"><span class="tf-home-stat__label">Rechazos por capacidad ocupada</span><p class="tf-home-stat__value" id="trafficCapacity">—</p><small id="trafficCapacityPolicy">Límites de solicitudes y autenticación simultáneas</small></div></article>
+        <article class="tf-home-stat"><div class="tf-home-stat__body"><span class="tf-home-stat__label">Fallos del almacén de protección</span><p class="tf-home-stat__value" id="trafficStoreErrors">—</p><small>En bloqueo, las solicitudes responden 503</small></div></article>
+    </div>
+    <p class="small text-muted mt-3">Contadores del proceso actual; se reinician con BUFALO. Los baneos conservados en Redis pueden seguir activos. No se muestran IP ni identidades. Los rechazos anteriores a BUFALO, en Cloudflare o el proxy, se consultan en esos servicios. Si falla la actualización, los últimos datos pueden estar desactualizados.</p>
+</section>
+<script src="/js/admin-traffic.js" defer></script>
+
+<div class="small text-muted mt-2">Transporte rechazado: <span id="trafficTransport">—</span> · Cuerpos rechazados: <span id="trafficBody">—</span> · Plazos de lectura agotados: <span id="trafficReadTimeouts">—</span></div>
+
+<section class="tf-home__section" aria-labelledby="securityScanTitle">
+<h2 class="tf-home__section-title" id="securityScanTitle">Análisis de vulnerabilidades</h2>
+<p id="securityScanStatus">Consultando último análisis…</p>
+<p class="small text-muted" id="securityScanResources"></p>
+<h3 class="h5">Rechazos recientes de tráfico</h3>
+<p class="small text-muted">Últimos 128 registros del proceso. La identidad es un identificador protegido, no una IP. Un rechazo puede corresponder a sobrecarga o un cliente legítimo; no confirma un ataque.</p>
+<div class="table-responsive"><table class="table"><thead><tr><th>Hora</th><th>Motivo</th><th>HTTP</th><th>Identidad</th><th>Cantidad</th></tr></thead><tbody id="securityRejections"></tbody></table></div>
+</section>

@@ -123,25 +123,26 @@
         {{ if ne (printf "%v" .factura.Estado) "pagada" }}
         <div class="tf-rail-card">
             <header class="tf-rail-card__head"><i class="bi bi-cash-coin"></i><span>Marcar pagada</span></header>
-            <form action="/admin/facturas/{{ .factura.ID }}/pagar" method="POST">
-                <input type="hidden" name="_csrf" value="{{ .csrfToken }}">
-                <input type="text" name="metodo_pago" class="form-control" placeholder="Método (transferencia, efectivo…)" style="margin-bottom:.5rem;">
-                <button type="submit" class="btn btn-success tf-w-full">
+            <input form="adminFacturasAction1" type="text" name="metodo_pago" class="form-control" placeholder="Método (transferencia, efectivo…)" style="margin-bottom:.5rem;">
+<button form="adminFacturasAction1" type="submit" class="btn btn-success tf-w-full">
                     <i class="bi bi-check2-all"></i> Marcar como pagada
                 </button>
-            </form>
         </div>
         {{ end }}
 
         <div class="tf-rail-card tf-rail-card--danger" style="border-color: rgba(239,68,68,.35);">
             <header class="tf-rail-card__head"><i class="bi bi-exclamation-triangle"></i><span>Zona de peligro</span></header>
-            <form action="/admin/facturas/{{ .factura.ID }}/delete" method="POST"
-                  onsubmit="return confirm('¿Eliminar esta factura? Esta acción no se puede deshacer.')">
-                <input type="hidden" name="_csrf" value="{{ .csrfToken }}">
-                <button type="submit" class="btn btn-outline-danger tf-w-full">
+            <button form="adminFacturasAction2" type="submit" class="btn btn-outline-danger tf-w-full">
                     <i class="bi bi-trash"></i> Eliminar Factura
                 </button>
-            </form>
         </div>
     </aside>
+</form>
+
+<form id="adminFacturasAction1" action="/admin/facturas/{{ .factura.ID }}/pagar" method="POST">
+<input type="hidden" name="_csrf" value="{{ .csrfToken }}">
+</form>
+<form id="adminFacturasAction2" action="/admin/facturas/{{ .factura.ID }}/delete" method="POST"
+                  onsubmit="return confirm('¿Eliminar esta factura? Esta acción no se puede deshacer.')">
+<input type="hidden" name="_csrf" value="{{ .csrfToken }}">
 </form>

@@ -42,6 +42,7 @@
                             <input type="email" class="form-control" id="email" name="email"
                                    value="{{ if .old }}{{ .old.Email }}{{ end }}"
                                    placeholder="tu@empresa.com" required>
+                            <small class="tf-field-hint">Te enviaremos un enlace. La cuenta y el perfil se crearán después de confirmar el correo.</small>
                             {{ if .errors.email }}<small class="tf-field-error">{{ .errors.email }}</small>{{ end }}
                         </div>
                         <div class="tf-col-6 tf-field">
@@ -331,11 +332,12 @@
                             <label for="chofer_tipos_equipo_permitidos" class="form-label">
                                 Tipos de equipo permitidos
                             </label>
-                            <input type="text" class="form-control" id="chofer_tipos_equipo_permitidos"
-                                   name="chofer_tipos_equipo_permitidos"
-                                   value="{{ if .old }}{{ .old.ChoferTiposEquipoPermitidos }}{{ end }}"
-                                   placeholder="dry_van,reefer,flatbed">
-                            <span class="tf-field-hint">Separa con comas.</span>
+                            <input type="hidden" name="chofer_tipos_equipo_permitidos_present" value="1">
+<select multiple size="6" class="form-select" id="chofer_tipos_equipo_permitidos" name="chofer_tipos_equipo_permitidos_choice" aria-describedby="chofer_tipos_equipo_permitidos_hint">
+{{ range equipmentChoices }}<option value="{{ .Value }}" {{ if and $.old (csvContains $.old.ChoferTiposEquipoPermitidos .Value) }}selected{{ end }}>{{ .Label }}</option>{{ end }}
+</select><span class="tf-field-hint" id="chofer_tipos_equipo_permitidos_hint">Puedes seleccionar varias opciones. En computadora usa Ctrl o Cmd; en móvil toca las opciones.</span>
+{{ if .errors.chofer_tipos_equipo_permitidos }}<small class="tf-field-error">{{ .errors.chofer_tipos_equipo_permitidos }}</small>{{ end }}
+
                         </div>
                         <div class="tf-col-12 tf-field">
                             <label for="chofer_certificaciones" class="form-label">Certificaciones</label>
@@ -437,18 +439,20 @@
                     <div class="tf-form-row">
                         <div class="tf-col-12 tf-field">
                             <label for="preferred_equipment_types" class="form-label">Equipos preferidos</label>
-                            <input type="text" class="form-control" id="preferred_equipment_types"
-                                   name="preferred_equipment_types"
-                                   value="{{ if .old }}{{ .old.PreferredEquipmentTypes }}{{ end }}"
-                                   placeholder="dry_van,reefer,flatbed">
-                            <span class="tf-field-hint">Separa con comas.</span>
+                            <input type="hidden" name="preferred_equipment_types_present" value="1">
+<select multiple size="6" class="form-select" id="preferred_equipment_types" name="preferred_equipment_types_choice" aria-describedby="preferred_equipment_types_hint">
+{{ range equipmentChoices }}<option value="{{ .Value }}" {{ if and $.old (csvContains $.old.PreferredEquipmentTypes .Value) }}selected{{ end }}>{{ .Label }}</option>{{ end }}
+</select><span class="tf-field-hint" id="preferred_equipment_types_hint">Puedes seleccionar varias opciones. En computadora usa Ctrl o Cmd; en móvil toca las opciones.</span>
+{{ if .errors.preferred_equipment_types }}<small class="tf-field-error">{{ .errors.preferred_equipment_types }}</small>{{ end }}
+
                         </div>
                         <div class="tf-col-12 tf-field">
                             <label for="preferred_cargo_types" class="form-label">Tipos de carga aceptados</label>
-                            <input type="text" class="form-control" id="preferred_cargo_types"
-                                   name="preferred_cargo_types"
-                                   value="{{ if .old }}{{ .old.PreferredCargoTypes }}{{ end }}"
-                                   placeholder="refrigerados,secos,peligrosos">
+                            <input type="hidden" name="preferred_cargo_types_present" value="1">
+<select multiple size="6" class="form-select" id="preferred_cargo_types" name="preferred_cargo_types_choice" aria-describedby="preferred_cargo_types_hint">
+{{ range cargoChoices }}<option value="{{ .Value }}" {{ if and $.old (csvContains $.old.PreferredCargoTypes .Value) }}selected{{ end }}>{{ .Label }}</option>{{ end }}
+</select><span class="tf-field-hint" id="preferred_cargo_types_hint">Puedes seleccionar varias opciones. En computadora usa Ctrl o Cmd; en móvil toca las opciones.</span>
+{{ if .errors.preferred_cargo_types }}<small class="tf-field-error">{{ .errors.preferred_cargo_types }}</small>{{ end }}
                         </div>
                         <div class="tf-col-6 tf-field">
                             <label for="max_weight" class="form-label">Peso máximo</label>
@@ -516,14 +520,14 @@
                     <i class="bi bi-building tf-form-block__icon"></i>
                     <div class="tf-form-block__text">
                         <h2>Empresa</h2>
-                        <p id="empresaHint">Puedes asociarte a una empresa existente o crear una nueva.</p>
+                        <p id="empresaHint">Crea una empresa o continúa sin ella. Para acceder a una existente, contacta al administrador.</p>
                     </div>
                 </header>
                 <div class="tf-form-block__body">
                     <div class="tf-empresa-mode">
                         <label class="tf-mode-option">
-                            <input type="radio" name="empresa_mode" value="existing" checked>
-                            <span><i class="bi bi-link-45deg"></i> Asociarme a una existente</span>
+                            <input type="radio" name="empresa_mode" value="existing" disabled>
+                            <span>Empresa existente: solicita acceso a un administrador</span>
                         </label>
                         <label class="tf-mode-option">
                             <input type="radio" name="empresa_mode" value="new">
@@ -531,7 +535,7 @@
                         </label>
                     </div>
 <label class="tf-mode-option">
-    <input type="radio" name="empresa_mode" value="none">
+    <input type="radio" name="empresa_mode" value="none" checked>
     <span><i class="bi bi-dash-circle"></i> Sin empresa por ahora</span>
 </label>
                     <div id="empresaExistingBlock" class="tf-form-row">
@@ -976,8 +980,8 @@
 
         if (hint) {
             hint.textContent = isChofer
-                ? 'Como transportista puedes asociarte a una empresa de tipo Carrier, crear una nueva u omitir este paso.'
-                : 'Como broker puedes asociarte a una empresa de tipo Broker, crear una nueva u omitir este paso.';
+                ? 'Como transportista puedes crear una empresa Carrier o continuar sin empresa.'
+                : 'Como broker puedes crear una empresa Broker o continuar sin empresa.';
         }
 
         renderEmpresaOptions(tipo);
@@ -1126,5 +1130,3 @@
     setTimeout(updateSections, 100);
 })();
 </script>
-
-

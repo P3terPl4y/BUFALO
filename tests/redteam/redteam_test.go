@@ -11,7 +11,6 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"runtime"
 	"strings"
 	"sync"
 	"testing"
@@ -87,13 +86,17 @@ func TestMain(m *testing.M) {
 }
 
 func projectRoot() string {
-	_, file, _, _ := runtime.Caller(0)
-	return filepath.Join(filepath.Dir(file), "..", "..")
+	root, err := filepath.Abs(filepath.Join("..", ".."))
+	if err != nil {
+		panic(err)
+	}
+	return root
 }
 
 func TestSecurityRedTeam100Users(t *testing.T) {
 	tests.ResetDB(t)
 	fx := seedFixture(t, 100)
+	var missingProfileUserID uint
 	if len(fx.people) != 100 {
 		t.Fatalf("seeded %d principals; expected exactly 100", len(fx.people))
 	}
@@ -106,6 +109,7 @@ func TestSecurityRedTeam100Users(t *testing.T) {
 		if _, err := facades.Orm().Query().Where("user_id = ?", p.user.ID).Delete(&models.Chofer{}); err != nil {
 			t.Fatalf("remove test driver profile: %v", err)
 		}
+		missingProfileUserID = p.user.ID
 		res := request(t, p.client, http.MethodGet, "/loads", nil, "", "")
 		if res.StatusCode != http.StatusForbidden {
 			t.Errorf("driver without profile got status %d, want 403", res.StatusCode)
@@ -246,9 +250,10 @@ func TestSecurityRedTeam100Users(t *testing.T) {
 			}
 			for _, q := range probes {
 				if q.label == "invoice object access" {
-					if p.role == "admin" || (p.role == "publicador" && p.user.EmpresaID != nil && *p.user.EmpresaID == fx.brokerIDs[0]) {
-						q.want = http.StatusOK
-					} else if p.role == "chofer" && p.user.EmpresaID != nil && *p.user.EmpresaID == fx.carrierID {
+					// Invoice visibility follows the associated profile, not the
+					// user's company. The fixture invoice belongs to the issuing
+					// publisher and deliberately has no ChoferID.
+					if p.role == "admin" || p.user.ID == fx.ownerID {
 						q.want = http.StatusOK
 					} else {
 						q.want = http.StatusForbidden
@@ -262,14 +267,12 @@ func TestSecurityRedTeam100Users(t *testing.T) {
 					}
 				}
 				if q.label == "cross-company invoice payment" {
-					if p.role == "admin" {
+					// Only the issuer profile (or admin) may mutate this invoice;
+					// sharing a company does not grant payment authority.
+					if p.role == "admin" || p.user.ID == fx.ownerID {
 						q.want = http.StatusSeeOther
-					} else if p.role == "publicador" && p.user.EmpresaID != nil && *p.user.EmpresaID == fx.brokerIDs[0] {
-						q.want = http.StatusSeeOther
-					} else if p.role == "publicador" {
-						q.want = http.StatusForbidden
 					} else {
-						q.want = http.StatusSeeOther
+						q.want = http.StatusForbidden
 					}
 				}
 				if q.label == "address ownership" {
@@ -292,6 +295,9 @@ func TestSecurityRedTeam100Users(t *testing.T) {
 					} else {
 						q.want = http.StatusSeeOther
 					}
+				}
+				if q.path == "/home" && p.user.ID == missingProfileUserID {
+					q.want = http.StatusForbidden
 				}
 				res := request(nil, p.client, q.method, q.path, q.form, p.csrf, "")
 				if res.StatusCode != q.want {
@@ -450,8 +456,8 @@ func TestProductionJourneys(t *testing.T) {
 	}
 	res.Body.Close()
 	loadCount, err := facades.Orm().Query().Model(&models.Carga{}).Where("id = ?", load.ID).Count()
-	if err != nil || loadCount != 0 {
-		t.Fatalf("load delete left a visible row: count=%d err=%v", loadCount, err)
+	if err != nil || loadCount != 1 {
+		t.Fatalf("completed load was removed: count=%d err=%v", loadCount, err)
 	}
 
 	// Address CRUD enforces ownership while allowing the owner to mutate it.

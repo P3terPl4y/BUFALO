@@ -1,11 +1,14 @@
 package services_test
 
 import (
+	"fmt"
 	"goravel/app/models"
 	"goravel/app/services"
 	"goravel/bootstrap"
 	"goravel/tests"
 	"os"
+	"sync"
+	"sync/atomic"
 	"testing"
 )
 
@@ -226,6 +229,40 @@ func TestCreateWithRole_Rollback_EmailDuplicado(t *testing.T) {
 	}
 }
 
+func TestCreateWithRole_ConcurrentDuplicateEmailIsAtomic(t *testing.T) {
+	tests.ResetDB(t)
+	svc := services.NewUserService()
+	const attempts = 16
+	var wg sync.WaitGroup
+	var succeeded atomic.Int64
+	for i := 0; i < attempts; i++ {
+		wg.Add(1)
+		go func(i int) {
+			defer wg.Done()
+			user := tests.NewUserChofer("race@test.com")
+			company := &models.Empresa{Tipo: models.TipoCarrier, NombreLegal: "Empresa concurrente", Estado: models.EmpresaActiva}
+			profile := tests.NewChoferProfile()
+			profile.NumeroLicencia = fmt.Sprintf("RACE-%02d", i)
+			if err := svc.CreateWithRole(user, company, profile, nil); err == nil {
+				succeeded.Add(1)
+			}
+		}(i)
+	}
+	wg.Wait()
+	if got := succeeded.Load(); got != 1 {
+		t.Fatalf("expected exactly one successful duplicate-email registration, got %d", got)
+	}
+	if got := tests.CountUsers(t); got != 1 {
+		t.Fatalf("expected one user, got %d", got)
+	}
+	if got := tests.CountChoferes(t); got != 1 {
+		t.Fatalf("expected one driver profile, got %d", got)
+	}
+	if got := tests.CountEmpresas(t); got != 1 {
+		t.Fatalf("expected one company from the successful transaction, got %d", got)
+	}
+}
+
 func TestCreateWithRole_Rollback_ChoferNil(t *testing.T) {
 	tests.ResetDB(t)
 	svc := services.NewUserService()
@@ -320,5 +357,24 @@ func TestEmailExists(t *testing.T) {
 	exists, _ = svc.EmailExists("existente@test.com", u.ID)
 	if exists {
 		t.Error("EmailExists con excludeID no excluyó")
+	}
+}
+
+func TestDeleteUserRemovesRoleProfileAtomically(t *testing.T) {
+	tests.ResetDB(t)
+	svc := services.NewUserService()
+	user := tests.NewUserChofer("delete-profile@test.invalid")
+	profile := tests.NewChoferProfile()
+	if err := svc.CreateWithRole(user, nil, profile, nil); err != nil {
+		t.Fatal(err)
+	}
+	if err := svc.Delete(user.ID); err != nil {
+		t.Fatal(err)
+	}
+	if n := tests.CountUsers(t); n != 0 {
+		t.Fatal("user not removed")
+	}
+	if n := tests.CountChoferes(t); n != 0 {
+		t.Fatal("orphan role profile retained")
 	}
 }

@@ -80,6 +80,9 @@ func (c *EmpresaController) addressCanBeAssigned(addressID *uint, userID uint, r
 		return true
 	}
 	direccion, err := c.direccionService.GetByID(strconv.FormatUint(uint64(*addressID), 10))
+	if services.IsInfrastructureError(err) {
+		return false
+	}
 	return err == nil && canUseCompanyAddress(direccion, userID, role)
 }
 
@@ -96,10 +99,12 @@ func (c *EmpresaController) Index(ctx fiber.Ctx) error {
 	}
 	page, _ := strconv.Atoi(ctx.Query("page", "1"))
 	perPage, _ := strconv.Atoi(ctx.Query("per_page", "10"))
+	page, perPage = services.NormalizePagination(page, perPage)
 
 	list, total, err := c.service.GetAllWithFilters(filters, page, perPage)
 	if err != nil {
 		log.Printf("Error listando empresas: %v", err)
+		return fiber.ErrServiceUnavailable
 	}
 
 	return ctx.Render("empresas/index", fiber.Map{
@@ -120,17 +125,26 @@ func (c *EmpresaController) Show(ctx fiber.Ctx) error {
 	userID, role := currentUser(ctx)
 
 	e, err := c.service.GetByID(ctx.Params("id"))
+	if services.IsInfrastructureError(err) {
+		return fiber.ErrServiceUnavailable
+	}
 	if err != nil {
-		return ctx.Render("dashboard/404", fiber.Map{
+		return ctx.Status(fiber.StatusNotFound).Render("dashboard/404", fiber.Map{
 			"title": "No encontrada",
 			"role":  role,
 		}, "layouts/base")
 	}
 
-	choferes, _ := c.service.GetChoferes(ctx.Params("id"))
+	driverPage, _ := strconv.Atoi(ctx.Query("driver_page", "1"))
+	driverPage, _ = services.NormalizePagination(driverPage, 100)
+	choferes, err := c.service.GetChoferes(ctx.Params("id"), driverPage)
+	if err != nil {
+		return fiber.ErrServiceUnavailable
+	}
 
 	return ctx.Render("empresas/show", fiber.Map{
-		"title":     "Detalle Empresa",
+		"title":          "Detalle Empresa",
+		"driverPrevious": driverPage - 1, "driverNext": driverPage + 1, "driverHasNext": len(choferes) == 100,
 		"empresa":   e,
 		"choferes":  choferes,
 		"userID":    userID,
@@ -233,6 +247,9 @@ func (c *EmpresaController) Edit(ctx fiber.Ctx) error {
 
 	// 1. Cargar la entidad PRIMERO
 	e, err := c.service.GetByID(id)
+	if services.IsInfrastructureError(err) {
+		return fiber.ErrServiceUnavailable
+	}
 	if err != nil {
 		return ctx.Redirect().To("/empresas?flash_error=Empresa no encontrada")
 	}
@@ -264,6 +281,9 @@ func (c *EmpresaController) Update(ctx fiber.Ctx) error {
 
 	// 1. Cargar
 	existing, err := c.service.GetByID(id)
+	if services.IsInfrastructureError(err) {
+		return fiber.ErrServiceUnavailable
+	}
 	if err != nil {
 		return ctx.Redirect().To("/empresas?flash_error=Empresa no encontrada")
 	}
@@ -335,6 +355,9 @@ func (c *EmpresaController) Delete(ctx fiber.Ctx) error {
 
 	// 1. Cargar
 	e, err := c.service.GetByID(id)
+	if services.IsInfrastructureError(err) {
+		return fiber.ErrServiceUnavailable
+	}
 	if err != nil {
 		return ctx.Redirect().To("/empresas?flash_error=Empresa no encontrada")
 	}

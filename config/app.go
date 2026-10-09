@@ -2,6 +2,7 @@ package config
 
 import (
 	"github.com/goravel/framework/support/carbon"
+	"strings"
 
 	"goravel/app/facades"
 )
@@ -24,7 +25,7 @@ func init() {
 		// This value determines the "environment" your application is currently
 		// running in. This may determine how you prefer to configure various
 		// services the application utilizes. Set this in your ".env" file.
-		"env": config.Env("APP_ENV", "production"),
+		"env": strings.ToLower(strings.TrimSpace(config.Env("APP_ENV", "local").(string))),
 
 		// Application Debug Mode
 		"debug": config.Env("APP_DEBUG", false),

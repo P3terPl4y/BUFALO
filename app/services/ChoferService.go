@@ -1,7 +1,6 @@
 package services
 
 import (
-	"errors"
 	"goravel/app/facades"
 	"goravel/app/models"
 )
@@ -12,6 +11,7 @@ func NewChoferService() *ChoferService { return &ChoferService{} }
 
 // GetAllWithFilters lista choferes con User y Empresa preload.
 func (s *ChoferService) GetAllWithFilters(filters map[string]string, page, perPage int) ([]models.Chofer, int64, error) {
+	page, perPage = NormalizePagination(page, perPage)
 	query := facades.Orm().Query().
 		Model(&models.Chofer{}).
 		With("User").
@@ -58,8 +58,8 @@ func (s *ChoferService) GetByID(id uint) (*models.Chofer, error) {
 		With("Empresa").
 		Where("id = ?", id).
 		First(&c)
-	if err != nil || c.ID == 0 {
-		return nil, errors.New("chofer not found")
+	if lookupErr := recordError(err, c.ID, "chofer"); lookupErr != nil {
+		return nil, lookupErr
 	}
 	return &c, nil
 }
@@ -71,8 +71,8 @@ func (s *ChoferService) GetByUserID(userID uint) (*models.Chofer, error) {
 		With("Empresa").
 		Where("user_id = ?", userID).
 		First(&c)
-	if err != nil || c.ID == 0 {
-		return nil, errors.New("chofer not found")
+	if lookupErr := recordError(err, c.ID, "chofer"); lookupErr != nil {
+		return nil, lookupErr
 	}
 	return &c, nil
 }
@@ -83,6 +83,9 @@ func (s *ChoferService) Create(c *models.Chofer) error {
 
 // Update solo modifica campos de la tabla choferes.
 func (s *ChoferService) Update(id uint, updates map[string]interface{}) error {
+	if err := ValidateDriverUpdate(updates); err != nil {
+		return err
+	}
 	_, err := facades.Orm().Query().
 		Model(&models.Chofer{}).
 		Where("id = ?", id).

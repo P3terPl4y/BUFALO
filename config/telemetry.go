@@ -157,11 +157,11 @@ func init() {
 			//
 			// Configures the telemetry middleware for incoming HTTP requests.
 			"http_server": map[string]any{
-				"enabled":          config.Env("OTEL_HTTP_SERVER_ENABLED", true),
+				"enabled":          false,
 				"excluded_paths":   []string{}, // e.g., ["/health", "/metrics"]
 				"excluded_methods": []string{}, // e.g., ["OPTIONS", "HEAD"]
 			},
-			
+
 			// HTTP Client Instrumentation
 			//
 			// Configures instrumentation for outgoing HTTP requests made through the
@@ -172,21 +172,21 @@ func init() {
 			// "http.clients.{client_name}.enable_telemetry" to false for the
 			// corresponding client configuration.
 			"http_client": map[string]any{
-				"enabled": config.Env("OTEL_HTTP_CLIENT_ENABLED", true),
+				"enabled": false,
 			},
-			
+
 			// gRPC Server Instrumentation
 			//
 			// Configures the instrumentation for incoming gRPC requests to your server.
 			"grpc_server": map[string]any{
-				"enabled": config.Env("OTEL_GRPC_SERVER_ENABLED", true),
+				"enabled": false,
 			},
-			
+
 			// gRPC Client Instrumentation
 			//
 			// Configures the instrumentation for outgoing gRPC calls made by your application.
 			"grpc_client": map[string]any{
-				"enabled": config.Env("OTEL_GRPC_CLIENT_ENABLED", true),
+				"enabled": false,
 			},
 
 			// Database Instrumentation
@@ -194,7 +194,7 @@ func init() {
 			// Spans and metrics for ORM and DB query builder operations,
 			// plus connection pool metrics.
 			"database": map[string]any{
-				"enabled": config.Env("OTEL_DATABASE_ENABLED", true),
+				"enabled": false,
 			},
 
 			// Log Instrumentation
@@ -203,7 +203,7 @@ func init() {
 			// Disabling this acts as a global kill switch for sending logs to the OTel exporter,
 			// which can be useful for reducing cost/noise without changing logging config.
 			"log": map[string]any{
-				"enabled": config.Env("OTEL_LOG_ENABLED", true),
+				"enabled": false,
 			},
 		},
 

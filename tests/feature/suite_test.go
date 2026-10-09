@@ -8,11 +8,11 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"testing"
 	"time"
 
+	"goravel/app/http/middleware"
 	"goravel/app/models"
 	"goravel/app/services"
 	"goravel/app/viewhelpers"
@@ -30,13 +30,17 @@ import (
 )
 
 var (
-	testApp    *fiber.App
-	testServer *httptest.Server
+	testApp                         *fiber.App
+	testServer                      *httptest.Server
+	lastRegistrationConfirmationURL string
 )
 
 func projectRoot() string {
-	_, filename, _, _ := runtime.Caller(0)
-	return filepath.Join(filepath.Dir(filename), "..", "..")
+	root, err := filepath.Abs(filepath.Join("..", ".."))
+	if err != nil {
+		panic(err)
+	}
+	return root
 }
 
 func findViewsDir() string {
@@ -100,7 +104,10 @@ func TestMain(m *testing.M) {
 	}))
 	// ────────────────────────────────────────
 
-	routes.SetupWebRoutes(testApp, func(c fiber.Ctx) error { return c.Next() })
+	routes.SetupWebRoutesWithEmailSender(testApp, middleware.NewMemoryRateCounter(), func(_ string, confirmationURL string) error {
+		lastRegistrationConfirmationURL = confirmationURL
+		return nil
+	}, func(c fiber.Ctx) error { return c.Next() })
 
 	testServer = httptest.NewServer(adaptor.FiberApp(testApp))
 	defer testServer.Close()

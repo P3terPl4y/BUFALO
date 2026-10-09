@@ -28,6 +28,9 @@ func (c *DriverCommunityController) companyID(ctx fiber.Ctx) (uint, error) {
 		return 0, fiber.ErrForbidden
 	}
 	profile, err := c.publicadores.GetByUserID(uid)
+	if services.IsInfrastructureError(err) {
+		return 0, fiber.ErrServiceUnavailable
+	}
 	if err != nil || profile.EmpresaID == 0 {
 		return 0, fiber.ErrForbidden
 	}
@@ -37,9 +40,13 @@ func (c *DriverCommunityController) companyID(ctx fiber.Ctx) (uint, error) {
 func (c *DriverCommunityController) Index(ctx fiber.Ctx) error {
 	companyID, err := c.companyID(ctx)
 	if err != nil {
-		return ctx.SendStatus(fiber.StatusForbidden)
+		return err
 	}
-	members, err := c.community.ListCompanyNetwork(companyID)
+	memberPage, _ := strconv.Atoi(ctx.Query("member_page", "1"))
+	memberPage, _ = services.NormalizePagination(memberPage, 100)
+	driverPage, _ := strconv.Atoi(ctx.Query("page", "1"))
+	driverPage, _ = services.NormalizePagination(driverPage, 100)
+	members, err := c.community.ListCompanyNetwork(companyID, memberPage)
 	if err != nil {
 		return ctx.SendStatus(fiber.StatusInternalServerError)
 	}
@@ -48,11 +55,15 @@ func (c *DriverCommunityController) Index(ctx fiber.Ctx) error {
 		memberIDs[member.ChoferID] = true
 	}
 	filters := map[string]string{"q": ctx.Query("q"), "estado": "disponible", "orden": "puntaje", "active_user": "true"}
-	list, total, err := c.choferes.GetAllWithFilters(filters, 1, 100)
+	list, total, err := c.choferes.GetAllWithFilters(filters, driverPage, 100)
 	if err != nil {
 		return ctx.SendStatus(fiber.StatusInternalServerError)
 	}
-	return ctx.Render("community/drivers", fiber.Map{"title": "Mi red de choferes", "role": "publicador", "csrfToken": csrf.TokenFromContext(ctx), "drivers": list, "members": members, "memberIDs": memberIDs, "total": total, "query": filters["q"]}, "layouts/base")
+	memberIDs, err = c.community.CompanyMemberIDs(companyID, list)
+	if err != nil {
+		return fiber.ErrServiceUnavailable
+	}
+	return ctx.Render("community/drivers", fiber.Map{"memberPrevious": memberPage - 1, "memberNext": memberPage + 1, "memberHasNext": len(members) == 100, "previousPage": driverPage - 1, "nextPage": driverPage + 1, "hasNext": int64(driverPage*100) < total, "title": "Mi red de choferes", "role": "publicador", "csrfToken": csrf.TokenFromContext(ctx), "drivers": list, "members": members, "memberIDs": memberIDs, "total": total, "query": filters["q"]}, "layouts/base")
 }
 
 func (c *DriverCommunityController) Add(ctx fiber.Ctx) error {

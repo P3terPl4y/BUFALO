@@ -197,13 +197,14 @@
 
         <div class="tf-rail-card tf-rail-card--danger" style="border-color: rgba(239,68,68,.35);">
             <header class="tf-rail-card__head"><i class="bi bi-exclamation-triangle"></i><span>Zona de peligro</span></header>
-            <form action="/admin/empresas/{{ .empresa.ID }}/delete" method="POST"
-                  onsubmit="return confirm('¿Eliminar esta empresa? Esta acción no se puede deshacer.')">
-                <input type="hidden" name="_csrf" value="{{ .csrfToken }}">
-                <button type="submit" class="btn btn-outline-danger tf-w-full">
-                    <i class="bi bi-trash"></i> Eliminar Empresa
-                </button>
-            </form>
+            <button type="submit" form="adminEmpresaDeleteForm" class="btn btn-outline-danger tf-w-full">
+                <i class="bi bi-trash"></i> Eliminar Empresa
+            </button>
         </div>
     </aside>
 </form>
+<form id="adminEmpresaDeleteForm" action="/admin/empresas/{{ .empresa.ID }}/delete" method="POST" onsubmit="return confirm('¿Eliminar esta empresa? Esta acción no se puede deshacer.')">
+    <input type="hidden" name="_csrf" value="{{ .csrfToken }}">
+</form>
+
+<script src="/js/address-options.js" defer></script>

@@ -1,0 +1,79 @@
+package middleware
+
+import (
+	"crypto/subtle"
+	"net/url"
+	"path"
+	"strings"
+
+	contractshttp "github.com/goravel/framework/contracts/http"
+)
+
+const HeaderCsrfKey = "X-CSRF-TOKEN"
+
+type csrf struct {
+	exceptPaths []string
+}
+
+func (c *csrf) Signature() string {
+	return "goravel:verify_csrf_token"
+}
+
+func (c *csrf) Handle(ctx contractshttp.Context) {
+	if isReading(ctx.Request().Method()) || isExcept(c.exceptPaths, ctx.Request().Path()) || isTokenMatch(ctx) {
+		ctx.Response().Header(HeaderCsrfKey, ctx.Request().Session().Token())
+		ctx.Request().Next()
+	} else {
+		ctx.Request().Abort(contractshttp.StatusTokenMismatch)
+	}
+}
+
+func VerifyCsrfToken(excepts ...[]string) contractshttp.Middleware {
+	var exceptPaths []string
+	if len(excepts) > 0 {
+		exceptPaths = parseExceptPaths(excepts[0])
+	}
+
+	return &csrf{exceptPaths: exceptPaths}
+}
+
+func isTokenMatch(ctx contractshttp.Context) bool {
+	if !ctx.Request().HasSession() {
+		return false
+	}
+	sessionCsrfToken := ctx.Request().Session().Token()
+	requestCsrfToken := ctx.Request().Header(HeaderCsrfKey)
+	if requestCsrfToken == "" {
+		requestCsrfToken = ctx.Request().Input("_token")
+	}
+	if requestCsrfToken == "" || subtle.ConstantTimeCompare([]byte(requestCsrfToken), []byte(sessionCsrfToken)) == 0 {
+		return false
+	}
+	return true
+}
+
+func isExcept(excepts []string, currentPath string) bool {
+	currentPath = strings.Trim(currentPath, "/")
+	for _, pattern := range excepts {
+		if matched, err := path.Match(pattern, currentPath); err == nil && matched {
+			return true
+		}
+	}
+	return false
+}
+
+func isReading(method string) bool {
+	return method == contractshttp.MethodGet || method == contractshttp.MethodHead || method == contractshttp.MethodOptions
+}
+
+func parseExceptPaths(rawExcepts []string) []string {
+	var paths []string
+	for _, except := range rawExcepts {
+		if u, err := url.Parse(except); err == nil && u.Path != "" {
+			paths = append(paths, strings.Trim(u.Path, "/"))
+		} else {
+			paths = append(paths, strings.Trim(except, "/"))
+		}
+	}
+	return paths
+}

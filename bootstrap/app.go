@@ -19,12 +19,12 @@ func Boot() contractsfoundation.Application {
 			facades.Schema().Extend(schema.Extension{
 				Models: []any{
 					&models.Direccion{},
-&models.Empresa{},
-&models.User{},        // FK a Empresa
-&models.Chofer{},      // FK a User + Empresa
-&models.Publicador{},  // FK a User + Empresa
-&models.Carga{},       // FK a Publicador + Empresa + Chofer + Direcciones
-&models.Factura{},     // FK a Carga + Empresas + Chofer
+					&models.Empresa{},
+					&models.User{},       // FK a Empresa
+					&models.Chofer{},     // FK a User + Empresa
+					&models.Publicador{}, // FK a User + Empresa
+					&models.Carga{},      // FK a Publicador + Empresa + Chofer + Direcciones
+					&models.Factura{},    // FK a Carga + Empresas + Chofer
 					models.CargaHistorial{},
 				},
 			})

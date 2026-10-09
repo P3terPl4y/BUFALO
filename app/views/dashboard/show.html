@@ -361,12 +361,13 @@
             {{ else if eq .role "chofer" }}
             {{ if eq .load.Estado "publicada" }}
             <form action="/loads/{{ .load.ID }}/accept" method="POST" style="display:inline"
-                  onsubmit="return confirm('¿Aceptar esta carga?')">
+                  id="acceptLoadForm">
                 <input type="hidden" name="_csrf" value="{{ .csrfToken }}">
-                <button type="submit" class="btn btn-success">
+                <button type="submit" class="btn btn-success" aria-haspopup="dialog">
                     <i class="bi bi-check2-circle"></i> Aceptar carga
                 </button>
             </form>
+            <button type="button" class="btn btn-outline-primary" aria-haspopup="dialog" data-load-interest="{{ .load.ID }}" data-load-reference="{{ .load.NumeroReferencia }}" data-csrf="{{ .csrfToken }}">Me interesa</button>
             {{ else if and (eq .load.Estado "asignada") .load.Chofer (eq .load.Chofer.UserID $.userID) }}
             <form action="/loads/{{ .load.ID }}/start-transit" method="POST" style="display:inline">
                 <input type="hidden" name="_csrf" value="{{ .csrfToken }}">
@@ -389,6 +390,77 @@
     </footer>
 
 </div>
+
+<div class="tf-confirm-overlay" id="acceptLoadDialog" role="dialog" aria-modal="true"
+     aria-labelledby="acceptLoadTitle" aria-describedby="acceptLoadMessage" tabindex="-1" hidden>
+    <section class="tf-confirm-dialog">
+        <div class="tf-confirm-dialog__icon"><i class="bi bi-truck"></i></div>
+        <h2 id="acceptLoadTitle">¿Aceptar esta carga?</h2>
+        <p id="acceptLoadMessage">La carga quedará asignada a tu cuenta y dejará de estar disponible para otros choferes.</p>
+        <div class="tf-confirm-dialog__actions">
+            <button type="button" class="btn btn-secondary" data-accept-cancel>Volver</button>
+            <button type="button" class="btn btn-success" data-accept-confirm>Aceptar carga</button>
+        </div>
+    </section>
+</div>
+
+<script>
+(function () {
+    const form = document.getElementById('acceptLoadForm');
+    const dialog = document.getElementById('acceptLoadDialog');
+    if (!form || !dialog) return;
+
+    const confirmButton = dialog.querySelector('[data-accept-confirm]');
+    const cancelButton = dialog.querySelector('[data-accept-cancel]');
+    const submitButton = form.querySelector('button[type="submit"]');
+    let confirmed = false;
+    let lastFocus = null;
+
+    function closeDialog() {
+        dialog.hidden = true;
+        if (lastFocus && typeof lastFocus.focus === 'function') lastFocus.focus();
+    }
+
+    form.addEventListener('submit', function (event) {
+        if (confirmed) {
+            confirmed = false;
+            if (submitButton) submitButton.disabled = true;
+            return;
+        }
+        event.preventDefault();
+        lastFocus = document.activeElement;
+        dialog.hidden = false;
+        confirmButton.focus();
+    });
+
+    cancelButton.addEventListener('click', closeDialog);
+    confirmButton.addEventListener('click', function () {
+        confirmed = true;
+        closeDialog();
+        if (typeof form.requestSubmit === 'function') form.requestSubmit();
+        else form.submit();
+    });
+    dialog.addEventListener('click', function (event) {
+        if (event.target === dialog) closeDialog();
+    });
+    dialog.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape') {
+            event.preventDefault();
+            closeDialog();
+            return;
+        }
+        if (event.key === 'Tab') {
+            if (event.shiftKey && document.activeElement === cancelButton) {
+                event.preventDefault();
+                confirmButton.focus();
+            } else if (!event.shiftKey && document.activeElement === confirmButton) {
+                event.preventDefault();
+                cancelButton.focus();
+            }
+        }
+    });
+})();
+</script>
 
 <script src="/js/load-route.js"></script>
 <script>
@@ -469,3 +541,5 @@
     }
 })();
 </script>
+
+<script src="/js/load-interest.js" defer></script>

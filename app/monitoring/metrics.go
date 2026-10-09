@@ -1,10 +1,13 @@
 package monitoring
 
 import (
+	"errors"
 	"math"
 	"net"
+	"os"
 	"runtime"
 	"strconv"
+	"strings"
 	"sync/atomic"
 	"time"
 
@@ -51,16 +54,35 @@ func checkTCP(host string, port int, dial func(string, string, time.Duration) (n
 	return true, latency
 }
 
-// Middleware stores aggregate measurements only. It deliberately avoids paths,
-// user IDs, and query values so metrics cannot leak request or account data.
+// Middleware mide resultados finales y conserva un historial acotado sin datos
+// de entrada. Debe envolver el manejador de errores y Recover.
 func Middleware() fiber.Handler {
 	return func(c fiber.Ctx) error {
-		if c.Path() == "/healthz" || c.Path() == "/admin/health" {
+		if c.Path() == "/healthz" || c.Path() == "/readyz" || c.Path() == "/presence/heartbeat" || c.Path() == "/admin/health" || strings.HasPrefix(c.Path(), "/admin/health/") {
 			return c.Next()
 		}
 		started := time.Now()
 		err := c.Next()
-		processCounters.record(time.Since(started), c.Response().StatusCode())
+		status := c.Response().StatusCode()
+		if err != nil {
+			status = fiber.StatusInternalServerError
+			var httpError *fiber.Error
+			if errors.As(err, &httpError) {
+				status = httpError.Code
+			}
+		}
+		for _, prefix := range []string{"/css/", "/js/", "/img/", "/uploads/", "/fonts/"} {
+			if status < 400 && strings.HasPrefix(c.Path(), prefix) {
+				return err
+			}
+		}
+		duration := time.Since(started)
+		processCounters.record(duration, status)
+		route := c.Route().Path
+		if route == "" || route == "/" && c.Path() != "/" || strings.Contains(route, "*") {
+			route = "(ruta no registrada)"
+		}
+		history.record(RequestEvent{At: time.Now().UTC(), Method: strings.Clone(c.Method()), Route: strings.Clone(route), Status: status, DurationMS: float64(duration) / float64(time.Millisecond)})
 		return err
 	}
 }
@@ -86,20 +108,21 @@ func (m *counters) record(duration time.Duration, status int) {
 }
 
 type RuntimeSnapshot struct {
-	UptimeSeconds     int64   `json:"uptime_seconds"`
-	Requests          uint64  `json:"requests"`
-	RequestsPerMinute float64 `json:"requests_per_minute"`
-	ClientErrors      uint64  `json:"client_errors_4xx"`
-	ServerErrors      uint64  `json:"server_errors_5xx"`
-	ErrorRatePercent  float64 `json:"error_rate_percent"`
-	AverageLatencyMS  float64 `json:"average_latency_ms"`
-	P95Latency        string  `json:"p95_latency"`
-	HeapInUseMB       float64 `json:"heap_in_use_mb"`
-	HeapAllocMB       float64 `json:"heap_alloc_mb"`
-	TotalAllocMB      float64 `json:"total_alloc_mb"`
-	Goroutines        int     `json:"goroutines"`
-	GOMAXPROCS        int     `json:"gomaxprocs"`
-	GCCycles          uint32  `json:"gc_cycles"`
+	ResidentMemoryMB  *float64 `json:"resident_memory_mb"`
+	UptimeSeconds     int64    `json:"uptime_seconds"`
+	Requests          uint64   `json:"requests"`
+	RequestsPerMinute float64  `json:"requests_per_minute"`
+	ClientErrors      uint64   `json:"client_errors_4xx"`
+	ServerErrors      uint64   `json:"server_errors_5xx"`
+	ErrorRatePercent  float64  `json:"error_rate_percent"`
+	AverageLatencyMS  float64  `json:"average_latency_ms"`
+	P95Latency        string   `json:"p95_latency"`
+	HeapInUseMB       float64  `json:"heap_in_use_mb"`
+	HeapAllocMB       float64  `json:"heap_alloc_mb"`
+	TotalAllocMB      float64  `json:"total_alloc_mb"`
+	Goroutines        int      `json:"goroutines"`
+	GOMAXPROCS        int      `json:"gomaxprocs"`
+	GCCycles          uint32   `json:"gc_cycles"`
 }
 
 func Snapshot() RuntimeSnapshot {
@@ -116,6 +139,7 @@ func Snapshot() RuntimeSnapshot {
 	var mem runtime.MemStats
 	runtime.ReadMemStats(&mem)
 	return RuntimeSnapshot{
+		ResidentMemoryMB:  residentMemory(),
 		UptimeSeconds:     int64(up.Seconds()),
 		Requests:          requests,
 		RequestsPerMinute: float64(requests) / up.Minutes(),
@@ -131,6 +155,23 @@ func Snapshot() RuntimeSnapshot {
 		GOMAXPROCS:        runtime.GOMAXPROCS(0),
 		GCCycles:          mem.NumGC,
 	}
+}
+
+func residentMemory() *float64 {
+	data, err := os.ReadFile("/proc/self/statm")
+	if err != nil {
+		return nil
+	}
+	fields := strings.Fields(string(data))
+	if len(fields) < 2 {
+		return nil
+	}
+	pages, err := strconv.ParseUint(fields[1], 10, 64)
+	if err != nil {
+		return nil
+	}
+	value := bytesToMB(pages * uint64(os.Getpagesize()))
+	return &value
 }
 
 func (m *counters) p95Bucket(requests uint64) string {

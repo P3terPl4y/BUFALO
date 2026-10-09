@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 260" fill="none">
+  <path d="M26 212h468" stroke="#819097" stroke-width="5" stroke-linecap="round" stroke-dasharray="3 15"/>
+  <path d="M77 212h367" stroke="#F3AA27" stroke-width="2" stroke-dasharray="16 14"/>
+  <g class="truck-body">
+    <path d="M125 116h202a11 11 0 0 1 11 11v65H125v-76Z" fill="#F3AA27" stroke="#152126" stroke-width="6"/>
+    <path d="M338 145h57l36 38v9H338v-47Z" fill="#E0E7E9" stroke="#152126" stroke-width="6" stroke-linejoin="round"/>
+    <path d="M350 153h37l23 25h-60v-25Z" fill="#75C7D4" stroke="#152126" stroke-width="4"/>
+    <path d="M144 133h151v42H144v-42Z" fill="#fff" fill-opacity=".92"/>
+    <path d="M160 148h57" stroke="#152126" stroke-width="6" stroke-linecap="round"/><path d="M160 162h35" stroke="#829197" stroke-width="5" stroke-linecap="round"/>
+    <circle cx="183" cy="195" r="21" fill="#152126"/><circle cx="183" cy="195" r="9" fill="#DCE3E5"/>
+    <circle cx="381" cy="195" r="21" fill="#152126"/><circle cx="381" cy="195" r="9" fill="#DCE3E5"/>
+    <path d="M104 151h20" stroke="#E06445" stroke-width="7" stroke-linecap="round"/><path d="M432 185h13" stroke="#F3AA27" stroke-width="6" stroke-linecap="round"/>
+  </g>
+  <path d="M90 101h28M405 104h31" stroke="#F3AA27" stroke-width="6" stroke-linecap="round"/>
+  <circle cx="80" cy="132" r="5" fill="#75C7D4"/><circle cx="453" cy="133" r="7" fill="#E06445"/>
+</svg>

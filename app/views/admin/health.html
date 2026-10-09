@@ -1,0 +1,33 @@
+<div class="bf-health" id="healthPage">
+    <header class="bf-health__header">
+        <div><a href="/admin/" class="bf-health__back">Administración / Observabilidad</a><h1>Salud del sistema <span class="bf-health__live">EN VIVO</span></h1><p>Disponibilidad, rendimiento y actividad reciente de BUFALO.</p></div>
+        <div class="bf-health__actions"><a class="btn btn-outline-success" id="healthExportCSV" href="/admin/health/export?format=csv"><i class="bi bi-filetype-csv"></i> CSV</a><a class="btn btn-outline-success" id="healthExportExcel" href="/admin/health/export?format=excel"><i class="bi bi-file-earmark-excel"></i> Excel</a><button type="button" class="btn btn-outline-danger" id="healthExportPDF"><i class="bi bi-file-earmark-pdf"></i> Guardar PDF</button><button type="button" class="btn btn-outline-primary" id="healthPause" aria-pressed="false"><i class="bi bi-pause"></i> Pausar</button><button type="button" class="btn btn-primary" id="healthRefresh"><i class="bi bi-arrow-clockwise"></i> Actualizar</button></div>
+    </header>
+    <div class="bf-health__banner" id="healthBanner" role="status" aria-live="polite"><i class="bi bi-heart-pulse"></i><div><strong id="healthStatus">Comprobando el sistema…</strong><p id="healthUpdated">La página se actualiza cada 15 segundos.</p></div><span id="healthUptime">—</span></div>
+    <noscript><p class="alert alert-warning">Activa JavaScript para consultar las comprobaciones y el historial de salud.</p></noscript>
+    <section class="bf-health__cards" aria-label="Servicios y rendimiento">
+        <article class="bf-health__card"><div><span>PostgreSQL</span><i class="bi bi-database"></i></div><strong id="healthDB">—</strong><small id="healthDBLatency">Consulta autenticada · SELECT 1</small></article>
+        <article class="bf-health__card"><div><span>Redis</span><i class="bi bi-hdd-network"></i></div><strong id="healthRedis">—</strong><small id="healthRedisLatency">Sesiones y límites · PING</small></article>
+        <article class="bf-health__card"><div><span>Peticiones</span><i class="bi bi-arrow-left-right"></i></div><strong id="healthRequests">—</strong><small id="healthRate">Desde el inicio del proceso</small></article>
+        <article class="bf-health__card"><div><span>Latencia media</span><i class="bi bi-speedometer2"></i></div><strong id="healthLatency">—</strong><small id="healthP95">p95 aproximado por intervalos</small></article>
+        <article class="bf-health__card"><div><span>Errores del servidor</span><i class="bi bi-exclamation-triangle"></i></div><strong id="healthErrors">—</strong><small id="healthErrorRate">Respuestas HTTP 5xx</small></article>
+        <article class="bf-health__card"><div><span>Memoria y ejecución</span><i class="bi bi-cpu"></i></div><strong id="healthMemory">—</strong><small id="healthWorkers">Heap y goroutines</small></article>
+    </section>
+    <section class="bf-health__panel"><h2>Notificaciones pendientes</h2><p id="healthOutbox">Comprobando cola…</p></section>
+ {{ template "admin/traffic" . }}
+    <section class="bf-health__panel" aria-labelledby="healthTrendTitle"><div class="bf-health__panel-head"><div><h2 id="healthTrendTitle">Pulso de actividad</h2><p>Peticiones de aplicación por minuto · última hora</p></div><div class="bf-health__legend"><span><i class="bf-health__key"></i>Peticiones</span><span><i class="bf-health__key bf-health__key--error"></i>Errores 4xx y 5xx</span></div></div><div class="bf-health__chart" id="healthTrend" role="img" aria-label="Sin datos de actividad todavía"></div><div class="bf-health__axis"><span>Hace 60 min</span><span>Hace 30 min</span><span>Ahora</span></div><p class="bf-health__note" id="healthTrendSummary">Esperando datos…</p></section>
+    <section class="bf-health__panel" aria-labelledby="healthHistoryTitle">
+        <div class="bf-health__panel-head"><div><h2 id="healthHistoryTitle">Historial de actividad</h2><p id="healthRetention">Últimas 500 peticiones y 200 errores del proceso actual.</p></div><span class="bf-health__count" id="healthVisibleCount">0 registros</span></div>
+        <div class="bf-health__filters">
+            <div class="bf-health__tabs" aria-label="Tipo de historial"><button type="button" class="is-active" data-history-tab="requests" aria-pressed="true">Peticiones</button><button type="button" data-history-tab="errors" aria-pressed="false">Errores</button></div>
+            <label>Estado<select id="healthStatusFilter"><option value="all">Todos los estados</option><option value="2">2xx · Correctas</option><option value="3">3xx · Redirecciones</option><option value="4">4xx · Solicitud rechazada</option><option value="5">5xx · Error del servidor</option></select></label>
+            <label>Método<select id="healthMethodFilter"><option value="all">Todos</option><option>GET</option><option>POST</option><option>PUT</option><option>PATCH</option><option>DELETE</option><option>HEAD</option><option>OPTIONS</option></select></label>
+            <label class="bf-health__search">Buscar ruta<input type="search" id="healthRouteFilter" placeholder="/login, /loads, /admin…" autocomplete="off" maxlength="100"></label>
+        </div>
+        <div class="bf-health__table-wrap"><table class="bf-health__table"><caption class="bf-health__sr">Peticiones recientes, ordenadas de más nueva a más antigua</caption><thead><tr><th scope="col">Hora</th><th scope="col">Método</th><th scope="col">Ruta</th><th scope="col">Estado</th><th scope="col">Duración</th><th scope="col">Resultado</th></tr></thead><tbody id="healthHistoryRows"><tr><td colspan="6" class="bf-health__empty">Cargando historial…</td></tr></tbody></table></div>
+        <div class="bf-health__pagination"><span id="healthPageInfo">Página 1 de 1</span><div><button type="button" class="btn btn-sm btn-outline-primary" id="healthPrev" disabled>Anterior</button><button type="button" class="btn btn-sm btn-outline-primary" id="healthNext" disabled>Siguiente</button></div></div>
+        <p class="bf-health__note">El historial se reinicia al arrancar el servidor. No incluye parámetros, cuerpos, credenciales ni identidad de usuarios. Las comprobaciones de salud y los archivos estáticos correctos se excluyen para no inflar el tráfico.</p>
+    </section>
+    <footer class="bf-health__footer"><span><i class="bi bi-shield-lock"></i> Solo administradores</span><a href="/healthz" target="_blank" rel="noopener">Liveness <i class="bi bi-box-arrow-up-right"></i></a><a href="/readyz" target="_blank" rel="noopener">Readiness <i class="bi bi-box-arrow-up-right"></i></a><a href="/admin/metrics">Métricas de negocio <i class="bi bi-arrow-right"></i></a></footer>
+</div>
+<script src="/js/admin-health.js" defer></script>

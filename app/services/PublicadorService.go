@@ -1,7 +1,6 @@
 package services
 
 import (
-	"errors"
 	"goravel/app/facades"
 	"goravel/app/models"
 )
@@ -11,6 +10,7 @@ type PublicadorService struct{}
 func NewPublicadorService() *PublicadorService { return &PublicadorService{} }
 
 func (s *PublicadorService) GetAllWithFilters(filters map[string]string, page, perPage int) ([]models.Publicador, int64, error) {
+	page, perPage = NormalizePagination(page, perPage)
 	query := facades.Orm().Query().
 		Model(&models.Publicador{}).
 		With("User").
@@ -47,8 +47,8 @@ func (s *PublicadorService) GetByID(id uint) (*models.Publicador, error) {
 		With("Empresa").
 		Where("id = ?", id).
 		First(&p)
-	if err != nil || p.ID == 0 {
-		return nil, errors.New("publicador not found")
+	if lookupErr := recordError(err, p.ID, "publicador"); lookupErr != nil {
+		return nil, lookupErr
 	}
 	return &p, nil
 }
@@ -60,8 +60,8 @@ func (s *PublicadorService) GetByUserID(userID uint) (*models.Publicador, error)
 		With("Empresa").
 		Where("user_id = ?", userID).
 		First(&p)
-	if err != nil || p.ID == 0 {
-		return nil, errors.New("publicador not found")
+	if lookupErr := recordError(err, p.ID, "publicador"); lookupErr != nil {
+		return nil, lookupErr
 	}
 	return &p, nil
 }
@@ -71,6 +71,9 @@ func (s *PublicadorService) Create(p *models.Publicador) error {
 }
 
 func (s *PublicadorService) Update(id uint, updates map[string]interface{}) error {
+	if err := ValidatePublisherUpdate(updates); err != nil {
+		return err
+	}
 	_, err := facades.Orm().Query().
 		Model(&models.Publicador{}).
 		Where("id = ?", id).

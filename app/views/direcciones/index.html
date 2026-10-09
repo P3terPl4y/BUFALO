@@ -151,3 +151,5 @@
     });
 })();
 </script>
+
+<nav aria-label="Páginas de direcciones">{{ if gt .page 1 }}<a class="btn btn-secondary" href="?page={{ .previousPage }}">Anterior</a>{{ end }}{{ if .hasNext }}<a class="btn btn-secondary" href="?page={{ .nextPage }}">Siguiente</a>{{ end }}</nav>

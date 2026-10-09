@@ -15,3 +15,6 @@
   {{ range .members }}<tr><td>{{ if and .Chofer .Chofer.User }}{{ .Chofer.User.Name }}{{ else }}Chofer #{{ .ChoferID }}{{ end }}</td><td>{{ if .Chofer }}{{ printf "%.1f" .Chofer.RatingAverage }} ★ ({{ .Chofer.RatingCount }}){{ else }}—{{ end }}</td><td>{{ .CreatedAt.Format "02/01/2006" }}</td></tr>{{ else }}<tr><td colspan="3">Aún no has añadido choferes.</td></tr>{{ end }}
   </tbody></table></div>
 </section>
+
+<nav aria-label="Páginas de conductores disponibles">{{ if gt .previousPage 0 }}<a href="?page={{ .previousPage }}&q={{ urlquery .query }}">Anteriores</a>{{ end }} {{ if .hasNext }}<a href="?page={{ .nextPage }}&q={{ urlquery .query }}">Siguientes</a>{{ end }}</nav>
+<nav aria-label="Páginas de mi red">{{ if gt .memberPrevious 0 }}<a href="?member_page={{ .memberPrevious }}&q={{ urlquery .query }}">Anteriores en mi red</a>{{ end }} {{ if .memberHasNext }}<a href="?member_page={{ .memberNext }}&q={{ urlquery .query }}">Siguientes en mi red</a>{{ end }}</nav>

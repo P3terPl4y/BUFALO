@@ -46,6 +46,59 @@ func (s *AdminUsersTestSuite) TestStore_CreatesPublicador() {
 	s.True(users[0].IsActive)
 }
 
+func (s *AdminUsersTestSuite) TestCreateFormOffersSupportedDomainRoles() {
+	seedUser(s.T(), "Admin", "admin@test.com", "password123", "admin")
+	client := login(s.T(), "admin@test.com", "password123")
+	resp := get(s.T(), client, "/admin/users/create")
+	body := readBody(s.T(), resp)
+
+	s.Equal(http.StatusOK, resp.StatusCode)
+	s.Contains(body, `name="role" value="publicador"`)
+	s.Contains(body, `name="role" value="chofer"`)
+	s.NotContains(body, `name="role" value="broker"`)
+	s.NotContains(body, `name="role" value="carrier"`)
+	for _, field := range []string{
+		"city", "state", "country", "radius", "chofer_numero_licencia", "chofer_tipo_licencia",
+		"chofer_anios_experiencia", "publicador_numero_licencia_broker", "publicador_anios_experiencia",
+		"empresa_mode", "empresa_id", "empresa_nombre_legal",
+	} {
+		s.Contains(body, `name="`+field+`"`, "form must submit server-required/profile field %s", field)
+	}
+}
+
+func (s *AdminUsersTestSuite) TestStore_RejectsIncompleteProfileWithoutCreatingUser() {
+	seedUser(s.T(), "Admin", "admin@test.com", "password123", "admin")
+	client := login(s.T(), "admin@test.com", "password123")
+	resp := postForm(s.T(), client, "/admin/users", map[string]string{
+		"name": "Incomplete", "email": "incomplete@test.com", "password": "password123", "role": "chofer",
+	})
+	body := readBody(s.T(), resp)
+	resp.Body.Close()
+	s.Equal(http.StatusOK, resp.StatusCode)
+	s.Contains(body, "Ciudad")
+	s.Contains(body, "Número de licencia")
+	svc := services.NewUserService()
+	_, total, _ := svc.GetAllWithFilters(map[string]string{"search": "incomplete@test.com"}, 1, 10)
+	s.Equal(int64(0), total)
+}
+
+func (s *AdminUsersTestSuite) TestStore_RejectsInvalidCompanyMode() {
+	seedUser(s.T(), "Admin", "admin@test.com", "password123", "admin")
+	client := login(s.T(), "admin@test.com", "password123")
+	resp := postForm(s.T(), client, "/admin/users", map[string]string{
+		"name": "Bad Mode", "email": "bad-mode@test.com", "password": "password123", "role": "publicador",
+		"city": "La Habana", "state": "La Habana", "country": "Cuba", "radius": "100",
+		"publicador_numero_licencia_broker": "BROKER-TEST", "publicador_anios_experiencia": "1", "empresa_mode": "unexpected",
+	})
+	body := readBody(s.T(), resp)
+	resp.Body.Close()
+	s.Equal(http.StatusOK, resp.StatusCode)
+	s.Contains(body, "Opción de empresa inválida")
+	svc := services.NewUserService()
+	_, total, _ := svc.GetAllWithFilters(map[string]string{"search": "bad-mode@test.com"}, 1, 10)
+	s.Equal(int64(0), total)
+}
+
 func (s *AdminUsersTestSuite) TestStore_RejectsInvalidRole() {
 	seedUser(s.T(), "Admin", "admin@test.com", "password123", "admin")
 	client := login(s.T(), "admin@test.com", "password123")
@@ -81,6 +134,21 @@ func (s *AdminUsersTestSuite) TestStore_DuplicateEmail() {
 	svc := services.NewUserService()
 	_, total, _ := svc.GetAllWithFilters(map[string]string{"search": "dup@test.com"}, 1, 10)
 	s.Equal(int64(1), total)
+}
+
+func (s *AdminUsersTestSuite) TestIndexMutationFormsIncludeCSRFAndUseDeleteRoute() {
+	seedUser(s.T(), "Admin", "admin@test.com", "password123", "admin")
+	target := seedUser(s.T(), "Publicador", "publisher@test.com", "password123", "publicador")
+	client := login(s.T(), "admin@test.com", "password123")
+
+	resp := get(s.T(), client, "/admin/users")
+	body := readBody(s.T(), resp)
+	id := itoa(target.ID)
+
+	s.Contains(body, `<form action="/admin/users/`+id+`/toggle" method="POST"><input type="hidden" name="_csrf" value="`)
+	s.Contains(body, `<form action="/admin/users/`+id+`/delete" method="POST"`)
+	s.Contains(body, `<input type="hidden" name="_csrf" value="`)
+	s.NotContains(body, `<form action="/admin/users/`+id+`" method="POST" onsubmit=`)
 }
 
 func (s *AdminUsersTestSuite) TestDelete_AdminIsProtected() {

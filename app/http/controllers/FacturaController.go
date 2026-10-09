@@ -37,6 +37,7 @@ func (c *FacturaController) Index(ctx fiber.Ctx) error {
 	role, _ := session.FromContext(ctx).Get("role").(string)
 	page, _ := strconv.Atoi(ctx.Query("page", "1"))
 	perPage, _ := strconv.Atoi(ctx.Query("per_page", "10"))
+	page, perPage = services.NormalizePagination(page, perPage)
 	if page < 1 {
 		page = 1
 	}
@@ -153,8 +154,11 @@ func (c *FacturaController) Export(ctx fiber.Ctx) error {
 func (c *FacturaController) Show(ctx fiber.Ctx) error {
 	sess := session.FromContext(ctx)
 	f, err := c.service.GetByID(ctx.Params("id"))
+	if services.IsInfrastructureError(err) {
+		return fiber.ErrServiceUnavailable
+	}
 	if err != nil {
-		return ctx.Render("dashboard/404", fiber.Map{"title": "No encontrada", "role": sess.Get("role")}, "layouts/base")
+		return ctx.Status(fiber.StatusNotFound).Render("dashboard/404", fiber.Map{"title": "No encontrada", "role": sess.Get("role")}, "layouts/base")
 	}
 	if err := c.authorize(ctx, f, false); err != nil {
 		return err
@@ -185,6 +189,15 @@ func (c *FacturaController) Create(ctx fiber.Ctx) error {
 		"carga":     carga,
 		"csrfToken": csrf.TokenFromContext(ctx),
 		"role":      sess.Get("role"),
+	}, "layouts/base")
+}
+
+// Studio is an isolated invoice-layout sandbox. It never creates, edits or
+// emits a financial document; layouts remain local to the current browser.
+func (c *FacturaController) Studio(ctx fiber.Ctx) error {
+	ctx.Set("Cache-Control", "no-store, private")
+	return ctx.Render("admin/invoice_studio", fiber.Map{
+		"title": "Diseñador de facturas", "csrfToken": csrf.TokenFromContext(ctx),
 	}, "layouts/base")
 }
 
@@ -253,6 +266,9 @@ func (c *FacturaController) Store(ctx fiber.Ctx) error {
 		f.ChoferID = &profile.ID
 	case "admin":
 		load, err := c.cargaService.GetByID(strconv.FormatUint(uint64(req.CargaID), 10))
+		if services.IsInfrastructureError(err) {
+			return fiber.ErrServiceUnavailable
+		}
 		if err != nil || load.PublicadorID == 0 {
 			return fiber.ErrBadRequest
 		}
@@ -274,8 +290,11 @@ func (c *FacturaController) Store(ctx fiber.Ctx) error {
 func (c *FacturaController) Edit(ctx fiber.Ctx) error {
 	sess := session.FromContext(ctx)
 	f, err := c.service.GetByID(ctx.Params("id"))
+	if services.IsInfrastructureError(err) {
+		return fiber.ErrServiceUnavailable
+	}
 	if err != nil {
-		return ctx.Render("dashboard/404", fiber.Map{"title": "No encontrada", "role": sess.Get("role")}, "layouts/base")
+		return ctx.Status(fiber.StatusNotFound).Render("dashboard/404", fiber.Map{"title": "No encontrada", "role": sess.Get("role")}, "layouts/base")
 	}
 	if err := c.authorize(ctx, f, true); err != nil {
 		return err
@@ -290,6 +309,9 @@ func (c *FacturaController) Edit(ctx fiber.Ctx) error {
 
 func (c *FacturaController) Update(ctx fiber.Ctx) error {
 	f, err := c.service.GetByID(ctx.Params("id"))
+	if services.IsInfrastructureError(err) {
+		return fiber.ErrServiceUnavailable
+	}
 	if err != nil {
 		return fiber.ErrNotFound
 	}
@@ -318,6 +340,9 @@ func (c *FacturaController) Update(ctx fiber.Ctx) error {
 
 func (c *FacturaController) Delete(ctx fiber.Ctx) error {
 	f, err := c.service.GetByID(ctx.Params("id"))
+	if services.IsInfrastructureError(err) {
+		return fiber.ErrServiceUnavailable
+	}
 	if err != nil {
 		return fiber.ErrNotFound
 	}
@@ -333,6 +358,9 @@ func (c *FacturaController) Delete(ctx fiber.Ctx) error {
 // MarcarPagada — cambia estado a pagada
 func (c *FacturaController) MarcarPagada(ctx fiber.Ctx) error {
 	f, err := c.service.GetByID(ctx.Params("id"))
+	if services.IsInfrastructureError(err) {
+		return fiber.ErrServiceUnavailable
+	}
 	if err != nil {
 		return fiber.ErrNotFound
 	}
@@ -423,6 +451,9 @@ func (c *FacturaController) choferForUser(user *models.User) (*models.Chofer, er
 }
 func (c *FacturaController) Emitir(ctx fiber.Ctx) error {
 	f, err := c.service.GetByID(ctx.Params("id"))
+	if services.IsInfrastructureError(err) {
+		return fiber.ErrServiceUnavailable
+	}
 	if err != nil {
 		return fiber.ErrNotFound
 	}

@@ -2,10 +2,11 @@ package requests
 
 type UserRegisterRequest struct {
 	// ── Identidad y acceso ──
-	Name     string `form:"name"`
-	Email    string `form:"email"`
-	Password string `form:"password"`
-	Role     string `form:"role"` // publicador | chofer
+	Name            string `form:"name"`
+	Email           string `form:"email"`
+	Password        string `form:"password"`
+	CurrentPassword string `form:"current_password"`
+	Role            string `form:"role"` // publicador | chofer
 
 	// ── Empresa ──
 	EmpresaMode            string `form:"empresa_mode"` // existing | new
@@ -81,7 +82,7 @@ type AdminUpdateRequestByUser struct {
 	Password string `form:"password"`
 	Role     string `form:"role"`
 	IsActive string `form:"is_active"`
-	
+
 	Phone          string `form:"phone"`
 	PhoneAlt       string `form:"phone_alt"`
 	WhatsApp       string `form:"whatsapp"`

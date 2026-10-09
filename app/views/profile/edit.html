@@ -78,12 +78,13 @@
                                 </div>
                                 {{ if .errors.password }}<small class="tf-field-error">{{ .errors.password }}</small>{{
                                 end }}
-                                <span class="tf-field-hint">Mínimo 8 caracteres. Solo si deseas cambiarla.</span>
+                                <span class="tf-field-hint">Entre 8 y 72 bytes. Cambia correo y contraseña por separado.</span>
                             </div>
                         </div>
                     </div>
                 </section>
 
+                <div class="tf-field"><label for="current_password">Contraseña actual (para cambiar correo o contraseña)</label><input type="password" class="form-control" id="current_password" name="current_password" autocomplete="current-password"><p>Un correo nuevo se activa al confirmar el enlace recibido. Al cambiar credenciales se cierran las sesiones anteriores.</p></div>
                 <!-- ───────── 02 · UBICACIÓN ───────── -->
                 <!-- ───────── 02 · UBICACIÓN ───────── -->
 <section class="tf-form-block" id="block-location" data-block="location">

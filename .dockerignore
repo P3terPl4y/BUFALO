@@ -12,7 +12,11 @@ logs.log
 nohup.out
 *.dump
 *.log
+public/uploads
+deploy/__pycache__
 mobile/node_modules
 mobile/dist
 tests
 docs
+
+mobile

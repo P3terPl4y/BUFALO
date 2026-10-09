@@ -115,13 +115,13 @@
 
                             <div class="tf-role-grid" role="radiogroup" aria-label="Selecciona un rol">
                                 <label class="tf-role-card" data-role="broker">
-                                    <input type="radio" name="role" value="broker"
-                                           {{ if eq .old.Role "broker" }}checked{{ end }} required>
+                                    <input type="radio" name="role" value="publicador"
+                                           {{ if eq .old.Role "publicador" }}checked{{ end }} required>
                                     <span class="tf-role-card__marker">
                                         <i class="bi bi-briefcase-fill"></i>
                                     </span>
                                     <span class="tf-role-card__body">
-                                        <strong>Broker</strong>
+                                        <strong>Publicador (Broker)</strong>
                                         <small>Publica y gestiona cargas para transportistas</small>
                                     </span>
                                     <span class="tf-role-card__check">
@@ -130,13 +130,13 @@
                                 </label>
 
                                 <label class="tf-role-card" data-role="carrier">
-                                    <input type="radio" name="role" value="carrier"
-                                           {{ if eq .old.Role "carrier" }}checked{{ end }}>
+                                    <input type="radio" name="role" value="chofer"
+                                           {{ if eq .old.Role "chofer" }}checked{{ end }}>
                                     <span class="tf-role-card__marker">
                                         <i class="bi bi-truck"></i>
                                     </span>
                                     <span class="tf-role-card__body">
-                                        <strong>Carrier</strong>
+                                        <strong>Chofer (Carrier)</strong>
                                         <small>Acepta y transporta cargas asignadas</small>
                                     </span>
                                     <span class="tf-role-card__check">
@@ -149,6 +149,50 @@
                         </div>
 
                     </div>
+                </div>
+            </section>
+
+            <section class="tf-form-block" data-block="location">
+                <header class="tf-form-block__head"><i class="bi bi-geo-alt tf-form-block__icon"></i><div class="tf-form-block__text"><h2>Ubicación y operación</h2><p>Estos datos son obligatorios para completar el perfil.</p></div></header>
+                <div class="tf-form-block__body"><div class="tf-form-row">
+                    <div class="tf-col-12 tf-field"><label for="address">Dirección</label><input class="form-control" id="address" name="address" value="{{ .old.Address }}"></div>
+                    <div class="tf-col-6 tf-field"><label for="city">Ciudad <span class="req">*</span></label><input class="form-control" id="city" name="city" value="{{ .old.City }}" required>{{ if .errors.city }}<small class="tf-field-error">{{ .errors.city }}</small>{{ end }}</div>
+                    <div class="tf-col-6 tf-field"><label for="state">Provincia/Estado <span class="req">*</span></label><input class="form-control" id="state" name="state" value="{{ .old.State }}" required>{{ if .errors.state }}<small class="tf-field-error">{{ .errors.state }}</small>{{ end }}</div>
+                    <div class="tf-col-6 tf-field"><label for="country">País <span class="req">*</span></label><input class="form-control" id="country" name="country" value="{{ if .old }}{{ .old.Country }}{{ else }}Cuba{{ end }}" required>{{ if .errors.country }}<small class="tf-field-error">{{ .errors.country }}</small>{{ end }}</div>
+                    <div class="tf-col-6 tf-field"><label for="radius">Radio operativo (km) <span class="req">*</span></label><input class="form-control" type="number" id="radius" name="radius" min="1" value="{{ if .old }}{{ .old.Radius }}{{ else }}100{{ end }}" required>{{ if .errors.radius }}<small class="tf-field-error">{{ .errors.radius }}</small>{{ end }}</div>
+                    <div class="tf-col-6 tf-field"><label for="phone">Teléfono</label><input class="form-control" type="tel" id="phone" name="phone" value="{{ .old.Phone }}"></div>
+                    <div class="tf-col-6 tf-field"><label for="whatsapp">WhatsApp</label><input class="form-control" type="tel" id="whatsapp" name="whatsapp" value="{{ .old.WhatsApp }}"></div>
+                </div></div>
+            </section>
+
+            <section class="tf-form-block" data-role-fields="chofer" hidden>
+                <header class="tf-form-block__head"><i class="bi bi-card-checklist tf-form-block__icon"></i><div class="tf-form-block__text"><h2>Perfil de chofer</h2><p>Datos de licencia y experiencia requeridos para este rol.</p></div></header>
+                <div class="tf-form-block__body"><div class="tf-form-row">
+                    <div class="tf-col-6 tf-field"><label for="chofer_numero_licencia">Número de licencia <span class="req">*</span></label><input class="form-control" id="chofer_numero_licencia" name="chofer_numero_licencia" value="{{ .old.ChoferNumeroLicencia }}" data-required="true">{{ if .errors.chofer_numero_licencia }}<small class="tf-field-error">{{ .errors.chofer_numero_licencia }}</small>{{ end }}</div>
+                    <div class="tf-col-6 tf-field"><label for="chofer_tipo_licencia">Tipo de licencia <span class="req">*</span></label><input class="form-control" id="chofer_tipo_licencia" name="chofer_tipo_licencia" value="{{ .old.ChoferTipoLicencia }}" data-required="true">{{ if .errors.chofer_tipo_licencia }}<small class="tf-field-error">{{ .errors.chofer_tipo_licencia }}</small>{{ end }}</div>
+                    <div class="tf-col-6 tf-field"><label for="chofer_anios_experiencia">Años de experiencia <span class="req">*</span></label><input class="form-control" type="number" min="0" id="chofer_anios_experiencia" name="chofer_anios_experiencia" value="{{ .old.ChoferAniosExperiencia }}" data-required="true">{{ if .errors.chofer_anios_experiencia }}<small class="tf-field-error">{{ .errors.chofer_anios_experiencia }}</small>{{ end }}</div>
+                </div></div>
+            </section>
+
+            <section class="tf-form-block" data-role-fields="publicador" hidden>
+                <header class="tf-form-block__head"><i class="bi bi-briefcase tf-form-block__icon"></i><div class="tf-form-block__text"><h2>Perfil de publicador</h2><p>Datos de licencia y experiencia requeridos para este rol.</p></div></header>
+                <div class="tf-form-block__body"><div class="tf-form-row">
+                    <div class="tf-col-6 tf-field"><label for="publicador_numero_licencia_broker">Licencia de broker <span class="req">*</span></label><input class="form-control" id="publicador_numero_licencia_broker" name="publicador_numero_licencia_broker" value="{{ .old.PublicadorNumeroLicenciaBroker }}" data-required="true">{{ if .errors.publicador_numero_licencia_broker }}<small class="tf-field-error">{{ .errors.publicador_numero_licencia_broker }}</small>{{ end }}</div>
+                    <div class="tf-col-6 tf-field"><label for="publicador_anios_experiencia">Años de experiencia <span class="req">*</span></label><input class="form-control" type="number" min="0" id="publicador_anios_experiencia" name="publicador_anios_experiencia" value="{{ .old.PublicadorAniosExperiencia }}" data-required="true">{{ if .errors.publicador_anios_experiencia }}<small class="tf-field-error">{{ .errors.publicador_anios_experiencia }}</small>{{ end }}</div>
+                </div></div>
+            </section>
+
+            <section class="tf-form-block tf-form-block--last" data-block="company">
+                <header class="tf-form-block__head"><i class="bi bi-building tf-form-block__icon"></i><div class="tf-form-block__text"><h2>Empresa (opcional)</h2><p>Asocia al usuario a una empresa del tipo correspondiente a su rol.</p></div></header>
+                <div class="tf-form-block__body">
+                    <div class="tf-form-row"><div class="tf-col-12 tf-field"><label for="empresa_mode">Asociación</label><select class="form-select" id="empresa_mode" name="empresa_mode"><option value="none" {{ if or (not .old) (eq .old.EmpresaMode "none") }}selected{{ end }}>Sin empresa por ahora</option><option value="existing" {{ if eq .old.EmpresaMode "existing" }}selected{{ end }}>Elegir empresa existente</option><option value="new" {{ if eq .old.EmpresaMode "new" }}selected{{ end }}>Crear empresa nueva</option></select>{{ if .errors.empresa_mode }}<small class="tf-field-error">{{ .errors.empresa_mode }}</small>{{ end }}</div></div>
+                    <div class="tf-form-row" id="existing-company" hidden><div class="tf-col-12 tf-field"><label for="empresa_id">Empresa existente <span class="req">*</span></label><select class="form-select" id="empresa_id" name="empresa_id" data-required="true"><option value="">Selecciona una empresa</option><optgroup label="Carriers">{{ range .empresasCarrier }}<option data-company-role="chofer" value="{{ .ID }}" {{ if and $.old (eq $.old.EmpresaID .ID) }}selected{{ end }}>{{ .NombreLegal }}</option>{{ end }}</optgroup><optgroup label="Brokers">{{ range .empresasBroker }}<option data-company-role="publicador" value="{{ .ID }}" {{ if and $.old (eq $.old.EmpresaID .ID) }}selected{{ end }}>{{ .NombreLegal }}</option>{{ end }}</optgroup></select>{{ if .errors.empresa_id }}<small class="tf-field-error">{{ .errors.empresa_id }}</small>{{ end }}</div></div>
+                    <div id="new-company" hidden><div class="tf-form-row">
+                        <div class="tf-col-12 tf-field"><label for="empresa_nombre_legal">Nombre legal <span class="req">*</span></label><input class="form-control" id="empresa_nombre_legal" name="empresa_nombre_legal" value="{{ .old.EmpresaNombreLegal }}" data-required="true">{{ if .errors.empresa_nombre_legal }}<small class="tf-field-error">{{ .errors.empresa_nombre_legal }}</small>{{ end }}</div>
+                        <div class="tf-col-6 tf-field"><label for="empresa_nombre_comercial">Nombre comercial</label><input class="form-control" id="empresa_nombre_comercial" name="empresa_nombre_comercial" value="{{ .old.EmpresaNombreComercial }}"></div><div class="tf-col-6 tf-field"><label for="empresa_tax_id">Identificación fiscal</label><input class="form-control" id="empresa_tax_id" name="empresa_tax_id" value="{{ .old.EmpresaTaxID }}"></div>
+                        <div class="tf-col-6 tf-field"><label for="empresa_mc_number">MC Number</label><input class="form-control" id="empresa_mc_number" name="empresa_mc_number" value="{{ .old.EmpresaMCNumber }}"></div><div class="tf-col-6 tf-field"><label for="empresa_dot_number">DOT Number</label><input class="form-control" id="empresa_dot_number" name="empresa_dot_number" value="{{ .old.EmpresaDOTNumber }}"></div>
+                        <div class="tf-col-6 tf-field"><label for="empresa_telefono">Teléfono</label><input class="form-control" id="empresa_telefono" name="empresa_telefono" value="{{ .old.EmpresaTelefono }}"></div><div class="tf-col-6 tf-field"><label for="empresa_email">Email</label><input class="form-control" type="email" id="empresa_email" name="empresa_email" value="{{ .old.EmpresaEmail }}"></div><div class="tf-col-12 tf-field"><label for="empresa_sitio_web">Sitio web</label><input class="form-control" id="empresa_sitio_web" name="empresa_sitio_web" value="{{ .old.EmpresaSitioWeb }}"></div>
+                    </div></div>
                 </div>
             </section>
 
@@ -322,17 +366,19 @@
     preview.email.textContent = emailInput?.value.trim() || 'sin-email@—';
 
     const role = form.querySelector('input[name="role"]:checked')?.value || '';
-    preview.role.textContent = role ? role.charAt(0).toUpperCase() + role.slice(1) : '—';
-    preview.role.dataset.role = role;
+    const roleKey = role === 'publicador' ? 'broker' : role === 'chofer' ? 'carrier' : '';
+    preview.role.textContent = role === 'publicador' ? 'Publicador (Broker)' :
+      role === 'chofer' ? 'Chofer (Carrier)' : '—';
+    preview.role.dataset.role = roleKey;
 
     if (preview.avatar) {
       const ic = preview.avatar.querySelector('i');
-      if (ic) ic.className = 'bi ' + (roleIcons[role] || 'bi-person');
+      if (ic) ic.className = 'bi ' + (roleIcons[roleKey] || 'bi-person');
     }
 
     // Permisos del rol
     document.querySelectorAll('[data-role-info]').forEach(el => {
-      el.hidden = el.dataset.roleInfo !== role;
+      el.hidden = el.dataset.roleInfo !== roleKey;
     });
   }
 
@@ -342,6 +388,39 @@
   });
 
   updatePreview();
+
+  const companyMode = document.getElementById('empresa_mode');
+  const companyExisting = document.getElementById('existing-company');
+  const companyNew = document.getElementById('new-company');
+  const companySelect = document.getElementById('empresa_id');
+  function setSection(section, visible) {
+    section.hidden = !visible;
+    section.querySelectorAll('input, select, textarea').forEach(field => {
+      field.disabled = !visible;
+      field.required = visible && field.dataset.required === 'true';
+    });
+  }
+  function updateRoleSections() {
+    const role = form.querySelector('input[name="role"]:checked')?.value || '';
+    form.querySelectorAll('[data-role-fields]').forEach(section => setSection(section, section.dataset.roleFields === role));
+    if (companySelect) {
+      Array.from(companySelect.options).forEach(option => {
+        if (!option.dataset.companyRole) return;
+        option.hidden = option.dataset.companyRole !== role;
+        option.disabled = option.dataset.companyRole !== role;
+        if (option.disabled && option.selected) companySelect.value = '';
+      });
+    }
+    updateCompanySections();
+  }
+  function updateCompanySections() {
+    const mode = companyMode?.value || 'none';
+    setSection(companyExisting, mode === 'existing');
+    setSection(companyNew, mode === 'new');
+  }
+  form.querySelectorAll('input[name="role"]').forEach(input => input.addEventListener('change', updateRoleSections));
+  companyMode?.addEventListener('change', updateCompanySections);
+  updateRoleSections();
 
   /* ─────── Estado seleccionado del role-card ─────── */
   form.querySelectorAll('.tf-role-card').forEach(card => {
@@ -355,4 +434,3 @@
   });
 })();
 </script>
-<p style="color:red;">{{.errors}}</p>

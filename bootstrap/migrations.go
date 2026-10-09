@@ -19,5 +19,11 @@ func Migrations() []schema.Migration {
 		&migrations.M20261003000002AddDriverProfilesNetworksAndRatings{},
 		&migrations.M20261005000001AssociateInvoicesWithRoleProfiles{},
 		&migrations.M20261005000002BackfillInvoiceRoleProfiles{},
+		&migrations.M20261006000001CreatePendingRegistrationsTable{},
+		&migrations.M20261009000001CreateLoadInterests{},
+		&migrations.M20261009000002CreateNotificationOutbox{},
+		&migrations.M20261009000003AddVerificationResend{},
+		&migrations.M20261009000004CreateCompanyMembershipRequests{},
+		&migrations.M20261009000005AddIntegrityConstraints{},
 	}
 }

@@ -4,7 +4,7 @@
         </h1>
         <p>Actualiza los datos y guarda los cambios</p>
     </div>
-    <a href="/loads/{{ .load.ID }}" class="btn btn-secondary">
+    <a href="/admin/cargas/{{ .load.ID }}" class="btn btn-secondary">
         <i class="bi bi-arrow-left"></i> Volver al detalle
     </a>
 </div>
@@ -12,7 +12,7 @@
 {{ if .flash_success }}<div class="alert alert-success tf-mb-4">{{ .flash_success }}</div>{{ end }}
 {{ if .flash_error }}<div class="alert alert-danger tf-mb-4">{{ .flash_error }}</div>{{ end }}
 
-<form action="/admin/cargas/{{ .empresa.ID }}" method="POST" class="tf-form-page">
+<form action="/loads/{{ .load.ID }}" method="POST" class="tf-form-page">
     <input type="hidden" name="_csrf" value="{{ .csrfToken }}">
 
    <!-- ESTADO -->
@@ -133,7 +133,8 @@
                             {{ .Ciudad }} — {{ .EstadoProvincia }}
                         </option>
                         {{ end }}
-                    </select>
+                    {{ if .load.OrigenDireccion }}<option value="{{ .load.OrigenDireccionID }}" selected>{{ .load.OrigenDireccion.Ciudad }} — {{ .load.OrigenDireccion.EstadoProvincia }}</option>{{ end }}
+</select>
                 </div>
                 <div class="tf-col-6 tf-field">
                     <label for="fecha_recogida" class="form-label">Fecha recogida <span class="req">*</span></label>
@@ -148,7 +149,8 @@
                             {{ .Ciudad }} — {{ .EstadoProvincia }}
                         </option>
                         {{ end }}
-                    </select>
+                    {{ if .load.DestinoDireccion }}<option value="{{ .load.DestinoDireccionID }}" selected>{{ .load.DestinoDireccion.Ciudad }} — {{ .load.DestinoDireccion.EstadoProvincia }}</option>{{ end }}
+</select>
                 </div>
                 <div class="tf-col-6 tf-field">
                     <label for="fecha_entrega" class="form-label">Fecha entrega</label>
@@ -321,3 +323,5 @@
         updateProgress();
     })();
 </script>
+
+<script src="/js/address-options.js" defer></script>

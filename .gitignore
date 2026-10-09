@@ -8,6 +8,12 @@
 storage
 tmp
 bin/bufalo
+deploy/__pycache__/
 
 # Discontinued React/Capacitor mobile application
 /mobile/
+
+# Runtime data and private local output
+/public/uploads/
+/logs.log
+/nohup.out

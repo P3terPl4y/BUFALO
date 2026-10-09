@@ -15,6 +15,7 @@ func NewFacturaService() *FacturaService {
 }
 
 func (s *FacturaService) GetAllWithFilters(filters map[string]string, page, perPage int) ([]models.Factura, int64, error) {
+	page, perPage = NormalizePagination(page, perPage)
 	if page < 1 {
 		page = 1
 	}
@@ -79,8 +80,8 @@ func (s *FacturaService) GetByID(id string) (*models.Factura, error) {
 		With("Chofer.User").
 		Where("id = ?", id).
 		First(&f)
-	if err != nil || f.ID == 0 {
-		return nil, errors.New("factura not found")
+	if lookupErr := recordError(err, f.ID, "factura"); lookupErr != nil {
+		return nil, lookupErr
 	}
 	return &f, nil
 }

@@ -78,6 +78,9 @@
         <a href="/admin/users" class="bf-topnav__link">
             <i class="bi bi-people"></i><span>Usuarios</span>
         </a>
+        <a href="/admin/health" class="bf-topnav__link" title="Salud del sistema">
+            <i class="bi bi-heart-pulse"></i><span>Salud</span>
+        </a>
         {{ end }}
     </nav>
 
@@ -116,6 +119,7 @@
             <a href="/choferes" class="bf-sidebar__link"><span class="bf-sidebar__icon"><i class="bi bi-person-badge"></i></span><span class="bf-sidebar__label">Choferes</span></a>
             {{ end }}
             {{ if or .isAdmin (eq .role "admin") }}<a href="/admin/users" class="bf-sidebar__link"><span class="bf-sidebar__icon"><i class="bi bi-people"></i></span><span class="bf-sidebar__label">Usuarios</span></a><a href="/admin/metrics" class="bf-sidebar__link"><span class="bf-sidebar__icon"><i class="bi bi-graph-up"></i></span><span class="bf-sidebar__label">Métricas del sistema</span></a>{{ end }}
+            {{ if or .isAdmin (eq .role "admin") }}<a href="/admin/health" class="bf-sidebar__link"><span class="bf-sidebar__icon"><i class="bi bi-heart-pulse"></i></span><span class="bf-sidebar__label">Salud del sistema</span></a>{{ end }}
             <hr class="bf-sidebar__divider">
             <a href="/profile" class="bf-sidebar__link"><span class="bf-sidebar__icon"><i class="bi bi-person"></i></span><span class="bf-sidebar__label">Mi perfil</span></a>
         </nav>
@@ -240,6 +244,5 @@
 </body>
 
 </html>
-
 
 

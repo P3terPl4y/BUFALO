@@ -42,7 +42,7 @@ func (s *ProfileTestSuite) TestUpdate_PasswordChange() {
 	client := login(s.T(), "pw@test.com", "oldpassword")
 
 	resp := postForm(s.T(), client, "/profile/update", map[string]string{
-		"password": "newpassword123",
+		"password": "newpassword123", "current_password": "oldpassword",
 	})
 	resp.Body.Close()
 

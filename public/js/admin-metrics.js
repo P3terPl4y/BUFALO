@@ -24,6 +24,7 @@
             });
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
             const data = await response.json();
+            window.BufaloTraffic?.render(data.traffic_protection);
             const runtime = data.runtime || {};
             const dependencies = data.dependencies || {};
             text('metricsPostgres', dependencies.postgres_tcp?.status === 'available' ? 'Disponible' : 'No disponible');
@@ -37,7 +38,7 @@
             text('metricsP95', `p95: ${runtime.p95_latency || '—'}`);
             text('metricsErrors', number(runtime.server_errors_5xx));
             text('metricsErrorRate', `${number(runtime.error_rate_percent, 2)} % de solicitudes`);
-            text('metricsHeap', `${number(runtime.heap_in_use_mb, 1)} MB en uso`);
+            text('metricsHeap', runtime.resident_memory_mb == null ? `${number(runtime.heap_in_use_mb, 1)} MB heap · RSS no disponible` : `${number(runtime.resident_memory_mb, 1)} MB RSS`);
             text('metricsHeapAlloc', `${number(runtime.heap_alloc_mb, 1)} MB asignados · ${number(runtime.total_alloc_mb, 1)} MB acumulados`);
             text('metricsGoroutines', number(runtime.goroutines));
             text('metricsGC', `GOMAXPROCS: ${number(runtime.gomaxprocs)} · GC: ${number(runtime.gc_cycles)}`);

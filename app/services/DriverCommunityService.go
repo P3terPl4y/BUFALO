@@ -40,6 +40,14 @@ func (s *DriverCommunityService) RateCompletedLoad(loadID, publisherID uint, sco
 		return errors.New("solo se puede calificar una carga entregada")
 	}
 
+	// Lock the driver before inserting or reading aggregates across different loads.
+	var driver models.Chofer
+	if err := tx.Where("id = ?", *load.ChoferID).LockForUpdate().First(&driver); err != nil {
+		return err
+	}
+	if driver.ID == 0 {
+		return ErrNotFound
+	}
 	exists, err := tx.Model(&models.ChoferCalificacion{}).Where("carga_id = ?", loadID).Exists()
 	if err != nil {
 		return err
@@ -72,9 +80,13 @@ func (s *DriverCommunityService) HasLoadRating(loadID uint) bool {
 	return err == nil && exists
 }
 
-func (s *DriverCommunityService) ListCompanyNetwork(companyID uint) ([]models.RedChofer, error) {
+func (s *DriverCommunityService) ListCompanyNetwork(companyID uint, pages ...int) ([]models.RedChofer, error) {
+	page := 1
+	if len(pages) > 0 {
+		page, _ = NormalizePagination(pages[0], 100)
+	}
 	var members []models.RedChofer
-	err := facades.Orm().Query().Model(&models.RedChofer{}).With("Chofer.User").Where("empresa_id = ?", companyID).OrderBy("id", "desc").Find(&members)
+	err := facades.Orm().Query().Model(&models.RedChofer{}).With("Chofer.User").Where("empresa_id = ?", companyID).OrderBy("id", "desc").Limit(100).Offset((page - 1) * 100).Find(&members)
 	return members, err
 }
 
@@ -107,4 +119,25 @@ func (s *DriverCommunityService) RemoveFromCompanyNetwork(companyID, driverID ui
 func (s *DriverCommunityService) IsCompanyMember(companyID, driverID uint) bool {
 	exists, err := facades.Orm().Query().Model(&models.RedChofer{}).Where("empresa_id = ? AND chofer_id = ?", companyID, driverID).Exists()
 	return err == nil && exists
+}
+
+// CompanyMemberIDs resolves membership for a bounded visible driver page.
+func (s *DriverCommunityService) CompanyMemberIDs(companyID uint, drivers []models.Chofer) (map[uint]bool, error) {
+	members := map[uint]bool{}
+	if len(drivers) == 0 {
+		return members, nil
+	}
+	if len(drivers) > 100 {
+		return nil, errors.New("driver page too large")
+	}
+	ids := make([]any, 0, len(drivers))
+	for _, driver := range drivers {
+		ids = append(ids, driver.ID)
+	}
+	var rows []models.RedChofer
+	err := facades.Orm().Query().Where("empresa_id = ?", companyID).WhereIn("chofer_id", ids).Limit(100).Find(&rows)
+	for _, row := range rows {
+		members[row.ChoferID] = true
+	}
+	return members, err
 }

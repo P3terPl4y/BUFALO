@@ -1,3 +1,4 @@
+{{ if or (eq .role "chofer") (eq .role "publicador") }}<form method="POST" action="/empresas/{{ .empresa.ID }}/membership"><input type="hidden" name="_csrf" value="{{ .csrfToken }}"><p>La asociación requiere aprobación administrativa y un perfil sin otra empresa.</p><button class="btn btn-primary">Solicitar asociación</button></form>{{ end }}
 <div class="tf-page-header">
     <div>
         <h1>
@@ -263,3 +264,5 @@
     </a>
     {{ end }}
 </footer>
+
+<nav aria-label="Páginas de conductores de la empresa">{{ if gt .driverPrevious 0 }}<a href="?driver_page={{ .driverPrevious }}">Anteriores</a>{{ end }} {{ if .driverHasNext }}<a href="?driver_page={{ .driverNext }}">Siguientes</a>{{ end }}</nav>

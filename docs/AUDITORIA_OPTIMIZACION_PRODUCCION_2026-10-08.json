@@ -1,0 +1,118 @@
+{
+  "slow_connections": {
+    "count": 64,
+    "body_bytes_expected": 1,
+    "body_bytes_sent": 0,
+    "health_before": 200,
+    "health_during": 503,
+    "health_after": 200
+  },
+  "auth_body_probe": {
+    "bytes": 20002,
+    "statuses": {
+      "/login": 413,
+      "/LOGIN": 403,
+      "/login/": 403,
+      "/register": 413,
+      "/REGISTER": 403,
+      "/register/": 403
+    },
+    "aliases_get": 200
+  },
+  "binaries": {
+    "installed": {
+      "bytes": 109654653,
+      "mib": 104.57,
+      "build_settings": [
+        "build\tCGO_ENABLED=1",
+        "build\tvcs.revision=ddeea6f74843a96102d3fd0f85918008ad2018ed",
+        "build\tvcs.modified=true"
+      ],
+      "file": "bin/bufalo: ELF 64-bit LSB executable, x86-64, version 1 (SYSV), dynamically linked, interpreter /lib64/ld-linux-x86-64.so.2, Go BuildID=ZMAQhiDAOctT-RplMx-2/8ei5OhqtuoVPsTx4ungo/HXTx3P8Q72P90hOAvBrz/ommz_ROlv-S_SnVnPvv1, BuildID[sha1]=9435a36b503d7a3bc0b6869bc217df902588ff80, with debug_info, not stripped"
+    },
+    "tested": {
+      "bytes": 77267209,
+      "mib": 73.69,
+      "build_settings": [
+        "build\t-ldflags=\"-s -w\"",
+        "build\tCGO_ENABLED=1",
+        "build\tvcs.revision=ddeea6f74843a96102d3fd0f85918008ad2018ed",
+        "build\tvcs.modified=true"
+      ],
+      "file": "/tmp/bufalo-ddos-final: ELF 64-bit LSB executable, x86-64, version 1 (SYSV), dynamically linked, interpreter /lib64/ld-linux-x86-64.so.2, Go BuildID=-QBdTeM8YC4mpX3Zup0v/tIlI3ZRwOoUKzm3xFEPv/4e8yB5ziuEDQUvjG6jQs/VhgvMzN3wXYgnH4NSzDy, BuildID[sha1]=d93787b7fdbec27685307d58acb2675ac3cd609a, stripped"
+    },
+    "migrator": {
+      "bytes": 61944073,
+      "mib": 59.07,
+      "build_settings": [
+        "build\t-ldflags=\"-s -w\"",
+        "build\tCGO_ENABLED=1",
+        "build\tvcs.revision=ddeea6f74843a96102d3fd0f85918008ad2018ed",
+        "build\tvcs.modified=true"
+      ],
+      "file": "/tmp/bufalo-container-migrate: ELF 64-bit LSB executable, x86-64, version 1 (SYSV), dynamically linked, interpreter /lib64/ld-linux-x86-64.so.2, Go BuildID=X5hTT6hRNlMzgj9CKyLE/N_rQjhNOtKfHlvOuIjP0/W50yfkfloZ2SLHyKf_nX/hbfB4PXs_4t_fOAv6ZJg, BuildID[sha1]=5abc7bccb2fdba8228998860a90bc3ea9075a460, stripped"
+    },
+    "static_candidate": {
+      "bytes": 77054114,
+      "mib": 73.48,
+      "sha256": "70e8829658efd799a775e08358159e25a94b4b5e92899c3d6ec287e0b7761a57",
+      "build_settings": [
+        "build\t-trimpath=true",
+        "build\tCGO_ENABLED=0",
+        "build\tvcs.modified=true"
+      ],
+      "file": "storage/audit-production/bufalo.static: ELF 64-bit LSB executable, x86-64, version 1 (SYSV), statically linked, Go BuildID=whcnTKZOlIpiULlCjUKm/tj63bRzoKgRaSz0dKIVm/TnDMzCw858w3X35tIiY7/bYHsLJa2VDdh0L2YkT2R, BuildID[sha1]=53063c928d02e703d8e70c94861ea565bd520f9a, stripped"
+    }
+  },
+  "go_vet": "passed",
+  "production_modified": false,
+  "environment_probe": {
+    "APP_ENV": "Production",
+    "startup": "accepted",
+    "cookies": [
+      {
+        "name": "csrf_",
+        "attributes": [
+          " expires=Thu, 08 Oct 2026 17:52:24 GMT",
+          " path=/",
+          " HttpOnly",
+          " SameSite=Lax"
+        ]
+      },
+      {
+        "name": "session_id",
+        "attributes": [
+          " path=/",
+          " HttpOnly",
+          " SameSite=Lax"
+        ]
+      }
+    ]
+  },
+  "systemd_env_precedence": {
+    "file": ".env",
+    "APP_ENV": "local",
+    "APP_DEBUG": "true",
+    "overrides_unit_environment": true,
+    "unit_activated": false
+  },
+  "static_candidate_smoke": {
+    "passed": true,
+    "port": 33336,
+    "process_stopped": true,
+    "login_statuses": [
+      200,
+      200,
+      200,
+      200,
+      200,
+      200,
+      200,
+      200,
+      200,
+      200,
+      429,
+      429
+    ]
+  }
+}

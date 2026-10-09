@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"goravel/app/dbresilience"
 	"goravel/app/facades"
 	"goravel/app/models"
 	"goravel/bootstrap"
@@ -19,6 +20,12 @@ func ResetDB(t *testing.T) {
 	}
 	_, err := facades.Orm().Query().Exec(`
 		TRUNCATE TABLE
+			company_membership_requests,
+notification_outbox,
+			load_interests,
+            chofer_calificaciones,
+            red_choferes,
+            pending_registrations,
 			facturas,
 			cargas,
 			chofers,
@@ -141,8 +148,25 @@ func PtrUint(v uint) *uint    { return &v }
 // RequireTestDatabase refuses destructive tests unless explicitly isolated.
 func RequireTestDatabase() error {
 	name := os.Getenv("DB_DATABASE")
-	if os.Getenv("APP_ENV") != "testing" || !strings.HasSuffix(name, "_test") || facades.Config().GetString("database.connections.postgres.database") != name {
+	return ValidateTestDatabase(
+		os.Getenv("APP_ENV"),
+		name,
+		facades.Config().GetString("database.connections.postgres.database"),
+		facades.Config().GetString("database.connections.postgres.dsn"),
+	)
+}
+
+// ValidateTestDatabase refuses destructive tests unless both the configured
+// ORM database and any overriding DSN resolve to the explicit *_test target.
+func ValidateTestDatabase(appEnv, envDatabase, configDatabase, dsn string) error {
+	if appEnv != "testing" || !strings.HasSuffix(envDatabase, "_test") || configDatabase != envDatabase {
 		return fmt.Errorf("tests require APP_ENV=testing and an explicit DB_DATABASE ending in _test matching active configuration")
+	}
+	if strings.TrimSpace(dsn) != "" {
+		dsnDatabase, err := dbresilience.DatabaseNameFromDSN(dsn)
+		if err != nil || dsnDatabase != envDatabase || !strings.HasSuffix(dsnDatabase, "_test") {
+			return fmt.Errorf("tests require DB_DSN to target the same explicit *_test database as DB_DATABASE")
+		}
 	}
 	return nil
 }

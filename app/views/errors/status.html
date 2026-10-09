@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>{{ .code }} · {{ .title }} | BUFALO</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="bf-error-page">
+  <main class="bf-error-card" aria-labelledby="error-title">
+    <a class="bf-error-brand" href="/" aria-label="BUFALO, inicio"><img src="/img/bufalo-wide.png" alt="BUFALO"></a>
+    <div class="bf-error-art" role="img" aria-label="Ilustración animada de un camión de BUFALO en una ruta interrumpida">
+      <span class="bf-error-art__sun"></span><span class="bf-error-art__cloud bf-error-art__cloud--one"></span><span class="bf-error-art__cloud bf-error-art__cloud--two"></span>
+      <img src="/img/errors/bufalo-error.svg" alt="">
+      <span class="bf-error-art__road"></span><span class="bf-error-art__marker">{{ .code }}</span>
+    </div>
+    <p class="bf-error-eyebrow">CENTRO DE OPERACIONES · BUFALO</p>
+    <h1 id="error-title">{{ .title }}</h1>
+    <p class="bf-error-message">{{ .message }}</p>
+    <p class="bf-error-detail">{{ .detail }}</p>
+    <div class="bf-error-actions">
+      <a class="btn btn-primary" href="/home">Volver al inicio</a>
+      <button class="btn btn-secondary" type="button" onclick="history.back()">Regresar</button>
+    </div>
+    <small class="bf-error-code">Código de estado: {{ .code }}</small>
+  </main>
+</body>
+</html>

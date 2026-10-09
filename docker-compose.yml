@@ -1,31 +1,166 @@
+name: bufalo
+
+x-app-environment: &app-environment
+  APP_ENV: production
+  APP_DEBUG: "false"
+  APP_HOST: 0.0.0.0
+  APP_PORT: 3000
+  DDOS_MODE: ${DDOS_MODE:-enforce}
+  # Only the bridge gateway carrying host cloudflared traffic is trusted.
+  TRUSTED_PROXY_IPS: 172.30.113.1
+  DB_CONNECTION: postgres
+  DB_HOST: postgres
+  DB_PORT: 5432
+  DB_DATABASE: ${DB_DATABASE:-bufalo}
+  DB_USERNAME: ${DB_USERNAME:-bufalo}
+  DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env.production}
+  DB_DSN: ""
+  DB_SSLMODE: disable
+  REDIS_HOST: redis
+  REDIS_PORT: 6379
+  REDIS_DB: 0
+  RATE_REDIS_HOST: redis-traffic
+  RATE_REDIS_PORT: 6379
+  RATE_REDIS_PASSWORD: ${RATE_REDIS_PASSWORD:?Set RATE_REDIS_PASSWORD}
+  RATE_REDIS_DB: 0
+  DB_POOL_MAX_OPEN_CONNS: 12
+  DB_POOL_MAX_IDLE_CONNS: 4
+  REDIS_PASSWORD: ${REDIS_PASSWORD:?Set REDIS_PASSWORD in .env.production}
+  GOMEMLIMIT: 128MiB
+  GOMAXPROCS: 2
+  LOG_LEVEL: warning
+
+x-app: &app
+  image: bufalo:local
+  build: .
+  env_file: .env.production
+  environment: *app-environment
+  init: true
+  read_only: true
+  security_opt: [no-new-privileges:true]
+  cap_drop: [ALL]
+  tmpfs: [/tmp:size=32m,noexec,nosuid]
+  volumes:
+    - uploads:/www/public/uploads
+    - storage:/www/storage
+  networks: [backend]
+  logging:
+    driver: json-file
+    options: {max-size: "10m", max-file: "3"}
+
 services:
-  goravel:
-    build:
-      context: .
-    env_file:
-      - .env.production
+  postgres:
+    image: postgres:17-alpine
     environment:
-      APP_ENV: production
-      APP_DEBUG: "false"
-      APP_HOST: 0.0.0.0
-      APP_PORT: 3000
-    ports:
-      - "3000:3000"
+      POSTGRES_DB: ${DB_DATABASE:-bufalo}
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_ADMIN_PASSWORD:?Set DB_ADMIN_PASSWORD}
+      APP_DB_USER: ${DB_USERNAME:-bufalo}
+      APP_DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD}
+      MIGRATION_DB_USER: ${DB_MIGRATION_USERNAME:-bufalo_migrator}
+      MIGRATION_DB_PASSWORD: ${DB_MIGRATION_PASSWORD:?Set DB_MIGRATION_PASSWORD}
+    command: [postgres, -c, max_connections=50, -c, shared_buffers=64MB]
     volumes:
-      - bufalo_avatars:/www/public/uploads/avatars
+      - postgres_data:/var/lib/postgresql/data
+      - ./deploy/postgres-init.sh:/docker-entrypoint-initdb.d/10-bufalo-roles.sh:ro
+    networks: [backend]
     restart: unless-stopped
-    init: true
-    security_opt:
-      - no-new-privileges:true
-    read_only: true
-    tmpfs:
-      - /tmp:size=32m,noexec,nosuid
+    mem_limit: 512m
+    cpus: 1
     healthcheck:
-      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:3000/healthz"]
-      interval: 30s
+      test: [CMD-SHELL, 'pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"']
+      interval: 5s
+      timeout: 3s
+      retries: 15
+    logging:
+      driver: json-file
+      options: {max-size: "10m", max-file: "3"}
+
+  redis:
+    image: redis:7.4-alpine
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?Set REDIS_PASSWORD in .env.production}
+    command: [sh, -ec, 'exec redis-server --requirepass "$$REDIS_PASSWORD" --appendonly yes --appendfsync everysec --maxmemory 64mb --maxmemory-policy noeviction']
+    volumes: [redis_data:/data]
+    networks: [backend]
+    restart: unless-stopped
+    mem_limit: 192m
+    cpus: 0.5
+    healthcheck:
+      test: [CMD-SHELL, 'REDISCLI_AUTH="$$REDIS_PASSWORD" redis-cli ping | grep -q PONG']
+      interval: 5s
+      timeout: 3s
+      retries: 15
+    logging:
+      driver: json-file
+      options: {max-size: "10m", max-file: "3"}
+
+  redis-traffic:
+    image: redis:7.4-alpine
+    environment:
+      REDIS_PASSWORD: ${RATE_REDIS_PASSWORD:?Set RATE_REDIS_PASSWORD}
+    command: [sh, -ec, 'exec redis-server --requirepass "$$REDIS_PASSWORD" --appendonly yes --appendfsync everysec --maxmemory 32mb --maxmemory-policy noeviction']
+    volumes: [redis_traffic_data:/data]
+    networks: [backend]
+    restart: unless-stopped
+    mem_limit: 128m
+    cpus: 0.5
+    healthcheck:
+      test: [CMD-SHELL, 'REDISCLI_AUTH="$$REDIS_PASSWORD" redis-cli ping | grep -q PONG']
+      interval: 5s
+      timeout: 3s
+      retries: 15
+    logging:
+      driver: json-file
+      options: {max-size: "10m", max-file: "3"}
+
+  migrate:
+    <<: *app
+    entrypoint: [/www/main, migrate]
+    environment:
+      <<: *app-environment
+      DB_USERNAME: ${DB_MIGRATION_USERNAME:-bufalo_migrator}
+      DB_PASSWORD: ${DB_MIGRATION_PASSWORD:?Set DB_MIGRATION_PASSWORD}
+      DB_POOL_MAX_OPEN_CONNS: 4
+      DB_POOL_MAX_IDLE_CONNS: 1
+    restart: "no"
+    mem_limit: 256m
+    cpus: 1
+    depends_on:
+      postgres: {condition: service_healthy}
+
+  goravel:
+    <<: *app
+    # The host's existing Cloudflare Tunnel targets localhost:3000.
+    # PostgreSQL and Redis have no published ports.
+    ports: ["127.0.0.1:${BUFALO_HTTP_PORT:-3000}:3000"]
+    restart: unless-stopped
+    stop_grace_period: 35s
+    mem_limit: 512m
+    cpus: 1.5
+    pids_limit: 128
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+      redis: {condition: service_healthy}
+      redis-traffic: {condition: service_healthy}
+    healthcheck:
+      test: [CMD, wget, -q, -O, /dev/null, http://127.0.0.1:3001/readyz]
+      interval: 15s
       timeout: 5s
       retries: 3
       start_period: 20s
 
+networks:
+  backend:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.30.113.0/24
+          gateway: 172.30.113.1
+
 volumes:
-  bufalo_avatars:
+  postgres_data:
+  redis_data:
+  redis_traffic_data:
+  uploads:
+  storage:

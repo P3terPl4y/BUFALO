@@ -1,0 +1,393 @@
+{
+  "baseline": [
+    {
+      "path": "/healthz",
+      "requests": 300,
+      "concurrency": 8,
+      "seconds": 0.362,
+      "rps": 829.5,
+      "p50_ms": 7.19,
+      "p95_ms": 16.13,
+      "statuses": {
+        "200": 300
+      },
+      "cpu_ticks": 17,
+      "memory": {
+        "VmHWM": "73000 kB",
+        "VmRSS": "73000 kB",
+        "Threads": "12"
+      }
+    },
+    {
+      "path": "/css/style.css",
+      "requests": 300,
+      "concurrency": 8,
+      "seconds": 0.67,
+      "rps": 447.9,
+      "p50_ms": 13.82,
+      "p95_ms": 40.59,
+      "statuses": {
+        "200": 300
+      },
+      "cpu_ticks": 41,
+      "memory": {
+        "VmHWM": "76872 kB",
+        "VmRSS": "76872 kB",
+        "Threads": "12"
+      }
+    },
+    {
+      "path": "/login",
+      "requests": 300,
+      "concurrency": 8,
+      "seconds": 6.485,
+      "rps": 46.3,
+      "p50_ms": 181.29,
+      "p95_ms": 256.14,
+      "statuses": {
+        "200": 300
+      },
+      "cpu_ticks": 833,
+      "memory": {
+        "VmHWM": "108916 kB",
+        "VmRSS": "105596 kB",
+        "Threads": "12"
+      }
+    },
+    {
+      "path": "/register",
+      "requests": 300,
+      "concurrency": 8,
+      "seconds": 6.073,
+      "rps": 49.4,
+      "p50_ms": 157.2,
+      "p95_ms": 238.4,
+      "statuses": {
+        "200": 300
+      },
+      "cpu_ticks": 780,
+      "memory": {
+        "VmHWM": "110908 kB",
+        "VmRSS": "107328 kB",
+        "Threads": "12"
+      }
+    },
+    {
+      "path": "/missing-perf-check",
+      "requests": 300,
+      "concurrency": 8,
+      "seconds": 6.364,
+      "rps": 47.1,
+      "p50_ms": 161.34,
+      "p95_ms": 284.12,
+      "statuses": {
+        "404": 300
+      },
+      "cpu_ticks": 846,
+      "memory": {
+        "VmHWM": "114384 kB",
+        "VmRSS": "103684 kB",
+        "Threads": "12"
+      }
+    }
+  ],
+  "optimized": [
+    {
+      "path": "/healthz",
+      "requests": 300,
+      "concurrency": 8,
+      "seconds": 0.295,
+      "rps": 1018.3,
+      "p50_ms": 5.79,
+      "p95_ms": 12.87,
+      "statuses": {
+        "200": 300
+      },
+      "cpu_ticks": 17,
+      "memory": {
+        "VmHWM": "77508 kB",
+        "VmRSS": "77508 kB",
+        "Threads": "10"
+      }
+    },
+    {
+      "path": "/css/style.css",
+      "requests": 300,
+      "concurrency": 8,
+      "seconds": 0.338,
+      "rps": 887.0,
+      "p50_ms": 7.58,
+      "p95_ms": 12.82,
+      "statuses": {
+        "200": 300
+      },
+      "cpu_ticks": 23,
+      "memory": {
+        "VmHWM": "77768 kB",
+        "VmRSS": "77768 kB",
+        "Threads": "10"
+      }
+    },
+    {
+      "path": "/login",
+      "requests": 300,
+      "concurrency": 8,
+      "seconds": 0.351,
+      "rps": 854.4,
+      "p50_ms": 7.2,
+      "p95_ms": 13.38,
+      "statuses": {
+        "200": 300
+      },
+      "cpu_ticks": 29,
+      "memory": {
+        "VmHWM": "80020 kB",
+        "VmRSS": "80020 kB",
+        "Threads": "11"
+      }
+    },
+    {
+      "path": "/register",
+      "requests": 300,
+      "concurrency": 8,
+      "seconds": 0.384,
+      "rps": 781.1,
+      "p50_ms": 8.01,
+      "p95_ms": 16.26,
+      "statuses": {
+        "200": 300
+      },
+      "cpu_ticks": 40,
+      "memory": {
+        "VmHWM": "84084 kB",
+        "VmRSS": "84084 kB",
+        "Threads": "11"
+      }
+    },
+    {
+      "path": "/missing-perf-check",
+      "requests": 300,
+      "concurrency": 8,
+      "seconds": 0.34,
+      "rps": 883.2,
+      "p50_ms": 7.23,
+      "p95_ms": 13.53,
+      "statuses": {
+        "404": 300
+      },
+      "cpu_ticks": 31,
+      "memory": {
+        "VmHWM": "85056 kB",
+        "VmRSS": "85056 kB",
+        "Threads": "11"
+      }
+    }
+  ],
+  "final_32_clients": [
+    {
+      "path": "/healthz",
+      "requests": 2000,
+      "concurrency": 32,
+      "seconds": 1.687,
+      "rps": 1185.7,
+      "p50_ms": 19.7,
+      "p95_ms": 41.12,
+      "statuses": {
+        "200": 2000
+      },
+      "cpu_ticks": 125,
+      "memory": {
+        "VmHWM": "76868 kB",
+        "VmRSS": "76868 kB",
+        "Threads": "10"
+      }
+    },
+    {
+      "path": "/css/style.css",
+      "requests": 2000,
+      "concurrency": 32,
+      "seconds": 1.91,
+      "rps": 1047.3,
+      "p50_ms": 24.48,
+      "p95_ms": 44.82,
+      "statuses": {
+        "200": 2000
+      },
+      "cpu_ticks": 143,
+      "memory": {
+        "VmHWM": "77604 kB",
+        "VmRSS": "77604 kB",
+        "Threads": "10"
+      }
+    },
+    {
+      "path": "/login",
+      "requests": 2000,
+      "concurrency": 32,
+      "seconds": 2.21,
+      "rps": 904.8,
+      "p50_ms": 26.8,
+      "p95_ms": 57.23,
+      "statuses": {
+        "200": 2000
+      },
+      "cpu_ticks": 192,
+      "memory": {
+        "VmHWM": "88784 kB",
+        "VmRSS": "88784 kB",
+        "Threads": "11"
+      }
+    },
+    {
+      "path": "/register",
+      "requests": 2000,
+      "concurrency": 32,
+      "seconds": 2.852,
+      "rps": 701.4,
+      "p50_ms": 35.05,
+      "p95_ms": 74.8,
+      "statuses": {
+        "200": 2000
+      },
+      "cpu_ticks": 240,
+      "memory": {
+        "VmHWM": "94084 kB",
+        "VmRSS": "94084 kB",
+        "Threads": "13"
+      }
+    },
+    {
+      "path": "/missing-perf-check",
+      "requests": 2000,
+      "concurrency": 32,
+      "seconds": 2.689,
+      "rps": 743.9,
+      "p50_ms": 32.29,
+      "p95_ms": 73.63,
+      "statuses": {
+        "404": 2000
+      },
+      "cpu_ticks": 225,
+      "memory": {
+        "VmHWM": "100524 kB",
+        "VmRSS": "100524 kB",
+        "Threads": "13"
+      }
+    }
+  ],
+  "final_8_clients": [
+    {
+      "path": "/healthz",
+      "requests": 300,
+      "concurrency": 8,
+      "seconds": 0.445,
+      "rps": 674.5,
+      "p50_ms": 6.55,
+      "p95_ms": 14.99,
+      "statuses": {
+        "200": 300
+      },
+      "cpu_ticks": 17,
+      "memory": {
+        "VmHWM": "73288 kB",
+        "VmRSS": "73288 kB",
+        "Threads": "10"
+      }
+    },
+    {
+      "path": "/css/style.css",
+      "requests": 300,
+      "concurrency": 8,
+      "seconds": 0.459,
+      "rps": 653.2,
+      "p50_ms": 9.89,
+      "p95_ms": 20.17,
+      "statuses": {
+        "200": 300
+      },
+      "cpu_ticks": 23,
+      "memory": {
+        "VmHWM": "74348 kB",
+        "VmRSS": "74348 kB",
+        "Threads": "11"
+      }
+    },
+    {
+      "path": "/login",
+      "requests": 300,
+      "concurrency": 8,
+      "seconds": 0.432,
+      "rps": 694.2,
+      "p50_ms": 8.91,
+      "p95_ms": 19.22,
+      "statuses": {
+        "200": 300
+      },
+      "cpu_ticks": 39,
+      "memory": {
+        "VmHWM": "77752 kB",
+        "VmRSS": "77752 kB",
+        "Threads": "11"
+      }
+    },
+    {
+      "path": "/register",
+      "requests": 300,
+      "concurrency": 8,
+      "seconds": 0.481,
+      "rps": 624.1,
+      "p50_ms": 10.1,
+      "p95_ms": 20.21,
+      "statuses": {
+        "200": 300
+      },
+      "cpu_ticks": 35,
+      "memory": {
+        "VmHWM": "81272 kB",
+        "VmRSS": "81272 kB",
+        "Threads": "11"
+      }
+    },
+    {
+      "path": "/missing-perf-check",
+      "requests": 300,
+      "concurrency": 8,
+      "seconds": 0.504,
+      "rps": 594.7,
+      "p50_ms": 10.17,
+      "p95_ms": 21.06,
+      "statuses": {
+        "404": 300
+      },
+      "cpu_ticks": 33,
+      "memory": {
+        "VmHWM": "83820 kB",
+        "VmRSS": "83820 kB",
+        "Threads": "12"
+      }
+    }
+  ],
+  "smoke_final": {
+    "smoke": "passed",
+    "login_statuses": [
+      200,
+      200,
+      200,
+      200,
+      200,
+      200,
+      200,
+      200,
+      200,
+      200,
+      429,
+      429
+    ]
+  },
+  "validation": {
+    "full_suite": "passed",
+    "race_controllers_middleware_services": "passed",
+    "final_build": "passed",
+    "git_diff_check": "passed"
+  }
+}

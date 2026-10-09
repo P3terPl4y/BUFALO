@@ -133,7 +133,8 @@
                             {{ .Ciudad }} — {{ .EstadoProvincia }}
                         </option>
                         {{ end }}
-                    </select>
+                    {{ if .load.OrigenDireccion }}<option value="{{ .load.OrigenDireccionID }}" selected>{{ .load.OrigenDireccion.Ciudad }} — {{ .load.OrigenDireccion.EstadoProvincia }}</option>{{ end }}
+</select>
                 </div>
                 <div class="tf-col-6 tf-field">
                     <label for="fecha_recogida" class="form-label">Fecha recogida <span class="req">*</span></label>
@@ -148,7 +149,8 @@
                             {{ .Ciudad }} — {{ .EstadoProvincia }}
                         </option>
                         {{ end }}
-                    </select>
+                    {{ if .load.DestinoDireccion }}<option value="{{ .load.DestinoDireccionID }}" selected>{{ .load.DestinoDireccion.Ciudad }} — {{ .load.DestinoDireccion.EstadoProvincia }}</option>{{ end }}
+</select>
                 </div>
                 <div class="tf-col-6 tf-field">
                     <label for="fecha_entrega" class="form-label">Fecha entrega</label>
@@ -322,3 +324,5 @@
         updateProgress();
     })();
 </script>
+
+<script src="/js/address-options.js" defer></script>

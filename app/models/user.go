@@ -1,6 +1,9 @@
 package models
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
+	"errors"
 	"time"
 
 	"github.com/goravel/framework/database/orm"
@@ -68,12 +71,21 @@ type User struct {
 func (User) TableName() string { return "users" }
 
 func (u *User) SetPassword(plain string) error {
-	hash, err := bcrypt.GenerateFromPassword([]byte(plain), bcrypt.DefaultCost)
+	if len(plain) < 8 || len(plain) > 72 {
+		return errors.New("la contraseña debe tener entre 8 y 72 bytes")
+	}
+	hash, err := bcrypt.GenerateFromPassword([]byte(plain), 12)
 	if err != nil {
 		return err
 	}
 	u.Password = string(hash)
 	return nil
+}
+
+// Bound to stored credentials: any password or verified-email change revokes old sessions.
+func (u *User) CredentialStamp() string {
+	digest := sha256.Sum256([]byte(u.Password + "\x00" + u.Email))
+	return hex.EncodeToString(digest[:])
 }
 
 func (u *User) CheckPassword(plain string) bool {

@@ -1,0 +1,55 @@
+{
+  "local_load": {
+    "requests": 10000,
+    "workers": 32,
+    "seconds": 12.337312235999889,
+    "requests_per_second": 810.549316472701,
+    "statuses": {
+      "200": 43,
+      "429": 9957
+    },
+    "memory_before_kib": {
+      "VmHWM": 76248,
+      "VmRSS": 76248
+    },
+    "memory_after_kib": {
+      "VmHWM": 86212,
+      "VmRSS": 86212
+    },
+    "health": 200,
+    "independent_ip": 200,
+    "oversized_auth": 413
+  },
+  "admin_browser": {
+    "pages": [
+      {
+        "path": "/admin/metrics",
+        "mode": "BLOQUEO ACTIVO",
+        "banned": "9858"
+      },
+      {
+        "path": "/admin/health",
+        "mode": "BLOQUEO ACTIVO",
+        "banned": "9858"
+      }
+    ],
+    "rss_mb": 86.08,
+    "protection": {
+      "policy": {
+        "mode": "enforce",
+        "rate": 20,
+        "burst": 40,
+        "static_rate": 100,
+        "short_ban_seconds": 60,
+        "long_ban_seconds": 1200,
+        "request_capacity": 64,
+        "auth_capacity": 4
+      },
+      "limited": 99,
+      "banned": 9858,
+      "observed": 0,
+      "store_errors": 0,
+      "capacity_rejected": 0
+    }
+  }
+}

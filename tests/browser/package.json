@@ -1,0 +1,10 @@
+{
+  "private": true,
+  "scripts": {
+    "test:admin": "node admin-crud.cjs",
+    "test:registration": "node registration.cjs"
+  },
+  "devDependencies": {
+    "playwright": "1.63.0"
+  }
+}

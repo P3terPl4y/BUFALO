@@ -64,13 +64,14 @@
         <article class="tf-home-stat"><div class="tf-home-stat__body"><span class="tf-home-stat__label">PostgreSQL</span><p class="tf-home-stat__value" id="metricsPostgres">—</p><small id="metricsPostgresLatency">—</small></div></article>
         <article class="tf-home-stat"><div class="tf-home-stat__body"><span class="tf-home-stat__label">Redis</span><p class="tf-home-stat__value" id="metricsRedis">—</p><small id="metricsRedisLatency">—</small></div></article>
         <article class="tf-home-stat"><div class="tf-home-stat__body"><span class="tf-home-stat__label">Tiempo activo</span><p class="tf-home-stat__value" id="metricsUptime">—</p></div></article>
-        <article class="tf-home-stat"><div class="tf-home-stat__body"><span class="tf-home-stat__label">Solicitudes desde inicio</span><p class="tf-home-stat__value" id="metricsRequests">—</p><small id="metricsRequestRate">—</small></div></article>
+        <article class="tf-home-stat"><div class="tf-home-stat__body"><span class="tf-home-stat__label">Solicitudes procesadas desde inicio</span><p class="tf-home-stat__value" id="metricsRequests">—</p><small id="metricsRequestRate">—</small></div></article>
         <article class="tf-home-stat"><div class="tf-home-stat__body"><span class="tf-home-stat__label">Latencia media / p95 aprox.</span><p class="tf-home-stat__value" id="metricsLatency">—</p><small id="metricsP95">—</small></div></article>
         <article class="tf-home-stat"><div class="tf-home-stat__body"><span class="tf-home-stat__label">Errores HTTP 5xx</span><p class="tf-home-stat__value" id="metricsErrors">—</p><small id="metricsErrorRate">—</small></div></article>
-        <article class="tf-home-stat"><div class="tf-home-stat__body"><span class="tf-home-stat__label">Memoria heap</span><p class="tf-home-stat__value" id="metricsHeap">—</p><small id="metricsHeapAlloc">—</small></div></article>
+        <article class="tf-home-stat"><div class="tf-home-stat__body"><span class="tf-home-stat__label">Memoria del proceso (RSS)</span><p class="tf-home-stat__value" id="metricsHeap">—</p><small id="metricsHeapAlloc">—</small></div></article>
         <article class="tf-home-stat"><div class="tf-home-stat__body"><span class="tf-home-stat__label">Goroutines / GOMAXPROCS</span><p class="tf-home-stat__value" id="metricsGoroutines">—</p><small id="metricsGC">—</small></div></article>
     </div>
     <p class="small text-muted mt-3 mb-0" id="metricsHealthChecked">La telemetría del proceso se reinicia en cada despliegue. La conectividad TCP no valida credenciales ni ejecuta consultas.</p>
 </section>
 
+{{ template "admin/traffic" . }}
 <script src="/js/admin-metrics.js" defer></script>

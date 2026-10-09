@@ -86,6 +86,9 @@ func (c *CargaController) Index(ctx fiber.Ctx) error {
 	switch role {
 	case "publicador":
 		pub, err := c.publicadorService.GetByUserID(userID)
+		if services.IsInfrastructureError(err) {
+			return fiber.ErrServiceUnavailable
+		}
 		if err != nil {
 			log.Printf("No se pudo resolver perfil publicador user_id=%d: %v", userID, err)
 			return ctx.SendStatus(fiber.StatusForbidden)
@@ -93,6 +96,9 @@ func (c *CargaController) Index(ctx fiber.Ctx) error {
 		filters["publicador_id"] = strconv.FormatUint(uint64(pub.ID), 10)
 	case "chofer":
 		ch, err := c.choferService.GetByUserID(userID)
+		if services.IsInfrastructureError(err) {
+			return fiber.ErrServiceUnavailable
+		}
 		if err != nil {
 			log.Printf("No se pudo resolver perfil chofer user_id=%d: %v", userID, err)
 			return ctx.SendStatus(fiber.StatusForbidden)
@@ -102,11 +108,12 @@ func (c *CargaController) Index(ctx fiber.Ctx) error {
 
 	page, _ := strconv.Atoi(ctx.Query("page", "1"))
 	perPage, _ := strconv.Atoi(ctx.Query("per_page", "10"))
+	page, perPage = services.NormalizePagination(page, perPage)
 
 	list, total, err := c.cargaService.GetAllWithFilters(filters, page, perPage)
 	if err != nil {
 		log.Printf("Error al obtener cargas: %v", err)
-		return ctx.Render("dashboard/index", fiber.Map{
+		return ctx.Status(fiber.StatusServiceUnavailable).Render("dashboard/index", fiber.Map{
 			"title":       "Lista de Cargas",
 			"flash_error": "Error al cargar las cargas",
 			"role":        role,
@@ -133,15 +140,18 @@ func (c *CargaController) Show(ctx fiber.Ctx) error {
 	role, _ := sess.Get("role").(string)
 
 	carga, err := c.cargaService.GetByID(ctx.Params("id"))
+	if services.IsInfrastructureError(err) {
+		return fiber.ErrServiceUnavailable
+	}
 	if err != nil {
-		return ctx.Render("dashboard/404", fiber.Map{
+		return ctx.Status(fiber.StatusNotFound).Render("dashboard/404", fiber.Map{
 			"title": "Carga no encontrada",
 			"role":  role,
 		}, "layouts/base")
 	}
 
 	if !c.canAccessCarga(carga, userID, role) {
-		return ctx.Render("dashboard/404", fiber.Map{
+		return ctx.Status(fiber.StatusNotFound).Render("dashboard/404", fiber.Map{
 			"title": "Carga no encontrada",
 			"role":  role,
 		}, "layouts/base")
@@ -169,12 +179,18 @@ func (c *CargaController) canAccessCarga(carga *models.Carga, userID uint, role 
 		return true
 	case "publicador":
 		pub, err := c.publicadorService.GetByUserID(userID)
+		if services.IsInfrastructureError(err) {
+			return false
+		}
 		if err != nil {
 			return false
 		}
 		return carga.PublicadorID == pub.ID
 	case "chofer":
 		ch, err := c.choferService.GetByUserID(userID)
+		if services.IsInfrastructureError(err) {
+			return false
+		}
 		if err != nil {
 			return false
 		}
@@ -205,25 +221,41 @@ func (c *CargaController) Store(ctx fiber.Ctx) error {
 	if err != nil {
 		return ctx.Redirect().To("/login")
 	}
-
-	// 1. Resolver el Publicador del user logueado
-	publicador, err := c.publicadorService.GetByUserID(userID)
-	if err != nil {
-		return ctx.Redirect().To("/loads/create?flash_error=Debes tener un perfil de publicador")
+	_, role := currentUser(ctx)
+	createPath := "/loads/create"
+	if role == "admin" {
+		createPath = "/admin/cargas/create"
 	}
 
 	var req requests.CargaStoreRequest
 	if err := ctx.Bind().Body(&req); err != nil {
-		return ctx.Render("dashboard/create", fiber.Map{
-			"title":        "Nueva Carga",
-			"flash_error":  "Datos inválidos",
-			"destinations": c.getAllDestinations(ctx),
-			"csrfToken":    csrf.TokenFromContext(ctx),
-		}, "layouts/base")
+		return ctx.Redirect().To(createPath + "?flash_error=Datos+inv%C3%A1lidos")
+	}
+
+	var publicador *models.Publicador
+	if role == "admin" {
+		if req.PublicadorID == nil || *req.PublicadorID == 0 {
+			return ctx.Redirect().To("/admin/cargas/create?flash_error=Selecciona+un+publicador")
+		}
+		publicador, err = c.publicadorService.GetByID(*req.PublicadorID)
+	} else {
+		publicador, err = c.publicadorService.GetByUserID(userID)
+	}
+	if err != nil || publicador == nil {
+		if role == "admin" {
+			return ctx.Redirect().To("/admin/cargas/create?flash_error=Publicador+inv%C3%A1lido")
+		}
+		return ctx.Redirect().To("/loads/create?flash_error=Debes tener un perfil de publicador")
+	}
+	if publicador.Empresa == nil || publicador.Empresa.Tipo != models.TipoBroker || publicador.Empresa.Estado != models.EmpresaActiva {
+		return ctx.Redirect().To(createPath + "?flash_error=El+publicador+debe+tener+una+empresa+broker+activa")
 	}
 
 	errs, valid := validateCargaInput(ctx, req)
 	if !valid {
+		if role == "admin" {
+			return ctx.Redirect().To(createPath + "?flash_error=Revisa+los+datos+de+la+carga")
+		}
 		return ctx.Render("dashboard/create", fiber.Map{
 			"title":        "Nueva Carga",
 			"flash_error":  "Error de validación",
@@ -236,13 +268,13 @@ func (c *CargaController) Store(ctx fiber.Ctx) error {
 
 	fechaRecogida, err := time.Parse("2006-01-02T15:04", req.FechaRecogida)
 	if err != nil {
-		return ctx.Redirect().To("/loads/create?flash_error=Fecha de recogida inválida")
+		return ctx.Redirect().To(createPath + "?flash_error=Fecha+de+recogida+inv%C3%A1lida")
 	}
 	var fechaEntrega *time.Time
 	if req.FechaEntrega != "" {
 		t, parseErr := time.Parse("2006-01-02T15:04", req.FechaEntrega)
 		if parseErr != nil || t.Before(fechaRecogida) {
-			return ctx.Redirect().To("/loads/create?flash_error=Fecha+de+entrega+inv%C3%A1lida")
+			return ctx.Redirect().To(createPath + "?flash_error=Fecha+de+entrega+inv%C3%A1lida")
 		}
 		fechaEntrega = &t
 	}
@@ -259,12 +291,12 @@ func (c *CargaController) Store(ctx fiber.Ctx) error {
 		audiencia = models.AudienciaLoadBoard
 	}
 	if err := community.ValidateAudience(string(audiencia)); err != nil {
-		return ctx.Redirect().To("/loads/create?flash_error=Selecciona+una+audiencia+v%C3%A1lida")
+		return ctx.Redirect().To(createPath + "?flash_error=Selecciona+una+audiencia+v%C3%A1lida")
 	}
 	if audiencia == models.AudienciaRedPrivada {
 		members, err := facades.Orm().Query().Model(&models.RedChofer{}).Where("empresa_id = ?", publicador.EmpresaID).Count()
 		if err != nil || members == 0 {
-			return ctx.Redirect().To("/loads/create?flash_error=A%C3%B1ade+choferes+a+tu+red+antes+de+publicar+en+privado")
+			return ctx.Redirect().To(createPath + "?flash_error=A%C3%B1ade+choferes+a+tu+red+antes+de+publicar+en+privado")
 		}
 	}
 
@@ -290,9 +322,12 @@ func (c *CargaController) Store(ctx fiber.Ctx) error {
 		Audiencia:          audiencia,
 	}
 
-	if err := c.cargaService.Create(&carga); err != nil {
+	if err := c.cargaService.CreateForActor(&carga, userID, role); err != nil {
 		log.Printf("Error al crear carga: %v", err)
-		return ctx.Redirect().To("/loads/create?flash_error=Error al guardar")
+		return ctx.Redirect().To(createPath + "?flash_error=Error+al+guardar")
+	}
+	if role == "admin" {
+		return ctx.Redirect().To(fmt.Sprintf("/admin/cargas/%d", carga.ID))
 	}
 	return ctx.Redirect().To(fmt.Sprintf("/loads/%d", carga.ID))
 }
@@ -306,8 +341,11 @@ func (c *CargaController) Edit(ctx fiber.Ctx) error {
 	role, _ := sess.Get("role").(string)
 
 	carga, err := c.cargaService.GetByID(ctx.Params("id"))
+	if services.IsInfrastructureError(err) {
+		return fiber.ErrServiceUnavailable
+	}
 	if err != nil || !c.canEditCarga(carga, userID, role) {
-		return ctx.Render("dashboard/404", fiber.Map{
+		return ctx.Status(fiber.StatusNotFound).Render("dashboard/404", fiber.Map{
 			"title": "Carga no encontrada",
 			"role":  role,
 		}, "layouts/base")
@@ -331,6 +369,9 @@ func (c *CargaController) canEditCarga(carga *models.Carga, userID uint, role st
 		return false
 	}
 	pub, err := c.publicadorService.GetByUserID(userID)
+	if services.IsInfrastructureError(err) {
+		return false
+	}
 	if err != nil {
 		return false
 	}
@@ -347,8 +388,11 @@ func (c *CargaController) Update(ctx fiber.Ctx) error {
 	id := ctx.Params("id")
 
 	existing, err := c.cargaService.GetByID(id)
+	if services.IsInfrastructureError(err) {
+		return fiber.ErrServiceUnavailable
+	}
 	if err != nil || !c.canEditCarga(existing, userID, role) {
-		return ctx.Render("dashboard/404", fiber.Map{
+		return ctx.Status(fiber.StatusNotFound).Render("dashboard/404", fiber.Map{
 			"title": "Carga no encontrada",
 			"role":  role,
 		}, "layouts/base")
@@ -416,7 +460,7 @@ func (c *CargaController) Update(ctx fiber.Ctx) error {
 		"audiencia":            audience,
 	}
 
-	if err := c.cargaService.Update(id, updates); err != nil {
+	if err := c.cargaService.UpdateForActor(id, updates, userID, role); err != nil {
 		log.Printf("Error al actualizar carga: %v", err)
 		return ctx.Redirect().To("/loads/" + id + "/edit?flash_error=Error al actualizar")
 	}
@@ -465,6 +509,9 @@ func (c *CargaController) Delete(ctx fiber.Ctx) error {
 	id := ctx.Params("id")
 
 	carga, err := c.cargaService.GetByID(id)
+	if services.IsInfrastructureError(err) {
+		return fiber.ErrServiceUnavailable
+	}
 	if err != nil || !c.canEditCarga(carga, userID, role) {
 		return ctx.Redirect().To("/loads?flash_error=Carga no encontrada")
 	}
@@ -486,6 +533,9 @@ func (c *CargaController) AcceptLoad(ctx fiber.Ctx) error {
 
 	// 1. Resolver el Chofer del user logueado
 	chofer, err := c.choferService.GetByUserID(userID)
+	if services.IsInfrastructureError(err) {
+		return fiber.ErrServiceUnavailable
+	}
 	if err != nil {
 		return ctx.Redirect().To("/home?flash_error=Debes tener un perfil de chofer")
 	}
@@ -505,6 +555,9 @@ func (c *CargaController) StartTransit(ctx fiber.Ctx) error {
 		return ctx.Redirect().To("/login")
 	}
 	chofer, err := c.choferService.GetByUserID(userID)
+	if services.IsInfrastructureError(err) {
+		return fiber.ErrServiceUnavailable
+	}
 	if err != nil {
 		return ctx.Redirect().To("/home?flash_error=Debes tener un perfil de chofer")
 	}
@@ -522,6 +575,9 @@ func (c *CargaController) MarkDelivered(ctx fiber.Ctx) error {
 		return ctx.Redirect().To("/login")
 	}
 	chofer, err := c.choferService.GetByUserID(userID)
+	if services.IsInfrastructureError(err) {
+		return fiber.ErrServiceUnavailable
+	}
 	if err != nil {
 		return ctx.Redirect().To("/home?flash_error=Debes tener un perfil de chofer")
 	}
@@ -541,6 +597,9 @@ func (c *CargaController) AssignChofer(ctx fiber.Ctx) error {
 	role, _ := sess.Get("role").(string)
 
 	carga, err := c.cargaService.GetByID(ctx.Params("id"))
+	if services.IsInfrastructureError(err) {
+		return fiber.ErrServiceUnavailable
+	}
 	if err != nil {
 		return ctx.Redirect().To("/loads?flash_error=Carga no encontrada")
 	}
@@ -573,10 +632,16 @@ func (c *CargaController) RateDriver(ctx fiber.Ctx) error {
 		return ctx.SendStatus(fiber.StatusForbidden)
 	}
 	profile, err := c.publicadorService.GetByUserID(userID)
+	if services.IsInfrastructureError(err) {
+		return fiber.ErrServiceUnavailable
+	}
 	if err != nil {
 		return ctx.SendStatus(fiber.StatusForbidden)
 	}
 	load, err := c.cargaService.GetByID(ctx.Params("id"))
+	if services.IsInfrastructureError(err) {
+		return fiber.ErrServiceUnavailable
+	}
 	if err != nil || load.PublicadorID != profile.ID {
 		return ctx.SendStatus(fiber.StatusNotFound)
 	}

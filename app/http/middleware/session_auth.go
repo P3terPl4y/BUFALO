@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"crypto/subtle"
 	"errors"
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/session"
@@ -16,6 +17,9 @@ import (
 // This revokes stale sessions after disabling an account or changing its role.
 func SessionAuth() fiber.Handler {
 	return func(c fiber.Ctx) error {
+		if !isProtectedRequestPath(c.Path()) {
+			return c.Next()
+		}
 		sess := session.FromContext(c)
 		if sess == nil {
 			return c.Redirect().To("/login")
@@ -36,7 +40,8 @@ func SessionAuth() fiber.Handler {
 			}
 			return c.Redirect().To("/login?flash_error=Sesión inválida o usuario deshabilitado")
 		}
-		if user.ID == 0 || !user.IsActive {
+		stamp, _ := sess.Get("credential_stamp").(string)
+		if user.ID == 0 || !user.IsActive || subtle.ConstantTimeCompare([]byte(stamp), []byte(user.CredentialStamp())) != 1 {
 			if err := sess.Destroy(); err != nil {
 				log.Printf("session revocation failed: %v", err)
 			}

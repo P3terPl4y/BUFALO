@@ -11,8 +11,19 @@
 {{ if .flash_success }}<div class="alert alert-success tf-mb-4">{{ .flash_success }}</div>{{ end }}
 {{ if .flash_error }}<div class="alert alert-danger tf-mb-4">{{ .flash_error }}</div>{{ end }}
 
-<form action="/loads" method="post" class="tf-form-page" id="cargaCreateForm">
+<form action="/admin/cargas" method="post" class="tf-form-page" id="cargaCreateForm">
     <input type="hidden" name="_csrf" value="{{ .csrfToken }}">
+
+    <section class="tf-form-block" data-block="publisher">
+        <header class="tf-form-block__head"><i class="bi bi-person-workspace tf-form-block__icon"></i><div class="tf-form-block__text"><h2>Publicador responsable</h2><p>La carga quedará asociada al perfil y empresa de este publicador.</p></div></header>
+        <div class="tf-form-block__body">
+            <div class="tf-field"><label for="publicador_id" class="form-label">Publicador <span class="req">*</span></label>
+                <select class="form-select" id="publicador_id" name="publicador_id" required><option value="">Selecciona un publicador…</option>
+                    {{ range .publicadores }}<option value="{{ .ID }}">{{ if .User }}{{ .User.Name }}{{ else }}Publicador #{{ .ID }}{{ end }} — {{ if .Empresa }}{{ .Empresa.NombreLegal }}{{ else }}sin empresa{{ end }}</option>{{ end }}
+                </select>
+            </div>
+        </div>
+    </section>
 
     <!-- ═══════════════════════════════════════════════════════════
          COLUMNA PRINCIPAL
@@ -49,19 +60,7 @@
                             <label for="tipo_carga" class="form-label">
                                 Tipo de carga <span class="req">*</span>
                             </label>
-                            <select class="form-select" id="tipo_carga" name="tipo_carga" required>
-                                <option value="">Seleccionar…</option>
-                                <option value="FTL" {{ if and .old (eq .old.TipoCarga "FTL") }}selected{{ end }}>
-                                    FTL · Full Truckload
-                                </option>
-                                <option value="LTL" {{ if and .old (eq .old.TipoCarga "LTL") }}selected{{ end }}>
-                                    LTL · Partial
-                                </option>
-                                <option value="parcel" {{ if and .old (eq .old.TipoCarga "parcel") }}selected{{ end }}>Paquetería</option>
-                                <option value="bulk" {{ if and .old (eq .old.TipoCarga "bulk") }}selected{{ end }}>Granel seco</option>
-                                <option value="liquid_bulk" {{ if and .old (eq .old.TipoCarga "liquid_bulk") }}selected{{ end }}>Granel líquido</option>
-                                <option value="oversized" {{ if and .old (eq .old.TipoCarga "oversized") }}selected{{ end }}>Carga sobredimensionada</option>
-                            </select>
+                            <select class="form-select" id="tipo_carga" name="tipo_carga" required><option value="">Seleccionar…</option>{{ range cargoChoices }}<option value="{{ .Value }}" {{ if and $.old (eq (printf "%s" $.old.TipoCarga) .Value) }}selected{{ end }}>{{ .Label }}</option>{{ end }}</select>
                             {{ if .errors.tipo_carga }}
                             <small class="tf-field-error">{{ .errors.tipo_carga }}</small>
                             {{ end }}
@@ -235,18 +234,7 @@
                             <label for="tipo_equipo" class="form-label">
                                 Equipo <span class="req">*</span>
                             </label>
-                            <select class="form-select" id="tipo_equipo" name="tipo_equipo" required>
-                                <option value="">Seleccionar…</option>
-                                <option value="dry_van"     {{ if and .old (eq .old.TipoEquipo "dry_van") }}selected{{ end }}>Dry Van</option>
-                                <option value="flatbed"     {{ if and .old (eq .old.TipoEquipo "flatbed") }}selected{{ end }}>Flatbed</option>
-                                <option value="reefer"      {{ if and .old (eq .old.TipoEquipo "reefer") }}selected{{ end }}>Reefer</option>
-                                <option value="step_deck"   {{ if and .old (eq .old.TipoEquipo "step_deck") }}selected{{ end }}>Step Deck</option>
-                                <option value="double_drop" {{ if and .old (eq .old.TipoEquipo "double_drop") }}selected{{ end }}>Double Drop</option>
-                                <option value="lowboy"      {{ if and .old (eq .old.TipoEquipo "lowboy") }}selected{{ end }}>Lowboy</option>
-                                <option value="cargo_van"   {{ if and .old (eq .old.TipoEquipo "cargo_van") }}selected{{ end }}>Cargo Van</option>
-                                <option value="box_truck"   {{ if and .old (eq .old.TipoEquipo "box_truck") }}selected{{ end }}>Box Truck</option>
-                                <option value="power_only"  {{ if and .old (eq .old.TipoEquipo "power_only") }}selected{{ end }}>Power Only</option>
-                            </select>
+                            <select class="form-select" id="tipo_equipo" name="tipo_equipo" required><option value="">Seleccionar…</option>{{ range equipmentChoices }}<option value="{{ .Value }}" {{ if and $.old (eq (printf "%s" $.old.TipoEquipo) .Value) }}selected{{ end }}>{{ .Label }}</option>{{ end }}</select>
                             {{ if .errors.tipo_equipo }}
                             <small class="tf-field-error">{{ .errors.tipo_equipo }}</small>
                             {{ end }}
@@ -546,3 +534,5 @@
     updateProgress();
 })();
 </script>
+
+<script src="/js/address-options.js" defer></script>

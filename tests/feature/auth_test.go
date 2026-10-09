@@ -2,6 +2,8 @@ package feature
 
 import (
 	"net/http"
+	"net/url"
+	"strings"
 	"testing"
 
 	"goravel/app/services"
@@ -38,7 +40,7 @@ func (s *AuthTestSuite) TestLogin_Success() {
 }
 
 func (s *AuthTestSuite) TestLogin_WrongPassword() {
-	seedUser(s.T(), "X", "x@test.com", "correct", "carrier")
+	seedUser(s.T(), "X", "x@test.com", "correctpassword", "carrier")
 
 	client := newClient()
 	resp := postForm(s.T(), client, "/login", map[string]string{
@@ -57,6 +59,18 @@ func (s *AuthTestSuite) TestRegister_Success() {
 		"password": "password123",
 	})
 	s.Equal(http.StatusOK, resp.StatusCode)
+	if body := readBody(s.T(), resp); !strings.Contains(body, "Confirma tu correo") {
+		s.T().Fatalf("registration should wait for email confirmation: %s", body)
+	}
+	if count := tests.CountUsers(s.T()); count != 0 {
+		s.T().Fatalf("user was persisted before email confirmation: %d", count)
+	}
+	confirmationURL, err := url.Parse(lastRegistrationConfirmationURL)
+	s.NoError(err)
+	token := confirmationURL.Query().Get("token")
+	s.NotEmpty(token)
+	confirmed := postForm(s.T(), client, "/register/confirm", map[string]string{"token": token})
+	s.Contains(readBody(s.T(), confirmed), "Correo confirmado")
 
 	// Login works for the new user
 	client2 := login(s.T(), "new@test.com", "password123")

@@ -8,6 +8,7 @@ import (
 	"goravel/app/services"
 	"log"
 	"math"
+	"strconv"
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/csrf"
@@ -51,19 +52,21 @@ func (c *DireccionController) authorized(ctx fiber.Ctx, d *models.Direccion) boo
 func (c *DireccionController) Index(ctx fiber.Ctx) error {
 	sess := session.FromContext(ctx)
 	userID, role := currentUser(ctx)
+	page, _ := strconv.Atoi(ctx.Query("page", "1"))
+	page, perPage := services.NormalizePagination(page, 100)
 	var list []models.Direccion
 	var err error
 	if role == "admin" {
-		list, err = c.service.GetAll()
+		list, err = c.service.GetAll(page, perPage)
 	} else {
-		list, err = c.service.GetOwnedByUserID(userID)
+		list, err = c.service.GetOwnedByUserID(userID, page, perPage)
 	}
 	if err != nil {
 		log.Printf("Error listando direcciones: %v", err)
 		return fiber.ErrInternalServerError
 	}
 	return ctx.Render("direcciones/index", fiber.Map{
-		"title":       "Direcciones",
+		"title": "Direcciones", "page": page, "nextPage": page + 1, "previousPage": page - 1, "hasNext": len(list) == perPage,
 		"direcciones": list,
 		"csrfToken":   csrf.TokenFromContext(ctx),
 		"role":        sess.Get("role"),
@@ -73,6 +76,9 @@ func (c *DireccionController) Index(ctx fiber.Ctx) error {
 func (c *DireccionController) Show(ctx fiber.Ctx) error {
 	sess := session.FromContext(ctx)
 	d, err := c.service.GetByID(ctx.Params("id"))
+	if services.IsInfrastructureError(err) {
+		return fiber.ErrServiceUnavailable
+	}
 	if err != nil {
 		return ctx.Status(fiber.StatusNotFound).Render("dashboard/404", fiber.Map{"title": "No encontrada", "role": sess.Get("role")}, "layouts/base")
 	}
@@ -154,6 +160,9 @@ func (c *DireccionController) Store(ctx fiber.Ctx) error {
 func (c *DireccionController) Edit(ctx fiber.Ctx) error {
 	sess := session.FromContext(ctx)
 	d, err := c.service.GetByID(ctx.Params("id"))
+	if services.IsInfrastructureError(err) {
+		return fiber.ErrServiceUnavailable
+	}
 	if err != nil || !c.authorized(ctx, d) {
 		return ctx.Status(fiber.StatusNotFound).Render("dashboard/404", fiber.Map{"title": "No encontrada", "role": sess.Get("role")}, "layouts/base")
 	}
@@ -163,6 +172,9 @@ func (c *DireccionController) Edit(ctx fiber.Ctx) error {
 func (c *DireccionController) Update(ctx fiber.Ctx) error {
 	id := ctx.Params("id")
 	d, err := c.service.GetByID(id)
+	if services.IsInfrastructureError(err) {
+		return fiber.ErrServiceUnavailable
+	}
 	if err != nil {
 		return fiber.ErrNotFound
 	}
@@ -191,6 +203,9 @@ func (c *DireccionController) Update(ctx fiber.Ctx) error {
 func (c *DireccionController) Delete(ctx fiber.Ctx) error {
 	id := ctx.Params("id")
 	d, err := c.service.GetByID(id)
+	if services.IsInfrastructureError(err) {
+		return fiber.ErrServiceUnavailable
+	}
 	if err != nil {
 		return fiber.ErrNotFound
 	}
@@ -206,12 +221,14 @@ func (c *DireccionController) Delete(ctx fiber.Ctx) error {
 // Helper expuesto para selects en formularios
 func (c *DireccionController) All(ctx fiber.Ctx) error {
 	userID, role := currentUser(ctx)
+	page, _ := strconv.Atoi(ctx.Query("page", "1"))
+	page, perPage := services.NormalizePagination(page, 100)
 	var list []models.Direccion
 	var err error
 	if role == "admin" {
-		list, err = c.service.GetAll()
+		list, err = c.service.GetAll(page, perPage)
 	} else {
-		list, err = c.service.GetOwnedByUserID(userID)
+		list, err = c.service.GetOwnedByUserID(userID, page, perPage)
 	}
 	if err != nil {
 		return fiber.ErrInternalServerError

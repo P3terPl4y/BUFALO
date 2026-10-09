@@ -8,19 +8,27 @@ Type=simple
 User=peter
 Group=peter
 WorkingDirectory=/home/peter/BUFALO
-EnvironmentFile=/home/peter/BUFALO/.env
+EnvironmentFile=/home/peter/BUFALO/.env.production
 Environment=APP_ENV=production
 Environment=APP_DEBUG=false
-Environment=APP_HOST=0.0.0.0
+Environment=APP_HOST=127.0.0.1
+Environment=DDOS_MODE=enforce
 Environment=APP_PORT=3000
 Environment=CSRF_TRUSTED_ORIGINS=https://bufalo.duohnson.com
-ExecStart=/home/peter/BUFALO/bin/bufalo
+ExecStart=/usr/bin/env APP_ENV=production APP_DEBUG=false /home/peter/BUFALO/bin/bufalo
 Restart=on-failure
 RestartSec=3
+TimeoutStopSec=35
 UMask=0077
 NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=full
+Environment=GOMEMLIMIT=128MiB
+Environment=GOMAXPROCS=2
+MemoryHigh=384M
+MemoryMax=512M
+TasksMax=128
+CPUQuota=150%
 
 [Install]
 WantedBy=multi-user.target

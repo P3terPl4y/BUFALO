@@ -1,7 +1,6 @@
 package services
 
 import (
-	"errors"
 	"goravel/app/facades"
 	"goravel/app/models"
 )
@@ -13,6 +12,7 @@ func NewEmpresaService() *EmpresaService {
 }
 
 func (s *EmpresaService) GetAllWithFilters(filters map[string]string, page, perPage int) ([]models.Empresa, int64, error) {
+	page, perPage = NormalizePagination(page, perPage)
 	query := facades.Orm().Query().
 		Model(&models.Empresa{}).
 		With("Direccion")
@@ -47,11 +47,10 @@ func (s *EmpresaService) GetByID(id string) (*models.Empresa, error) {
 	err := facades.Orm().Query().
 		With("Direccion").
 		With("Owner").
-		With("Choferes").
 		Where("id = ?", id).
 		First(&e)
-	if err != nil || e.ID == 0 {
-		return nil, errors.New("empresa not found")
+	if lookupErr := recordError(err, e.ID, "empresa"); lookupErr != nil {
+		return nil, lookupErr
 	}
 	return &e, nil
 }
@@ -61,6 +60,9 @@ func (s *EmpresaService) Create(e *models.Empresa) error {
 }
 
 func (s *EmpresaService) Update(id string, updates map[string]interface{}) error {
+	if err := ValidateCompanyUpdate(updates); err != nil {
+		return err
+	}
 	_, err := facades.Orm().Query().Model(&models.Empresa{}).Where("id = ?", id).Update(updates)
 	return err
 }
@@ -71,12 +73,16 @@ func (s *EmpresaService) Delete(id string) error {
 }
 
 // GetChoferes lista los choferes de la empresa con su User preload.
-func (s *EmpresaService) GetChoferes(empresaID string) ([]models.Chofer, error) {
+func (s *EmpresaService) GetChoferes(empresaID string, pages ...int) ([]models.Chofer, error) {
+	page := 1
+	if len(pages) > 0 {
+		page, _ = NormalizePagination(pages[0], 100)
+	}
 	var list []models.Chofer
 	err := facades.Orm().Query().
 		With("User").
 		Where("empresa_id = ?", empresaID).
-		Order("id asc").
+		Order("id asc").Limit(100).Offset((page - 1) * 100).
 		Find(&list)
 	return list, err
 }

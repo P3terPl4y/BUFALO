@@ -4,6 +4,7 @@
             <div class="tf-loads-header__icon"><i class="bi bi-geo-alt-fill"></i></div>
             <div><h1>Direcciones</h1><p>Puntos geográficos registrados</p></div>
         </div>
+        <a href="/direcciones/create" class="btn btn-primary"><i class="bi bi-plus-circle"></i> Crear dirección</a>
     </header>
 
     {{ if .flash_success }}<div class="alert alert-success tf-mb-4">{{ .flash_success }}</div>{{ end }}
@@ -52,3 +53,5 @@
         </div>
     </section>
 </div>
+
+<nav aria-label="Páginas de direcciones">{{ if gt .page 1 }}<a class="btn btn-secondary" href="?page={{ .previousPage }}">Anterior</a>{{ end }}{{ if .hasNext }}<a class="btn btn-secondary" href="?page={{ .nextPage }}">Siguiente</a>{{ end }}</nav>

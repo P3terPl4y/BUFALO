@@ -1,0 +1,58 @@
+name: Production candidate
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: peter
+          POSTGRES_PASSWORD: isolated-test-only
+          POSTGRES_DB: bufalo_ci_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+      redis:
+        image: redis:8-alpine
+        ports: ['6379:6379']
+    env:
+      APP_ENV: testing
+      APP_KEY: 0123456789abcdef0123456789abcdef
+      APP_URL: http://localhost
+      DB_CONNECTION: postgres
+      DB_HOST: 127.0.0.1
+      DB_PORT: '5432'
+      DB_DATABASE: bufalo_ci_test
+      DB_USERNAME: peter
+      DB_PASSWORD: isolated-test-only
+      DB_DSN: ''
+      REDIS_HOST: 127.0.0.1
+      REDIS_PORT: '6379'
+      REDIS_PASSWORD: ''
+      GOMAXPROCS: '2'
+      GOMEMLIMIT: 512MiB
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26.8'
+      - name: Format
+        run: test -z "$(gofmt -l app bootstrap config database routes tests main.go)"
+      - name: Static analysis
+        run: go vet -p 1 ./...
+      - name: Acceptance
+        run: go test -p 1 -count=1 ./...
+      - name: Race detection
+        run: go test -race -p 1 ./app/services ./tests/feature ./tests/redteam
+      - name: Optimized binary
+        run: CGO_ENABLED=0 go build -p 1 -trimpath -ldflags='-s -w' -o storage/release/bufalo .
+      - name: Dependencies
+        run: |
+          go install golang.org/x/vuln/cmd/govulncheck@v1.8.0
+          ! go list -deps ./... | grep -E '^golang.org/x/crypto/openpgp($|/)'
+          sudo systemd-run --scope -p MemoryMax=2G -p MemorySwapMax=0 -p CPUQuota=100% env GOMEMLIMIT=512MiB GOMAXPROCS=2 GOFLAGS=-p=1 timeout 15m "$(go env GOPATH)/bin/govulncheck" ./...
+      - name: Container build
+        run: docker build -t bufalo:candidate .

@@ -54,10 +54,18 @@ func (c *PublicadorController) Index(ctx fiber.Ctx) error {
 
 	page, _ := strconv.Atoi(ctx.Query("page", "1"))
 	perPage, _ := strconv.Atoi(ctx.Query("per_page", "10"))
+	page, perPage = services.NormalizePagination(page, perPage)
 
 	list, total, err := c.service.GetAllWithFilters(filters, page, perPage)
 	if err != nil {
 		log.Printf("Error listando publicadores: %v", err)
+		return fiber.ErrServiceUnavailable
+	}
+	for i := range list {
+		if role != "admin" && list[i].UserID != userID {
+			list[i].NumeroLicenciaBroker = "Privado"
+			list[i].FechaVencimientoLicencia = nil
+		}
 	}
 
 	return ctx.Render("publicadores/index", fiber.Map{
@@ -85,11 +93,20 @@ func (c *PublicadorController) Show(ctx fiber.Ctx) error {
 	}
 
 	pub, err := c.service.GetByID(uint(id))
+	if services.IsInfrastructureError(err) {
+		return fiber.ErrServiceUnavailable
+	}
 	if err != nil {
-		return ctx.Render("dashboard/404", fiber.Map{
+		return ctx.Status(fiber.StatusNotFound).Render("dashboard/404", fiber.Map{
 			"title": "Publicador no encontrado",
 			"role":  sess.Get("role"),
 		}, "layouts/base")
+	}
+
+	viewerID, viewerRole := currentUser(ctx)
+	if viewerRole != "admin" && pub.UserID != viewerID {
+		pub.NumeroLicenciaBroker = "Privado"
+		pub.FechaVencimientoLicencia = nil
 	}
 
 	return ctx.Render("publicadores/show", fiber.Map{
@@ -118,6 +135,9 @@ func (c *PublicadorController) Edit(ctx fiber.Ctx) error {
 
 	// 1. Cargar PRIMERO
 	pub, err := c.service.GetByID(uint(id))
+	if services.IsInfrastructureError(err) {
+		return fiber.ErrServiceUnavailable
+	}
 	if err != nil {
 		return ctx.Redirect().To("/publicadores?flash_error=Publicador no encontrado")
 	}
@@ -151,6 +171,9 @@ func (c *PublicadorController) Update(ctx fiber.Ctx) error {
 
 	// 1. Cargar
 	existing, err := c.service.GetByID(uint(id))
+	if services.IsInfrastructureError(err) {
+		return fiber.ErrServiceUnavailable
+	}
 	if err != nil {
 		return ctx.Redirect().To("/publicadores?flash_error=Publicador no encontrado")
 	}
@@ -195,6 +218,13 @@ func (c *PublicadorController) Update(ctx fiber.Ctx) error {
 		}, "layouts/base")
 	}
 
+	for _, date := range []string{req.FechaVencimientoLicencia} {
+		if date != "" {
+			if _, err := time.Parse("2006-01-02", date); err != nil {
+				return fiber.ErrBadRequest
+			}
+		}
+	}
 	parseDate := func(s string) *time.Time {
 		if s == "" {
 			return nil
@@ -238,6 +268,9 @@ func (c *PublicadorController) Delete(ctx fiber.Ctx) error {
 	}
 
 	pub, err := c.service.GetByID(uint(id))
+	if services.IsInfrastructureError(err) {
+		return fiber.ErrServiceUnavailable
+	}
 	if err != nil {
 		return ctx.Redirect().To("/publicadores?flash_error=Publicador no encontrado")
 	}
