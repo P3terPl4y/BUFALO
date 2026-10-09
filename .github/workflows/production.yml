@@ -29,6 +29,8 @@ jobs:
       DB_USERNAME: peter
       DB_PASSWORD: isolated-test-only
       DB_DSN: ''
+      MAIL_HOST: ''
+      MAIL_PORT: '0'
       REDIS_HOST: 127.0.0.1
       REDIS_PORT: '6379'
       REDIS_PASSWORD: ''

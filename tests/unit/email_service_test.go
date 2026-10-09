@@ -2,6 +2,7 @@ package unit
 
 import (
 	"goravel/app/services"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
@@ -21,14 +22,15 @@ func TestEmailServiceTestSuite(t *testing.T) {
 	})
 }
 
-// Este test usa "log" como driver de mail para no enviar correos reales.
-// Configura MAIL_MAILER=log en .env.testing
-func (s *EmailServiceTestSuite) TestSend_DoesNotPanic() {
+// La suite unitaria no debe depender de SMTP ni enviar correo externo.
+// La entrega real se cubre con un servidor SMTP local en app/maildelivery.
+func (s *EmailServiceTestSuite) TestSend_FailsClosedWithoutSMTPConfiguration() {
 	err := s.service.Send(
 		"no-reply@truckfast.com",
 		"test@example.com",
 		"Test Subject",
 		"<p>Hola</p>",
 	)
-	s.NoError(err)
+	s.Error(err)
+	s.True(strings.Contains(err.Error(), "SMTP is not configured"), "unexpected error: %v", err)
 }

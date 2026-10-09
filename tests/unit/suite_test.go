@@ -13,6 +13,9 @@ import (
 func TestMain(m *testing.M) {
 	os.Setenv("APP_ENV", "testing")
 	os.Setenv("MAIL_MAILER", "log")
+	// Unit tests must never inherit a developer's or production SMTP endpoint.
+	// Email delivery is covered independently by app/maildelivery's local SMTP tests.
+	os.Setenv("MAIL_HOST", "")
 	os.Setenv("SESSION_DRIVER", "memory")
 
 	app := bootstrap.Boot()
