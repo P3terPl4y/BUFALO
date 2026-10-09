@@ -1,4 +1,4 @@
-<div class="tf-loads-page">
+<div class="tf-loads-page" data-entity-view data-view-key="admin-companies">
     <header class="tf-loads-header">
         <div class="tf-loads-header__left">
             <div class="tf-loads-header__icon"><i class="bi bi-building"></i></div>
@@ -7,7 +7,7 @@
                 <p>Brokers, carriers, shippers, factorings</p>
             </div>
         </div>
-        <a href="/empresas/create" class="btn btn-primary"><i class="bi bi-plus-circle"></i> Crear empresa</a>
+        <div data-view-toolbar></div><a href="/empresas/create" class="btn btn-primary"><i class="bi bi-plus-circle"></i> Crear empresa</a>
     </header>
 
     {{ if .flash_success }}<div class="alert alert-success tf-mb-4">{{ .flash_success }}</div>{{ end }}
@@ -51,10 +51,16 @@
         </div>
     </section>
 
-    <section class="tf-table-card">
+    <section class="tf-table-card" data-view-cards>
+        <header class="tf-table-card__header"><h2 class="tf-table-card__title">Empresas</h2><div data-view-toolbar></div><span class="tf-table-card__count">{{ .total }}</span></header>
+        <div class="entity-card-grid">{{ range .empresas }}<article class="entity-card entity-company-card"><div class="entity-card__identity"><div class="entity-card__avatar">{{ if and .Owner .Owner.ProfilePhoto }}<img src="{{ .Owner.ProfilePhoto }}" alt="Foto de {{ .Owner.Name }}" loading="lazy">{{ else }}<i class="bi bi-building"></i>{{ end }}</div><div><h3>{{ .NombreLegal }}</h3><p>{{ if .Owner }}Propietario: {{ .Owner.Name }}{{ else }}{{ .Tipo }}{{ end }}</p></div></div><div class="entity-card__badges"><span class="badge bg-primary">{{ .Tipo }}</span><span class="badge {{ if eq .Estado "activo" }}bg-success{{ else if eq .Estado "suspendido" }}bg-danger{{ else }}bg-secondary{{ end }}">{{ .Estado }}</span></div><dl class="entity-card__details"><div><dt>Ubicación</dt><dd>{{ if .Direccion }}{{ .Direccion.Ciudad }}, {{ .Direccion.EstadoProvincia }}{{ else }}—{{ end }}</dd></div></dl><div class="entity-card__actions"><a href="/empresas/{{ .ID }}" class="btn btn-outline-primary"><i class="bi bi-eye"></i> Ver</a><a href="/admin/empresas/{{ .ID }}/edit" class="btn btn-outline-secondary"><i class="bi bi-pencil"></i> Editar</a><form action="/admin/empresas/{{ .ID }}/delete" method="POST"><input type="hidden" name="_csrf" value="{{ $.csrfToken }}"><button class="btn btn-outline-danger">Eliminar</button></form></div></article>{{ else }}<div class="tf-empty"><i class="bi bi-building"></i><h4>No hay empresas</h4></div>{{ end }}</div>
+    </section>
+
+    <section class="tf-table-card" data-view-table hidden>
         <header class="tf-table-card__header">
             <h3 class="tf-table-card__title"><i class="bi bi-list-ul"></i> Resultados</h3>
             <span class="tf-table-card__count">{{ .total }} empresas</span>
+            <div data-view-toolbar></div>
         </header>
 
         <div class="table-responsive">
@@ -109,3 +115,4 @@
         </div>
     </section>
 </div>
+<script src="/js/entity-view-toggle.js" defer></script>

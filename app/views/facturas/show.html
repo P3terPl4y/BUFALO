@@ -13,6 +13,23 @@
     {{ if .flash_success }}<div class="alert alert-success" role="status">{{ .flash_success }}</div>{{ end }}
     {{ if .flash_error }}<div class="alert alert-danger" role="alert">{{ .flash_error }}</div>{{ end }}
 
+    {{ if .invoicePresentationJSON }}
+    <section class="tf-table-card bf-invoice-presentation-wrap" aria-label="Factura con el diseño seleccionado">
+        <header class="tf-table-card__header"><h2 class="tf-table-card__title"><i class="bi bi-file-earmark-richtext"></i> Formato que ve el chofer</h2><button class="btn btn-outline-primary" type="button" id="invoicePresentationPrint"><i class="bi bi-printer"></i> Imprimir / PDF</button></header>
+        <article class="bf-invoice-paper" id="invoicePresentation" data-invoice="{{ .invoicePresentationJSON }}"></article>
+    </section>
+    <script src="/js/invoice-document.js" defer></script>
+    {{ end }}
+
+    {{ if .canChooseTemplate }}
+    <form method="post" action="/facturas/{{ .factura.ID }}/plantilla" class="bf-invoice-template-select">
+        <input type="hidden" name="_csrf" value="{{ .csrfToken }}">
+        <label>Diseño de esta factura<select name="plantilla_id"><option value="0">Sin diseño personalizado</option>{{ range .plantillas }}<option value="{{ .ID }}" {{ if and $.factura.PlantillaID (eq (deref $.factura.PlantillaID) .ID) }}selected{{ end }}>{{ .Nombre }}{{ if .Predeterminada }} · predeterminado{{ end }}</option>{{ end }}</select></label>
+        <button class="btn btn-outline-primary" type="submit">Cambiar diseño visible al chofer</button>
+        <a class="btn btn-outline-secondary" href="/facturas/disenador">Administrar mis diseños</a>
+    </form>
+    {{ end }}
+
     <section class="tf-profile__hero" aria-label="Resumen de factura">
         <div class="tf-profile__identity">
             <span class="text-muted">Estado actual</span>

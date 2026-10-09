@@ -2,6 +2,7 @@ package services
 
 import (
 	"errors"
+	"github.com/goravel/framework/contracts/database/orm"
 	"goravel/app/facades"
 	"goravel/app/models"
 	"strconv"
@@ -145,30 +146,49 @@ func (s *CargaService) Delete(id string) error {
 // ─────────────────────────────────────────────────────────────
 // Aceptar carga — el chofer la toma
 // ─────────────────────────────────────────────────────────────
-func (s *CargaService) AcceptLoadService(id string, choferID uint) error {
-	result, err := facades.Orm().Query().
-		Model(&models.Carga{}).
-		Where("id = ?", id).
-		Where("estado = ?", "publicada").
-		Where("chofer_id IS NULL").
-		Where("(audiencia = ? OR (audiencia = ? AND EXISTS (SELECT 1 FROM red_choferes WHERE red_choferes.empresa_id = cargas.empresa_id AND red_choferes.chofer_id = ?)))", models.AudienciaLoadBoard, models.AudienciaRedPrivada, choferID).
-		Update(map[string]interface{}{
-			"chofer_id": choferID,
-			"estado":    "asignada",
-		})
+func (s *CargaService) AcceptLoadService(id string, choferID uint, actorUserID ...uint) error {
+	loadID, err := strconv.ParseUint(id, 10, 32)
+	if err != nil {
+		return errors.New("carga inválida")
+	}
+	tx, err := facades.Orm().Query().BeginTransaction()
 	if err != nil {
 		return err
 	}
-	if result.RowsAffected == 0 {
+	defer tx.Rollback()
+	var load models.Carga
+	err = tx.Where("id = ?", loadID).LockForUpdate().First(&load)
+	if err := recordError(err, load.ID, "carga"); err != nil {
+		return err
+	}
+	if load.Estado != models.CargaPublicada || load.ChoferID != nil {
 		return errors.New("carga no está publicada o ya fue asignada")
 	}
-	return nil
+	if load.Audiencia == models.AudienciaRedPrivada {
+		member, err := tx.Model(&models.RedChofer{}).Where("empresa_id = ? AND chofer_id = ?", load.EmpresaID, choferID).Exists()
+		if err != nil {
+			return err
+		}
+		if !member {
+			return errors.New("chofer fuera de la red privada")
+		}
+	}
+	if _, err := tx.Model(&models.Carga{}).Where("id = ?", load.ID).Update(map[string]interface{}{"chofer_id": choferID, "estado": models.CargaAsignada}); err != nil {
+		return err
+	}
+	if err := recordLoadActivity(tx, load.ID, models.CargaAsignada, "Carga aceptada por el chofer", firstActor(actorUserID)); err != nil {
+		return err
+	}
+	if err := notifyLoadAssigned(tx, load, choferID, firstActor(actorUserID)); err != nil {
+		return err
+	}
+	return tx.Commit()
 }
 
 // ─────────────────────────────────────────────────────────────
 // Asignar chofer — el publicador lo hace explícitamente
 // ─────────────────────────────────────────────────────────────
-func (s *CargaService) AssignChofer(cargaID string, choferID uint) error {
+func (s *CargaService) AssignChofer(cargaID string, choferID uint, actorUserID ...uint) error {
 	if choferID == 0 {
 		return errors.New("chofer inválido")
 	}
@@ -179,55 +199,121 @@ func (s *CargaService) AssignChofer(cargaID string, choferID uint) error {
 	if chofer.Estado != models.ChoferDisponible {
 		return errors.New("chofer no disponible")
 	}
-	result, err := facades.Orm().Query().
-		Model(&models.Carga{}).
-		Where("id = ?", cargaID).
-		Where("estado = ?", models.CargaPublicada).
-		Where("chofer_id IS NULL").
-		Update(map[string]interface{}{"chofer_id": choferID, "estado": models.CargaAsignada})
+	loadID, err := strconv.ParseUint(cargaID, 10, 32)
+	if err != nil {
+		return errors.New("carga inválida")
+	}
+	tx, err := facades.Orm().Query().BeginTransaction()
 	if err != nil {
 		return err
 	}
-	if result.RowsAffected == 0 {
+	defer tx.Rollback()
+	var load models.Carga
+	err = tx.Where("id = ?", loadID).LockForUpdate().First(&load)
+	if err := recordError(err, load.ID, "carga"); err != nil {
+		return err
+	}
+	if load.Estado != models.CargaPublicada || load.ChoferID != nil {
 		return errors.New("carga no está publicada o ya fue asignada")
 	}
-	return nil
+	if _, err := tx.Model(&models.Carga{}).Where("id = ?", load.ID).Update(map[string]interface{}{"chofer_id": choferID, "estado": models.CargaAsignada}); err != nil {
+		return err
+	}
+	if err := recordLoadActivity(tx, load.ID, models.CargaAsignada, "Chofer asignado por el publicador", firstActor(actorUserID)); err != nil {
+		return err
+	}
+	if err := notifyLoadAssigned(tx, load, choferID, firstActor(actorUserID)); err != nil {
+		return err
+	}
+	return tx.Commit()
+}
+
+func notifyLoadAssigned(tx orm.Query, load models.Carga, choferID, actorUserID uint) error {
+	var driver models.Chofer
+	if err := tx.Where("id = ?", choferID).First(&driver); err != nil {
+		return err
+	}
+	if driver.ID == 0 {
+		return ErrNotFound
+	}
+	var publisher models.Publicador
+	if err := tx.Where("id = ?", load.PublicadorID).First(&publisher); err != nil {
+		return err
+	}
+	if actorUserID == 0 {
+		actorUserID = publisher.UserID
+	}
+	if err := CreateUserNotification(tx, driver.UserID, "load_assigned", "Carga asignada", "Se te asignó la carga "+load.NumeroReferencia+".", "load", load.ID, true, actorUserID); err != nil {
+		return err
+	}
+	return CreateUserNotification(tx, publisher.UserID, "load_assigned", "Chofer asignado", "Un chofer aceptó o recibió la carga "+load.NumeroReferencia+".", "load", load.ID, false, driver.UserID)
 }
 
 // StartTransit moves a load to transit only when it is still assigned to this driver.
-func (s *CargaService) StartTransit(cargaID string, choferID uint) error {
+func (s *CargaService) StartTransit(cargaID string, choferID uint, actorUserID ...uint) error {
 	if choferID == 0 {
 		return errors.New("chofer inválido")
 	}
-	result, err := facades.Orm().Query().Model(&models.Carga{}).
-		Where("id = ?", cargaID).
-		Where("chofer_id = ?", choferID).
-		Where("estado = ?", models.CargaAsignada).
-		Update("estado", models.CargaEnTransito)
-	if err != nil {
-		return err
-	}
-	if result.RowsAffected != 1 {
-		return errors.New("carga no asignada a este chofer o transición inválida")
-	}
-	return nil
+	return s.transitionForDriver(cargaID, choferID, models.CargaAsignada, models.CargaEnTransito, "Chofer confirmó el inicio del tránsito", nil, firstActor(actorUserID))
 }
 
 // MarkDelivered completes a load only when the assigned driver has started transit.
-func (s *CargaService) MarkDelivered(cargaID string, choferID uint) error {
+func (s *CargaService) MarkDelivered(cargaID string, choferID uint, actorUserID ...uint) error {
 	if choferID == 0 {
 		return errors.New("chofer inválido")
 	}
-	result, err := facades.Orm().Query().Model(&models.Carga{}).
-		Where("id = ?", cargaID).
-		Where("chofer_id = ?", choferID).
-		Where("estado = ?", models.CargaEnTransito).
-		Update(map[string]interface{}{"estado": models.CargaEntregada, "fecha_entrega": time.Now().UTC()})
+	now := time.Now().UTC()
+	return s.transitionForDriver(cargaID, choferID, models.CargaEnTransito, models.CargaEntregada, "Chofer confirmó la entrega", &now, firstActor(actorUserID))
+}
+
+func firstActor(ids []uint) uint {
+	if len(ids) > 0 {
+		return ids[0]
+	}
+	return 0
+}
+
+func (s *CargaService) transitionForDriver(cargaID string, choferID uint, from, to models.EstadoCarga, message string, deliveredAt *time.Time, actorUserID uint) error {
+	loadID, err := strconv.ParseUint(cargaID, 10, 32)
+	if err != nil {
+		return errors.New("carga inválida")
+	}
+	tx, err := facades.Orm().Query().BeginTransaction()
 	if err != nil {
 		return err
 	}
-	if result.RowsAffected != 1 {
+	defer tx.Rollback()
+	var load models.Carga
+	err = tx.Where("id = ?", loadID).LockForUpdate().First(&load)
+	if err := recordError(err, load.ID, "carga"); err != nil {
+		return err
+	}
+	if load.ChoferID == nil || *load.ChoferID != choferID || load.Estado != from {
 		return errors.New("carga no asignada a este chofer o transición inválida")
 	}
-	return nil
+	updates := map[string]interface{}{"estado": to}
+	if deliveredAt != nil {
+		updates["fecha_entrega"] = *deliveredAt
+	}
+	if _, err := tx.Model(&models.Carga{}).Where("id = ?", load.ID).Update(updates); err != nil {
+		return err
+	}
+	if err := recordLoadActivity(tx, load.ID, to, message, actorUserID); err != nil {
+		return err
+	}
+	var publisher models.Publicador
+	if err := tx.Where("id = ?", load.PublicadorID).First(&publisher); err != nil {
+		return err
+	}
+	if actorUserID == 0 {
+		var driver models.Chofer
+		if err := tx.Where("id = ?", choferID).First(&driver); err != nil {
+			return err
+		}
+		actorUserID = driver.UserID
+	}
+	if err := CreateUserNotification(tx, publisher.UserID, "load_status", "Cambio de estado de carga", "La carga "+load.NumeroReferencia+" cambió a estado: "+string(to)+".", "load", load.ID, false, actorUserID); err != nil {
+		return err
+	}
+	return tx.Commit()
 }

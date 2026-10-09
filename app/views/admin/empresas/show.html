@@ -1,3 +1,4 @@
+<div data-entity-view data-view-key="admin-company-{{ .empresa.ID }}-members">
 <div class="tf-page-header">
     <div>
         <h1>
@@ -219,27 +220,18 @@
     {{ end }}
 
     <!-- CHOFERES (solo carriers) -->
-    {{ if and (eq (printf "%v" .empresa.Tipo) "carrier") .choferes }}
+    {{ if .members }}
     <section class="tf-info-block" data-block="choferes">
         <header class="tf-info-block__head">
             <i class="bi bi-person-badge tf-info-block__icon"></i>
             <div class="tf-info-block__text">
-                <h2>Choferes</h2>
-                <p>{{ len .choferes }} conductores registrados</p>
+                <h2>Usuarios de la empresa</h2>
+                <p>{{ len .members }} usuarios vinculados en esta página</p>
             </div>
+            <div data-view-toolbar></div>
         </header>
-        <div class="tf-info-block__body">
-            <ul class="tf-chip-list">
-                {{ range .choferes }}
-                <li>
-                    <a href="/choferes/{{ .ID }}" class="tf-chip">
-                        <i class="bi bi-person-fill"></i>
-                        {{ if .User }}{{ .User.Name }}{{ else }}Chofer #{{ .ID }}{{ end }}
-                    </a>
-                </li>
-                {{ end }}
-            </ul>
-        </div>
+        <div class="tf-info-block__body" data-view-cards><div data-view-toolbar></div><div class="entity-card-grid">{{ range .members }}<article class="entity-card entity-member-card"><div class="entity-card__identity"><div class="entity-card__avatar">{{ if .ProfilePhoto }}<img src="{{ .ProfilePhoto }}" alt="Foto de {{ .Name }}" loading="lazy">{{ else }}<i class="bi bi-person-fill"></i>{{ end }}</div><div><h3>{{ .Name }}</h3><p>{{ if eq .Role "publicador" }}Broker{{ else if eq .Role "chofer" }}Chofer{{ else if eq .Role "admin" }}Administrador{{ else }}Usuario{{ end }}</p></div></div><div class="entity-card__badges">{{ if .IsActive }}<span class="badge bg-success">Activo</span>{{ else }}<span class="badge bg-secondary">Inactivo</span>{{ end }}</div><div class="entity-card__actions">{{ if .Chofer }}<a href="/choferes/{{ .Chofer.ID }}" class="btn btn-outline-primary">Ver perfil</a>{{ else if .Publicador }}<a href="/publicadores/{{ .Publicador.ID }}" class="btn btn-outline-primary">Ver perfil</a>{{ end }}</div></article>{{ else }}<div class="tf-empty">No hay usuarios vinculados.</div>{{ end }}</div></div>
+        <div class="tf-info-block__body" data-view-table hidden><div data-view-toolbar></div><div class="table-responsive"><table class="tf-table"><thead><tr><th>Usuario</th><th>Rol</th><th>Estado</th><th>Perfil</th></tr></thead><tbody>{{ range .members }}<tr><td>{{ .Name }}</td><td>{{ .Role }}</td><td>{{ if .IsActive }}Activo{{ else }}Inactivo{{ end }}</td><td>{{ if .Chofer }}<a href="/choferes/{{ .Chofer.ID }}">Ver perfil</a>{{ else if .Publicador }}<a href="/publicadores/{{ .Publicador.ID }}">Ver perfil</a>{{ else }}—{{ end }}</td></tr>{{ else }}<tr><td colspan="4">No hay usuarios vinculados.</td></tr>{{ end }}</tbody></table></div></div>
     </section>
     {{ end }}
 
@@ -263,3 +255,5 @@
     </a>
     {{ end }}
 </footer>
+ </div>
+<script src="/js/entity-view-toggle.js" defer></script>

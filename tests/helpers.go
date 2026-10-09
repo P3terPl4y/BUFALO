@@ -20,6 +20,9 @@ func ResetDB(t *testing.T) {
 	}
 	_, err := facades.Orm().Query().Exec(`
 		TRUNCATE TABLE
+			notification_email_outbox,
+			user_notifications,
+			empresa_chat_mensajes,
 			company_membership_requests,
 notification_outbox,
 			load_interests,

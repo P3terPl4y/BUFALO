@@ -10,13 +10,32 @@
     {{ if .flash_success }}<div class="alert alert-success tf-mb-4">{{ .flash_success }}</div>{{ end }}
     {{ if .flash_error }}<div class="alert alert-danger tf-mb-4">{{ .flash_error }}</div>{{ end }}
 
-    <section class="tf-table-card">
+    <section class="tf-table-card" data-entity-view data-view-key="admin-loads">
         <header class="tf-table-card__header">
             <h3 class="tf-table-card__title"><i class="bi bi-list-ul"></i> Resultados</h3>
             <span class="tf-table-card__count">{{ .total }} cargas</span>
+            <div data-view-toolbar></div>
         </header>
 
-        <div class="table-responsive">
+        <div data-view-cards><div class="entity-card-grid">
+            {{ range .loads }}
+            <article class="entity-card">
+                <div class="entity-card__identity"><div class="entity-card__avatar">
+                    {{ if and .Publicador .Publicador.User .Publicador.User.ProfilePhoto }}<img src="{{ .Publicador.User.ProfilePhoto }}" alt="Foto de {{ .Publicador.User.Name }}" loading="lazy">{{ else }}<i class="bi bi-box-seam"></i>{{ end }}
+                </div><div><h3>{{ .NumeroReferencia }}</h3><p>Carga #{{ .ID }}</p></div></div>
+                <div class="entity-card__badges">{{ if eq .Estado "publicada" }}<span class="badge bg-success">Publicada</span>{{ end }}{{ if eq .Estado "asignada" }}<span class="badge bg-warning">Asignada</span>{{ end }}{{ if eq .Estado "en_transito" }}<span class="badge bg-info">En tránsito</span>{{ end }}{{ if eq .Estado "entregada" }}<span class="badge bg-primary">Entregada</span>{{ end }}{{ if eq .Estado "cancelada" }}<span class="badge bg-danger">Cancelada</span>{{ end }}</div>
+                <dl class="entity-card__details">
+                    <div><dt>Publicador</dt><dd>{{ if and .Publicador .Publicador.User }}<span class="entity-table-user">{{ if .Publicador.User.ProfilePhoto }}<img src="{{ .Publicador.User.ProfilePhoto }}" alt="" loading="lazy">{{ end }}{{ .Publicador.User.Name }}</span>{{ else }}—{{ end }}</dd></div>
+                    <div><dt>Chofer</dt><dd>{{ if and .Chofer .Chofer.User }}<span class="entity-table-user">{{ if .Chofer.User.ProfilePhoto }}<img src="{{ .Chofer.User.ProfilePhoto }}" alt="" loading="lazy">{{ end }}{{ .Chofer.User.Name }}</span>{{ else }}—{{ end }}</dd></div>
+                    <div><dt>Ruta</dt><dd>{{ if .OrigenDireccion }}{{ .OrigenDireccion.Ciudad }}{{ else }}—{{ end }} → {{ if .DestinoDireccion }}{{ .DestinoDireccion.Ciudad }}{{ else }}—{{ end }}</dd></div>
+                    <div><dt>Tarifa</dt><dd>{{ if .TarifaTotal }}{{ .TarifaTotal }} {{ .Moneda }}{{ else }}—{{ end }}</dd></div>
+                </dl>
+                <div class="entity-card__actions"><a href="/admin/cargas/{{ .ID }}" class="btn btn-outline-primary"><i class="bi bi-eye"></i> Ver</a><form action="/admin/cargas/{{ .ID }}/delete" method="POST" onsubmit="return confirm('¿Eliminar esta carga?')"><input type="hidden" name="_csrf" value="{{ $.csrfToken }}"><button type="submit" class="btn btn-outline-danger"><i class="bi bi-trash"></i> Eliminar</button></form></div>
+            </article>
+            {{ else }}<div class="tf-empty"><div class="tf-empty__icon"><i class="bi bi-box-seam"></i></div><h4>No hay cargas</h4></div>{{ end }}
+        </div></div>
+
+        <div data-view-table hidden><div class="table-responsive">
             <table class="tf-table">
                 <thead>
                     <tr>
@@ -60,6 +79,7 @@
                     {{ end }}
                 </tbody>
             </table>
-        </div>
+        </div></div>
     </section>
 </div>
+<script src="/js/entity-view-toggle.js" defer></script>

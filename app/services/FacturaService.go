@@ -31,7 +31,8 @@ func (s *FacturaService) GetAllWithFilters(filters map[string]string, page, perP
 		With("Emisor").
 		With("Receptor").
 		With("Publicador.User").
-		With("Chofer.User")
+		With("Chofer.User").
+		With("Plantilla")
 
 	if estado := filters["estado"]; estado != "" {
 		query = query.Where("estado = ?", estado)
@@ -78,6 +79,7 @@ func (s *FacturaService) GetByID(id string) (*models.Factura, error) {
 		With("Receptor").
 		With("Publicador.User").
 		With("Chofer.User").
+		With("Plantilla").
 		Where("id = ?", id).
 		First(&f)
 	if lookupErr := recordError(err, f.ID, "factura"); lookupErr != nil {
@@ -119,6 +121,16 @@ func (s *FacturaService) Create(f *models.Factura) error {
 	publicadorID, choferID := carga.PublicadorID, carga.ChoferID
 	f.PublicadorID = &publicadorID
 	f.ChoferID = choferID
+	if f.PlantillaID != nil {
+		if _, err := NewFacturaPlantillaService().GetOwned(publicadorID, *f.PlantillaID); err != nil {
+			return errors.New("la plantilla seleccionada no pertenece al broker de la carga")
+		}
+	} else {
+		var defaultTemplate models.FacturaPlantilla
+		if err := facades.Orm().Query().Where("publicador_id = ? AND predeterminada = ?", publicadorID, true).First(&defaultTemplate); err == nil && defaultTemplate.ID != 0 {
+			f.PlantillaID = &defaultTemplate.ID
+		}
+	}
 	emisorID := carga.EmpresaID
 	if emisorID > 0 {
 		f.EmisorID = &emisorID
@@ -134,6 +146,29 @@ func (s *FacturaService) Create(f *models.Factura) error {
 	f.FechaPago = nil
 	f.MetodoPago = nil
 	return facades.Orm().Query().Create(f)
+}
+
+// SetTemplate changes only the document presentation; it never mutates invoice amounts or status.
+func (s *FacturaService) SetTemplate(id string, publicadorID uint, templateID *uint) error {
+	f, err := s.GetByID(id)
+	if err != nil {
+		return err
+	}
+	if publicadorID == 0 || f.PublicadorID == nil || *f.PublicadorID != publicadorID || f.Estado == models.FacturaCancelada {
+		return errors.New("no se puede cambiar la plantilla de esta factura")
+	}
+	var selected any
+	if templateID != nil && *templateID > 0 {
+		if _, err := NewFacturaPlantillaService().GetOwned(publicadorID, *templateID); err != nil {
+			return errors.New("la plantilla seleccionada no pertenece al broker de la factura")
+		}
+		selected = *templateID
+	}
+	result, err := facades.Orm().Query().Model(&models.Factura{}).Where("id = ? AND publicador_id = ? AND estado <> ?", id, publicadorID, models.FacturaCancelada).Update("plantilla_id", selected)
+	if err == nil && result.RowsAffected != 1 {
+		return errors.New("la factura cambió concurrentemente")
+	}
+	return err
 }
 
 func (s *FacturaService) Update(id string, updates map[string]interface{}) error {

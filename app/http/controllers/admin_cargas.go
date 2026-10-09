@@ -77,6 +77,11 @@ func (c *AdminController) CargasShow(ctx fiber.Ctx) error {
 	if err != nil {
 		return ctx.Redirect().To("/admin/cargas?flash_error=Carga no encontrada")
 	}
+	activity, activityErr := services.LoadActivity(carga.ID)
+	if activityErr != nil {
+		log.Printf("No se pudo cargar cronología carga_id=%d", carga.ID)
+		return fiber.ErrServiceUnavailable
+	}
 
 	hasMap := carga.OrigenDireccion != nil && carga.DestinoDireccion != nil &&
 		carga.OrigenDireccion.Latitud != nil && carga.OrigenDireccion.Longitud != nil &&
@@ -85,6 +90,7 @@ func (c *AdminController) CargasShow(ctx fiber.Ctx) error {
 	return ctx.Render("admin/cargas/show", fiber.Map{
 		"title":     "Detalle de Carga",
 		"load":      carga,
+		"activity":  activity,
 		"hasMap":    hasMap,
 		"csrfToken": csrf.TokenFromContext(ctx),
 		"role":      ctx.Locals("role"),

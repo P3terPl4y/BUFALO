@@ -1,0 +1,53 @@
+<main class="company-chat-page" data-company-chat-root
+      data-messages-url="/empresas/{{ .empresa.ID }}/chat/messages"
+      data-company-id="{{ .empresa.ID }}" data-user-id="{{ .userID }}"
+      data-moderator="{{ .moderator }}" data-csrf="{{ .csrfToken }}">
+    <header class="tf-page-header">
+        <div>
+            <p class="company-chat-eyebrow"><i class="bi bi-building"></i> {{ .empresa.NombreLegal }}</p>
+            <h1><i class="bi bi-chat-dots"></i> Chat de la empresa</h1>
+            <p>Conversación privada para los miembros de esta empresa.</p>
+        </div>
+        <div class="tf-page-header__actions">
+            <a href="/empresas/{{ .empresa.ID }}" class="btn btn-secondary"><i class="bi bi-arrow-left"></i> Empresa</a>
+            {{ if .moderator }}<span class="company-chat-moderator"><i class="bi bi-shield-check"></i> Moderador</span>{{ end }}
+        </div>
+    </header>
+
+    {{ if .flash_success }}<div class="alert alert-success" role="status">{{ .flash_success }}</div>{{ end }}
+    {{ if .flash_error }}<div class="alert alert-danger" role="alert">{{ .flash_error }}</div>{{ end }}
+
+    <section class="company-chat-panel" aria-label="Mensajes de la empresa">
+        <div class="company-chat-panel__header">
+            <div><strong>Mensajes</strong><span>Consulta mensajes nuevos cada 30 segundos</span></div>
+            <span class="company-chat-live"><i></i> Privado</span>
+        </div>
+        <ol class="company-chat-messages" data-chat-messages aria-live="polite" aria-relevant="additions text">
+            {{ range .messages }}
+            <li class="company-chat-message{{ if eq .UserID $.userID }} company-chat-message--mine{{ end }}{{ if .Moderated }} company-chat-message--moderated{{ end }}" data-message-id="{{ .ID }}">
+                <div class="company-chat-message__meta">
+                    {{ if .UserPhoto }}<img class="company-chat-message__avatar" src="{{ .UserPhoto }}" alt="" loading="lazy">{{ else }}<span class="company-chat-message__avatar company-chat-message__avatar--fallback" aria-hidden="true"><i class="bi bi-person-fill"></i></span>{{ end }}
+                    {{ if .ProfileURL }}<a href="{{ .ProfileURL }}">{{ .UserName }}</a>{{ else }}<strong>{{ .UserName }}</strong>{{ end }}
+                    <time datetime="{{ .CreatedAt.Format "2006-01-02T15:04:05Z07:00" }}">{{ .CreatedAt.Format "02/01/2006 15:04" }}</time>
+                </div>
+                <p>{{ .Message }}</p>
+                {{ if and $.moderator (not .Moderated) }}
+                <form action="/empresas/{{ $.empresa.ID }}/chat/messages/{{ .ID }}/moderate" method="POST" onsubmit="return confirm('¿Retirar este mensaje del chat?')">
+                    <input type="hidden" name="_csrf" value="{{ $.csrfToken }}">
+                    <button type="submit" class="company-chat-message__moderate"><i class="bi bi-trash3"></i> Moderar</button>
+                </form>
+                {{ end }}
+            </li>
+            {{ else }}
+            <li class="company-chat-empty" data-chat-empty><i class="bi bi-chat-square-text"></i><span>Aún no hay mensajes. Inicia la conversación.</span></li>
+            {{ end }}
+        </ol>
+        <form class="company-chat-compose" action="/empresas/{{ .empresa.ID }}/chat/messages" method="POST">
+            <input type="hidden" name="_csrf" value="{{ .csrfToken }}">
+            <label for="company-chat-message">Escribe al equipo</label>
+            <textarea id="company-chat-message" name="message" maxlength="1000" rows="3" required placeholder="Comparte una actualización con tu empresa…"></textarea>
+            <div class="company-chat-compose__footer"><small><span data-chat-length>0</span> / 1000 caracteres</small><button class="btn btn-primary" type="submit"><i class="bi bi-send"></i> Enviar mensaje</button></div>
+        </form>
+    </section>
+</main>
+<script src="/js/company-chat.js" defer></script>

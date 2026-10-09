@@ -77,6 +77,17 @@ func (s *CargaService) CreateForActor(load *models.Carga, userID uint, role stri
 	if err := tx.Create(load); err != nil {
 		return err
 	}
+	if err := recordLoadActivity(tx, load.ID, load.Estado, "Carga publicada", userID); err != nil {
+		return err
+	}
+	if load.Audiencia == models.AudienciaRedPrivada {
+		if _, err := tx.Exec(`INSERT INTO user_notifications (user_id,actor_user_id,event_type,title,message,resource_type,resource_id,created_at)
+SELECT c.user_id,$3,'load_published','Nueva carga en tu red','Se publicó una carga disponible en tu red privada.','load',$1,CURRENT_TIMESTAMP
+FROM red_choferes r JOIN chofers c ON c.id=r.chofer_id AND c.deleted_at IS NULL JOIN users u ON u.id=c.user_id AND u.is_active=TRUE
+WHERE r.empresa_id=$2`, load.ID, load.EmpresaID, userID); err != nil {
+			return err
+		}
+	}
 	return tx.Commit()
 }
 
@@ -129,6 +140,9 @@ func (s *CargaService) UpdateForActor(id string, updates map[string]interface{},
 		}
 	}
 	if _, err := tx.Model(&models.Carga{}).Where("id = ?", load.ID).Update(updates); err != nil {
+		return err
+	}
+	if err := recordLoadActivity(tx, load.ID, load.Estado, "Datos de la carga actualizados", userID); err != nil {
 		return err
 	}
 	return tx.Commit()

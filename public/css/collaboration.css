@@ -1,0 +1,27 @@
+/* Shared visual language for company membership decisions and conversations. */
+.membership-request-card{display:grid;gap:.9rem;margin:0 0 .8rem;padding:1rem;border:1px solid var(--tf-border);border-radius:var(--tf-radius-lg,14px);background:var(--tf-surface);box-shadow:var(--tf-shadow-sm,0 3px 12px rgba(11,15,20,.035))}
+.membership-request-card__person{display:flex;align-items:center;gap:.75rem;min-width:0}
+.membership-request-card__person>img,.membership-request-card__avatar{display:grid;width:2.8rem;height:2.8rem;flex:none;place-items:center;overflow:hidden;border:1px solid var(--tf-border);border-radius:50%;background:var(--tf-surface-2);color:var(--tf-text-muted);object-fit:cover;font-size:1.2rem}
+.membership-request-card__person>div{min-width:0}
+.membership-request-card__person h3{margin:0;color:var(--tf-text);font-size:var(--tf-fs-base);font-weight:var(--tf-fw-semibold)}
+.membership-request-card__person p{margin:.2rem 0 0;color:var(--tf-text-muted);font-size:var(--tf-fs-xs);overflow-wrap:anywhere}
+.membership-request-card__meta{display:flex;align-items:center;flex-wrap:wrap;gap:.6rem 1rem;color:var(--tf-text-subtle);font-size:var(--tf-fs-xs)}
+.membership-request-card__meta time{font-variant-numeric:tabular-nums}
+.membership-request-card__meta a{display:inline-flex;min-height:32px;align-items:center;gap:.3rem;color:var(--tf-yellow-600);font-weight:var(--tf-fw-semibold);text-decoration:none}
+.membership-request-card__meta a:hover{text-decoration:underline;text-underline-offset:2px}
+.membership-request-card__status{display:inline-flex;align-items:center;gap:.35rem;padding:.24rem .55rem;border-radius:999px;background:var(--tf-warning-bg);color:#754400;font-weight:var(--tf-fw-semibold)}
+.membership-request-card__actions{display:flex;flex-wrap:wrap;gap:.55rem;padding-top:.75rem;border-top:1px solid var(--tf-border)}
+.membership-request-card__actions form{margin:0}
+.membership-request-card__actions button{min-height:40px}
+.membership-request-card a:focus-visible,.membership-request-card button:focus-visible,.company-chat-page a:focus-visible,.company-chat-page button:focus-visible,.company-chat-page textarea:focus-visible{outline:3px solid var(--tf-border-focus);outline-offset:3px}
+.company-chat-message__meta{display:grid;grid-template-columns:2rem minmax(0,1fr) auto;align-items:center;gap:.55rem .65rem}
+.company-chat-message__avatar{display:grid;width:2rem;height:2rem;place-items:center;border:1px solid var(--tf-border);border-radius:50%;background:var(--tf-surface);color:var(--tf-text-muted);object-fit:cover;font-size:.9rem}
+.company-chat-message__meta a,.company-chat-message__meta strong{min-width:0;color:var(--tf-text);font-size:var(--tf-fs-xs);font-weight:var(--tf-fw-semibold);text-decoration:none;overflow-wrap:anywhere}
+.company-chat-message__meta a:hover{text-decoration:underline;text-underline-offset:2px}
+.company-chat-message__meta time{font-size:var(--tf-fs-xs)}
+.company-chat-message--mine{border-color:rgba(245,158,11,.35);background:var(--tf-yellow-050)}
+.company-chat-message--moderated{border-style:dashed;background:var(--tf-surface-2)}
+.company-chat-compose textarea{min-height:88px;padding:.75rem;border:1px solid var(--tf-border-strong);border-radius:10px;background:var(--tf-surface);color:var(--tf-text);font:inherit;line-height:var(--tf-lh-base)}
+.company-chat-compose textarea:focus{border-color:var(--tf-border-focus);box-shadow:0 0 0 3px rgba(245,158,11,.16);outline:0}
+.company-chat-compose__footer{min-height:40px}
+@media(max-width:600px){.membership-request-card{padding:.85rem}.membership-request-card__actions{display:grid;grid-template-columns:1fr}.membership-request-card__actions form,.membership-request-card__actions button{width:100%}.company-chat-message__meta{grid-template-columns:1.8rem minmax(0,1fr)}.company-chat-message__avatar{width:1.8rem;height:1.8rem}.company-chat-message__meta time{grid-column:2}}

@@ -1,5 +1,5 @@
 <div class="tf-loads-page">
-    <header class="tf-page-header"><div><p><a href="/facturas"><i class="bi bi-arrow-left"></i> Volver a facturas</a></p><h1><i class="bi bi-file-earmark-plus"></i> Crear factura</h1><p>Guarda primero un borrador; podrás revisarlo antes de emitirlo. <a href="/facturas/disenador">Prueba el diseñador de formatos</a>.</p></div></header>
+    <header class="tf-page-header"><div><p><a href="/facturas"><i class="bi bi-arrow-left"></i> Volver a facturas</a></p><h1><i class="bi bi-file-earmark-plus"></i> Crear factura</h1><p>Guarda un borrador y selecciona el formato que verá el chofer. {{ if eq .role "publicador" }}<a href="/facturas/disenador">Diseña una plantilla para tu broker</a>{{ end }}</p></div></header>
     <form method="post" action="/facturas" class="tf-form-page" id="invoiceCreateForm">
         <input type="hidden" name="_csrf" value="{{ .csrfToken }}">
         <div class="tf-form-page__main"><section class="tf-form-card">
@@ -19,6 +19,7 @@
                 <label>Subtotal<input name="subtotal" type="number" min="0" step="0.01" value="0" required></label>
                 <label>Impuestos<input name="impuestos" type="number" min="0" step="0.01" value="0" required></label>
                 <label>Moneda<select name="moneda" required><option value="">Seleccionar moneda</option><option value="CUP">CUP</option><option value="MLC">MLC</option><option value="USD">USD</option><option value="EUR">EUR</option></select></label>
+                <label>Formato para el chofer<select name="plantilla_id"><option value="0">Usar diseño predeterminado del broker</option>{{ range .plantillas }}<option value="{{ .ID }}" {{ if .Predeterminada }}selected{{ end }}>{{ .Nombre }}{{ if .Predeterminada }} · predeterminado{{ end }}</option>{{ end }}</select></label>
                 <label>Método de pago previsto<input name="metodo_pago" maxlength="50" placeholder="Transferencia, efectivo…"></label>
             </div>
         </section></div>

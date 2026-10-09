@@ -156,6 +156,11 @@ func (c *CargaController) Show(ctx fiber.Ctx) error {
 			"role":  role,
 		}, "layouts/base")
 	}
+	activity, activityErr := services.LoadActivity(carga.ID)
+	if activityErr != nil {
+		log.Printf("No se pudo cargar cronología carga_id=%d", carga.ID)
+		return fiber.ErrServiceUnavailable
+	}
 
 	hasMap := carga.OrigenDireccion != nil && carga.DestinoDireccion != nil &&
 		carga.OrigenDireccion.Latitud != nil && carga.OrigenDireccion.Longitud != nil &&
@@ -164,6 +169,7 @@ func (c *CargaController) Show(ctx fiber.Ctx) error {
 	return ctx.Render("dashboard/show", fiber.Map{
 		"title":        "Detalle de Carga",
 		"load":         carga,
+		"activity":     activity,
 		"csrfToken":    csrf.TokenFromContext(ctx),
 		"hasMap":       hasMap,
 		"role":         role,
@@ -541,7 +547,7 @@ func (c *CargaController) AcceptLoad(ctx fiber.Ctx) error {
 	}
 
 	id := ctx.Params("id")
-	if err := c.cargaService.AcceptLoadService(id, chofer.ID); err != nil {
+	if err := c.cargaService.AcceptLoadService(id, chofer.ID, userID); err != nil {
 		log.Printf("Error al aceptar carga %s: %v", id, err)
 		return ctx.Redirect().To("/home?flash_error=No se pudo aceptar la carga")
 	}
@@ -562,7 +568,7 @@ func (c *CargaController) StartTransit(ctx fiber.Ctx) error {
 		return ctx.Redirect().To("/home?flash_error=Debes tener un perfil de chofer")
 	}
 	id := ctx.Params("id")
-	if err := c.cargaService.StartTransit(id, chofer.ID); err != nil {
+	if err := c.cargaService.StartTransit(id, chofer.ID, userID); err != nil {
 		return ctx.Redirect().To(fmt.Sprintf("/loads/%s?flash_error=No se pudo iniciar el tránsito", id))
 	}
 	return ctx.Redirect().To(fmt.Sprintf("/loads/%s?flash_success=Tránsito iniciado", id))
@@ -582,7 +588,7 @@ func (c *CargaController) MarkDelivered(ctx fiber.Ctx) error {
 		return ctx.Redirect().To("/home?flash_error=Debes tener un perfil de chofer")
 	}
 	id := ctx.Params("id")
-	if err := c.cargaService.MarkDelivered(id, chofer.ID); err != nil {
+	if err := c.cargaService.MarkDelivered(id, chofer.ID, userID); err != nil {
 		return ctx.Redirect().To(fmt.Sprintf("/loads/%s?flash_error=No se pudo registrar la entrega", id))
 	}
 	return ctx.Redirect().To(fmt.Sprintf("/loads/%s?flash_success=Carga entregada", id))
@@ -616,7 +622,7 @@ func (c *CargaController) AssignChofer(ctx fiber.Ctx) error {
 		return ctx.Redirect().To("/loads/" + ctx.Params("id") + "?flash_error=Solo+puedes+asignar+choferes+de+tu+red+privada")
 	}
 
-	if err := c.cargaService.AssignChofer(ctx.Params("id"), uint(choferID)); err != nil {
+	if err := c.cargaService.AssignChofer(ctx.Params("id"), uint(choferID), userID); err != nil {
 		return ctx.Redirect().To("/loads/" + ctx.Params("id") + "?flash_error=Error al asignar")
 	}
 	return ctx.Redirect().To("/loads/" + ctx.Params("id") + "?flash_success=Chofer asignado")

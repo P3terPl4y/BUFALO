@@ -18,6 +18,7 @@ type Factura struct {
 	EmisorTipo       TipoEmisorFactura `json:"emisor_tipo" db:"emisor_tipo" gorm:"size:20;not null;default:publicador;index"`
 	PublicadorID     *uint             `json:"publicador_id,omitempty" db:"publicador_id" gorm:"index"`
 	ChoferID         *uint             `json:"chofer_id,omitempty" db:"chofer_id" gorm:"index"`
+	PlantillaID      *uint             `json:"plantilla_id,omitempty" db:"plantilla_id" gorm:"index"`
 	NumeroFactura    string            `json:"numero_factura" db:"numero_factura" gorm:"size:50;uniqueIndex;not null"`
 	FechaEmision     time.Time         `json:"fecha_emision" db:"fecha_emision" gorm:"not null"`
 	FechaVencimiento *time.Time        `json:"fecha_vencimiento,omitempty" db:"fecha_vencimiento"`
@@ -35,9 +36,10 @@ type Factura struct {
 	DeletedAt        *time.Time        `json:"deleted_at,omitempty" db:"deleted_at" gorm:"index"`
 
 	// Relaciones
-	Carga      *Carga      `json:"carga,omitempty" gorm:"foreignKey:CargaID"`
-	Emisor     *Empresa    `json:"emisor,omitempty" gorm:"foreignKey:EmisorID"`
-	Receptor   *Empresa    `json:"receptor,omitempty" gorm:"foreignKey:ReceptorID"`
-	Publicador *Publicador `json:"publicador,omitempty" gorm:"foreignKey:PublicadorID"`
-	Chofer     *Chofer     `json:"chofer,omitempty" gorm:"foreignKey:ChoferID"`
+	Carga      *Carga            `json:"carga,omitempty" gorm:"foreignKey:CargaID"`
+	Emisor     *Empresa          `json:"emisor,omitempty" gorm:"foreignKey:EmisorID"`
+	Receptor   *Empresa          `json:"receptor,omitempty" gorm:"foreignKey:ReceptorID"`
+	Publicador *Publicador       `json:"publicador,omitempty" gorm:"foreignKey:PublicadorID"`
+	Chofer     *Chofer           `json:"chofer,omitempty" gorm:"foreignKey:ChoferID"`
+	Plantilla  *FacturaPlantilla `json:"plantilla,omitempty" gorm:"foreignKey:PlantillaID"`
 }

@@ -35,6 +35,8 @@ func setupWebRoutes(app *fiber.App, counter middleware.RateCounter, sender func(
 	registerEmailLimiter := middleware.RegisterEmailRateLimiter(counter)
 	profileLimiter := middleware.ProfileAccountRateLimiter(counter)
 	interestLimiter := middleware.InterestAccountRateLimiter(counter)
+	companyChatReadLimiter := middleware.CompanyChatReadRateLimiter(counter)
+	companyChatWriteLimiter := middleware.CompanyChatWriteRateLimiter(counter)
 	loginCapacity := middleware.NewConcurrencyLimit(4)
 	registerCapacity := middleware.NewConcurrencyLimit(2)
 	if len(limiterOverride) > 0 {
@@ -45,6 +47,8 @@ func setupWebRoutes(app *fiber.App, counter middleware.RateCounter, sender func(
 		registerEmailLimiter = limiterOverride[0]
 		profileLimiter = limiterOverride[0]
 		interestLimiter = limiterOverride[0]
+		companyChatReadLimiter = limiterOverride[0]
+		companyChatWriteLimiter = limiterOverride[0]
 	}
 	// ------------------------------------------------------------------
 	// Controladores
@@ -68,6 +72,8 @@ func setupWebRoutes(app *fiber.App, counter middleware.RateCounter, sender func(
 	}
 	adminCtrl := controllers.NewAdminController()
 	communityCtrl := controllers.NewDriverCommunityController()
+	companyChatCtrl := controllers.CompanyChatController{}
+	notificationCtrl := controllers.NotificationController{}
 
 	// ============================================================
 	// PÚBLICAS
@@ -105,6 +111,8 @@ func setupWebRoutes(app *fiber.App, counter middleware.RateCounter, sender func(
 		return ctx.SendStatus(fiber.StatusNoContent)
 	})
 	protected.Get("/profile", userCtrl.Show)
+	protected.Get("/notifications", notificationCtrl.Index)
+	protected.Post("/notifications/:id<int>/read", notificationCtrl.Read)
 	protected.Get("/profile/edit", userCtrl.Edit)
 	protected.Post("/profile/update", profileLimiter, middleware.NewConcurrencyLimit(2), userCtrl.Update)
 	protected.Post("/profile/photo", userCtrl.UploadPhoto)
@@ -123,7 +131,12 @@ func setupWebRoutes(app *fiber.App, counter middleware.RateCounter, sender func(
 	protected.Get("/direcciones/:id<int>", direccionCtrl.Show)
 
 	protected.Post("/empresas/:id<int>/membership", profileLimiter, empresaCtrl.RequestMembership)
+	protected.Post("/empresas/:id<int>/membership-requests/:requestID<int>", empresaCtrl.DecideMembership)
 	protected.Get("/empresas", empresaCtrl.Index)
+	protected.Get("/empresas/:id<int>/chat", companyChatReadLimiter, middleware.NewConcurrencyLimit(4), companyChatCtrl.Show)
+	protected.Get("/empresas/:id<int>/chat/messages", companyChatReadLimiter, middleware.NewConcurrencyLimit(4), companyChatCtrl.Messages)
+	protected.Post("/empresas/:id<int>/chat/messages", companyChatWriteLimiter, middleware.NewConcurrencyLimit(2), companyChatCtrl.Send)
+	protected.Post("/empresas/:id<int>/chat/messages/:messageID<int>/moderate", companyChatWriteLimiter, middleware.NewConcurrencyLimit(2), companyChatCtrl.Moderate)
 	protected.Get("/empresas/:id<int>", empresaCtrl.Show)
 
 	protected.Get("/choferes", choferCtrl.Index)
@@ -134,7 +147,9 @@ func setupWebRoutes(app *fiber.App, counter middleware.RateCounter, sender func(
 
 	protected.Get("/facturas", facturaCtrl.Index)
 	protected.Get("/facturas/export", both, facturaCtrl.Export)
-	protected.Get("/facturas/disenador", both, facturaCtrl.Studio)
+	protected.Get("/facturas/disenador", pub, facturaCtrl.Studio)
+	protected.Get("/facturas/plantillas", pub, facturaCtrl.ListTemplates)
+	protected.Post("/facturas/plantillas", pub, facturaCtrl.SaveTemplate)
 	protected.Get("/facturas/:id<int>", facturaCtrl.Show)
 
 	// ═══════════════════════════════════════════════════════════
@@ -210,6 +225,7 @@ func setupWebRoutes(app *fiber.App, counter middleware.RateCounter, sender func(
 	protected.Post("/facturas/:id<int>/delete", both, facturaCtrl.Delete)
 	protected.Post("/facturas/:id<int>/emitir", both, facturaCtrl.Emitir)
 	protected.Post("/facturas/:id<int>/pagar", both, facturaCtrl.MarcarPagada)
+	protected.Post("/facturas/:id<int>/plantilla", pub, facturaCtrl.ChooseTemplate)
 
 	// ═══════════════════════════════════════════════════════════
 	// ADMIN — todo el panel
@@ -269,7 +285,6 @@ func setupWebRoutes(app *fiber.App, counter middleware.RateCounter, sender func(
 
 	// ── Facturas ──
 	admin.Get("/facturas", adminCtrl.FacturasIndex)
-	admin.Get("/facturas/disenador", facturaCtrl.Studio)
 	admin.Get("/facturas/export", facturaCtrl.Export)
 	admin.Get("/facturas/:id<int>", adminCtrl.FacturasShow)
 	admin.Get("/facturas/:id<int>/edit", adminCtrl.FacturasEdit)

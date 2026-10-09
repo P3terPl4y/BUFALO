@@ -6,7 +6,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ .title }} | BUFALO</title>
     <link rel="icon" href="data:,">
-    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/style.css?v=20261009-error-empty-inbox">
+    <link rel="stylesheet" href="/css/notifications.css?v=20261009-notifications-ux">
+    <link rel="stylesheet" href="/css/collaboration.css?v=20261009-collaboration-ux">
+    <link rel="stylesheet" href="/css/companies.css?v=20261010-company-workspace">
     <!-- Bootstrap Icons se usa en el shell y en todas las vistas autenticadas. -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
 
@@ -45,6 +48,7 @@
 
         <div class="bf-user-menu" id="bfUserMenu" hidden role="menu">
             <a href="/profile" role="menuitem"><i class="bi bi-person"></i> Ver perfil</a>
+            <a href="/notifications" role="menuitem"><i class="bi bi-bell"></i> Notificaciones</a>
             <a href="/profile/edit" role="menuitem"><i class="bi bi-gear"></i> Editar perfil</a>
             <hr>
             <a href="/logout" class="is-danger" role="menuitem">
@@ -122,6 +126,7 @@
             {{ if or .isAdmin (eq .role "admin") }}<a href="/admin/health" class="bf-sidebar__link"><span class="bf-sidebar__icon"><i class="bi bi-heart-pulse"></i></span><span class="bf-sidebar__label">Salud del sistema</span></a>{{ end }}
             <hr class="bf-sidebar__divider">
             <a href="/profile" class="bf-sidebar__link"><span class="bf-sidebar__icon"><i class="bi bi-person"></i></span><span class="bf-sidebar__label">Mi perfil</span></a>
+            <a href="/notifications" class="bf-sidebar__link"><span class="bf-sidebar__icon"><i class="bi bi-bell"></i></span><span class="bf-sidebar__label">Notificaciones</span></a>
         </nav>
         <div class="bf-sidebar__status"><span class="bf-status-dot"></span><span>Entorno local</span></div>
     </aside>

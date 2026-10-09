@@ -100,3 +100,10 @@ Impacto: el usuario verá un paso adicional al cambiar email/contraseña y un me
 Convertir estas reproducciones en regresiones que esperen el comportamiento corregido. Probar UI real, servicios y HTTP con CSRF/sesiones activados; los tests que desactivan límites no sustituyen pruebas del transporte real. Repetir suites, pruebas concurrentes de base de datos, `go vet`, análisis de vulnerabilidades y carga local moderada, midiendo RSS/heap, consultas y latencia.
 
 Publicar por fases con respaldo, candidato de producción, SHA-256 y comprobaciones antes/después en el puerto 3000. Mantener cloudflared y límites de memoria existentes. No prometer funcionalidad intacta solo porque compila: cada fase debe preservar los flujos permitidos y bloquear las reproducciones antes de desplegarse. No hace falta reescribir el proyecto ni añadir microservicios para estas correcciones.
+
+## Pendientes añadidos para la siguiente validación
+
+- [x] Aplicar y probar la migración del chat de empresa en una base `*_test`; verificar aislamiento entre empresas, acceso de miembros, moderación exclusiva del propietario y límites de envío/lectura.
+- [ ] Desplegar el candidato que incluye el chat y comprobarlo antes y después en producción cuando se autorice esa publicación.
+- [ ] Confirmar en navegador con cuentas de propietario, miembro y tercero que las acciones de edición de empresa solo aparecen al propietario y al administrador global; los endpoints ya conservan su autorización server-side.
+- [x] Reutilizar la animación de login en la página HTTP 409 y cubrirla con una prueba HTTP; las causas normales de afiliación ahora vuelven a la empresa con mensajes explicativos.

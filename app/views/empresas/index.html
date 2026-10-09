@@ -1,223 +1,76 @@
-<div class="tf-loads-page">
-
-    <!-- ══════════════ PAGE HEADER ══════════════ -->
+<div class="tf-loads-page" data-entity-view data-view-key="companies">
     <header class="tf-loads-header">
         <div class="tf-loads-header__left">
-            <div class="tf-loads-header__icon">
-                <i class="bi bi-building"></i>
-            </div>
+            <div class="tf-loads-header__icon"><i class="bi bi-building"></i></div>
             <div>
-                <h1>Empresas</h1>
-                <p>Brokers, transportistas, shippers y factorings del sistema</p>
+                <h1>{{ if .browse }}Buscar empresas{{ else if eq .role "admin" }}Empresas{{ else }}Mis empresas{{ end }}</h1>
+                <p>{{ if .browse }}Encuentra una empresa para solicitar afiliación{{ else if eq .role "admin" }}Directorio de empresas del sistema{{ else }}Tus empresas y acceso directo a sus espacios de trabajo{{ end }}</p>
             </div>
         </div>
-
-        {{ if or (eq .role "publicador") (eq .role "chofer") (eq .role "admin") }}
-        <a href="/empresas/create" class="btn btn-primary">
-            <i class="bi bi-plus-circle"></i> Nueva Empresa
-        </a>
-        {{ end }}
+        <div class="tf-flex" style="gap:.5rem;flex-wrap:wrap">
+            {{ if and (ne .role "admin") .browse }}
+            <a href="/empresas" class="btn btn-secondary"><i class="bi bi-arrow-left"></i> Mis empresas</a>
+            {{ else if and (ne .role "admin") (not .browse) }}
+            {{ if not .ownsCompany }}<a href="/empresas?disponibles=1" class="btn btn-outline-primary"><i class="bi bi-search"></i> Buscar empresas</a>{{ end }}
+            {{ end }}
+            {{ if or (eq .role "publicador") (eq .role "chofer") (eq .role "admin") }}
+            <a href="/empresas/create" class="btn btn-primary"><i class="bi bi-plus-circle"></i> Nueva Empresa</a>
+            {{ end }}
+        </div>
+        <div data-view-toolbar></div>
     </header>
 
-    <!-- ══════════════ FILTROS ══════════════ -->
+    {{ if or .browse (eq .role "admin") }}
     <section class="tf-filters" id="tfFilters">
-        <div class="tf-filters__header" onclick="document.getElementById('tfFilters').classList.toggle('is-collapsed')">
-            <h3 class="tf-filters__title"><i class="bi bi-funnel"></i> Filtros de búsqueda</h3>
-            <button type="button" class="tf-filters__toggle" aria-label="Colapsar">
-                <i class="bi bi-chevron-down"></i>
-            </button>
-        </div>
-
+        <div class="tf-filters__header"><h2 class="tf-filters__title"><i class="bi bi-funnel"></i> Filtrar empresas</h2></div>
         <div class="tf-filters__body">
             <form method="GET" action="/empresas">
+                {{ if .browse }}<input type="hidden" name="disponibles" value="1">{{ end }}
                 <div class="tf-filters__grid">
-                    <div class="tf-field">
-                        <label class="form-label">Tipo</label>
-                        <select name="tipo" class="form-select form-select-sm">
-                            <option value="">Todos</option>
-                            <option value="broker"    {{ if eq .filters.tipo "broker" }}selected{{ end }}>Broker</option>
-                            <option value="carrier"   {{ if eq .filters.tipo "carrier" }}selected{{ end }}>Carrier</option>
-                            <option value="shipper"   {{ if eq .filters.tipo "shipper" }}selected{{ end }}>Shipper</option>
-                            <option value="factoring" {{ if eq .filters.tipo "factoring" }}selected{{ end }}>Factoring</option>
-                            <option value="mixto"     {{ if eq .filters.tipo "mixto" }}selected{{ end }}>Mixto</option>
-                        </select>
+                    {{ if eq .role "admin" }}
+                    <div class="tf-field"><label for="companyType" class="form-label">Tipo</label>
+                        <select id="companyType" name="tipo" class="form-select form-select-sm"><option value="">Todos</option><option value="broker" {{ if eq .filters.tipo "broker" }}selected{{ end }}>Broker</option><option value="carrier" {{ if eq .filters.tipo "carrier" }}selected{{ end }}>Carrier</option><option value="shipper" {{ if eq .filters.tipo "shipper" }}selected{{ end }}>Shipper</option><option value="factoring" {{ if eq .filters.tipo "factoring" }}selected{{ end }}>Factoring</option><option value="mixto" {{ if eq .filters.tipo "mixto" }}selected{{ end }}>Mixto</option></select>
                     </div>
-
-                    <div class="tf-field">
-                        <label class="form-label">Estado</label>
-                        <select name="estado" class="form-select form-select-sm">
-                            <option value="">Todos</option>
-                            <option value="activo"     {{ if eq .filters.estado "activo" }}selected{{ end }}>Activo</option>
-                            <option value="inactivo"   {{ if eq .filters.estado "inactivo" }}selected{{ end }}>Inactivo</option>
-                            <option value="suspendido" {{ if eq .filters.estado "suspendido" }}selected{{ end }}>Suspendido</option>
-                        </select>
-                    </div>
-
-                    <div class="tf-field">
-                        <label class="form-label">Buscar</label>
-                        <input type="text" name="q" class="form-control form-control-sm"
-                               placeholder="Nombre legal, comercial, MC, DOT…"
-                               value="{{ .filters.q }}">
-                    </div>
+                    <div class="tf-field"><label for="companyState" class="form-label">Estado</label><select id="companyState" name="estado" class="form-select form-select-sm"><option value="">Todos</option><option value="activo" {{ if eq .filters.estado "activo" }}selected{{ end }}>Activo</option><option value="inactivo" {{ if eq .filters.estado "inactivo" }}selected{{ end }}>Inactivo</option><option value="suspendido" {{ if eq .filters.estado "suspendido" }}selected{{ end }}>Suspendido</option></select></div>
+                    {{ end }}
+                    <div class="tf-field"><label for="companySearch" class="form-label">Nombre o identificador</label><input id="companySearch" type="search" name="q" class="form-control form-control-sm" placeholder="Nombre, MC o DOT" value="{{ .filters.q }}"></div>
                 </div>
-
-                <div class="tf-filters__actions">
-                    <button type="submit" class="btn btn-primary btn-sm">
-                        <i class="bi bi-funnel"></i> Aplicar filtros
-                    </button>
-                    <a href="/empresas" class="btn btn-secondary btn-sm">
-                        <i class="bi bi-arrow-counterclockwise"></i> Limpiar
-                    </a>
-                </div>
+                <div class="tf-filters__actions"><button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-search"></i> Buscar</button><a href="{{ if .browse }}/empresas?disponibles=1{{ else }}/empresas{{ end }}" class="btn btn-secondary btn-sm">Limpiar</a></div>
             </form>
         </div>
     </section>
+    {{ end }}
 
-    <!-- ══════════════ TABLA ══════════════ -->
-    <section class="tf-table-card">
-
-        <header class="tf-table-card__header">
-            <h3 class="tf-table-card__title">
-                <i class="bi bi-list-ul"></i> Resultados
-            </h3>
-            <span class="tf-table-card__count">
-                {{ if .total }}{{ .total }}{{ else }}0{{ end }}
-                {{ if eq .total 1 }}empresa{{ else }}empresas{{ end }}
-            </span>
-        </header>
-
-        <div class="table-responsive">
-            <table class="tf-table">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Tipo</th>
-                        <th>Nombre</th>
-                        <th>MC / DOT</th>
-                        <th>Ubicación</th>
-                        <th>Estado</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {{ if .empresas }}
-                        {{ range .empresas }}
-                        <tr>
-                            <td class="tf-cell-id">#{{ .ID }}</td>
-
-                            <td>
-                                {{ if eq (printf "%v" .Tipo) "broker" }}
-                                    <span class="badge bg-primary"><i class="bi bi-briefcase"></i> Broker</span>
-                                {{ else if eq (printf "%v" .Tipo) "carrier" }}
-                                    <span class="badge bg-success"><i class="bi bi-truck"></i> Carrier</span>
-                                {{ else if eq (printf "%v" .Tipo) "shipper" }}
-                                    <span class="badge bg-info">Shipper</span>
-                                {{ else if eq (printf "%v" .Tipo) "factoring" }}
-                                    <span class="badge bg-warning">Factoring</span>
-                                {{ else }}
-                                    <span class="badge bg-secondary">{{ .Tipo }}</span>
-                                {{ end }}
-                            </td>
-
-                            <td class="tf-cell-title">
-                                {{ .NombreLegal }}
-                                {{ if .NombreComercial }}
-                                <small class="tf-cell-subtitle">{{ .NombreComercial }}</small>
-                                {{ end }}
-                            </td>
-
-                            <td class="tf-cell-num">
-                                {{ if .MCNumber }}<div><strong>MC:</strong> {{ .MCNumber }}</div>{{ end }}
-                                {{ if .DOTNumber }}<div><strong>DOT:</strong> {{ .DOTNumber }}</div>{{ end }}
-                                {{ if and (not .MCNumber) (not .DOTNumber) }}
-                                <span class="empty-value">—</span>
-                                {{ end }}
-                            </td>
-
-                            <td class="tf-cell-address">
-                                {{ if .Direccion }}
-                                {{ .Direccion.Ciudad }}, {{ .Direccion.EstadoProvincia }}
-                                <small>{{ .Direccion.Pais }}</small>
-                                {{ else }}
-                                <span class="empty-value">—</span>
-                                {{ end }}
-                            </td>
-
-                            <td>
-                                {{ if eq (printf "%v" .Estado) "activo" }}
-                                    <span class="badge bg-success">Activo</span>
-                                {{ else if eq (printf "%v" .Estado) "inactivo" }}
-                                    <span class="badge bg-secondary">Inactivo</span>
-                                {{ else if eq (printf "%v" .Estado) "suspendido" }}
-                                    <span class="badge bg-danger">Suspendido</span>
-                                {{ end }}
-                            </td>
-
-                            <td class="tf-cell-actions">
-                                <div class="tf-action-group">
-                                    <a href="/empresas/{{ .ID }}"
-                                       class="btn btn-outline-primary" title="Ver detalle">
-                                        <i class="bi bi-eye"></i>
-                                    </a>
-                                    {{ if or (eq $.role "admin") (and $.userID $.ownerID) }}
-                                    {{ end }}
-                                    <a href="/empresas/{{ .ID }}/edit"
-                                       class="btn btn-outline-secondary" title="Editar">
-                                        <i class="bi bi-pencil"></i>
-                                    </a>
-                                </div>
-                            </td>
-                        </tr>
-                        {{ end }}
-                    {{ else }}
-                        <tr>
-                            <td colspan="7">
-                                <div class="tf-empty">
-                                    <div class="tf-empty__icon">
-                                        <i class="bi bi-building"></i>
-                                    </div>
-                                    <h4>No hay empresas</h4>
-                                    <p>No se encontraron empresas que coincidan con los filtros aplicados.</p>
-                                    {{ if or (eq .role "publicador") (eq .role "chofer") (eq .role "admin") }}
-                                    <a href="/empresas/create" class="btn btn-primary">
-                                        <i class="bi bi-plus-circle"></i> Crear la primera
-                                    </a>
-                                    {{ end }}
-                                </div>
-                            </td>
-                        </tr>
-                    {{ end }}
-                </tbody>
-            </table>
+    <section class="tf-table-card" data-view-cards>
+        <header class="tf-table-card__header"><h2 class="tf-table-card__title">{{ if .browse }}Resultados disponibles{{ else if eq .role "admin" }}Directorio{{ else }}Tus empresas{{ end }}</h2><div data-view-toolbar></div><span class="tf-table-card__count">{{ .total }}</span></header>
+        <div class="entity-card-grid">
+            {{ range .empresas }}
+            <article class="entity-card entity-company-card">
+                <div class="entity-card__identity">
+                    <a class="entity-card__avatar entity-company-card__photo" href="/empresas/{{ .ID }}" aria-label="Ver información de {{ .NombreLegal }}">
+                        {{ if .ProfilePhoto }}<img src="{{ .ProfilePhoto }}" alt="Logo de {{ .NombreLegal }}" loading="lazy">{{ else }}<i class="bi bi-building" aria-hidden="true"></i>{{ end }}
+                    </a>
+                    <div><h3>{{ if .CanChat }}<a href="/empresas/{{ .ID }}/chat" aria-label="Abrir chat de {{ .NombreLegal }}">{{ .NombreLegal }}</a>{{ else }}<a href="/empresas/{{ .ID }}">{{ .NombreLegal }}</a>{{ end }}</h3><p>{{ if .NombreComercial }}{{ .NombreComercial }}{{ else }}{{ .Tipo }}{{ end }}</p></div>
+                </div>
+                <div class="entity-card__badges"><span class="badge bg-primary">{{ .Tipo }}</span><span class="badge {{ if eq (printf "%v" .Estado) "activo" }}bg-success{{ else if eq (printf "%v" .Estado) "suspendido" }}bg-danger{{ else }}bg-secondary{{ end }}">{{ .Estado }}</span></div>
+                <dl class="entity-card__details"><div><dt>MC / DOT</dt><dd>{{ if .MCNumber }}MC {{ .MCNumber }}{{ end }}{{ if and .MCNumber .DOTNumber }} · {{ end }}{{ if .DOTNumber }}DOT {{ .DOTNumber }}{{ end }}{{ if and (not .MCNumber) (not .DOTNumber) }}—{{ end }}</dd></div><div><dt>Ubicación</dt><dd>{{ if .Direccion }}{{ .Direccion.Ciudad }}, {{ .Direccion.EstadoProvincia }}{{ else }}—{{ end }}</dd></div></dl>
+                <div class="entity-card__actions">
+                    {{ if .CanChat }}<a href="/empresas/{{ .ID }}/chat" class="btn btn-primary"><i class="bi bi-chat-dots"></i> Abrir chat</a>{{ else }}<a href="/empresas/{{ .ID }}" class="btn btn-outline-primary"><i class="bi bi-info-circle"></i> Información</a>{{ end }}
+                    {{ if .CanRequestMembership }}<form method="POST" action="/empresas/{{ .ID }}/membership"><input type="hidden" name="_csrf" value="{{ $.csrfToken }}"><button class="btn btn-outline-primary" type="submit"><i class="bi bi-person-plus"></i> Solicitar afiliación</button></form>{{ else if .MembershipPending }}<span class="badge bg-warning text-dark">Solicitud pendiente</span>{{ end }}
+                    {{ if .CanManage }}<a href="/empresas/{{ .ID }}/edit" class="btn btn-outline-secondary"><i class="bi bi-pencil"></i> Editar</a>{{ end }}
+                </div>
+            </article>
+            {{ else }}
+            <div class="tf-empty"><i class="bi bi-building"></i><h3>{{ if .browse }}{{ if .hasSearch }}No hay empresas disponibles{{ else }}Busca una empresa{{ end }}{{ else if eq .role "admin" }}No hay empresas{{ else }}Aún no tienes empresas asociadas{{ end }}</h3><p>{{ if .browse }}{{ if .hasSearch }}Prueba con otro nombre o identificador.{{ else }}Escribe el nombre, número MC o DOT en el filtro para ver coincidencias.{{ end }}{{ else if eq .role "admin" }}No se encontraron empresas para mostrar.{{ else }}Cuando te afilies o crees una empresa, podrás abrir su chat desde aquí.{{ end }}</p>{{ if and (not .browse) (ne .role "admin") }}{{ if not .ownsCompany }}<a href="/empresas?disponibles=1" class="btn btn-primary">Buscar empresas</a>{{ end }}{{ end }}</div>
+            {{ end }}
         </div>
+    </section>
 
-        <!-- Paginación -->
-        {{ if gt .total .perPage }}
-        <div class="tf-pagination-wrap">
-            <nav>
-                <ul class="tf-pagination">
-                    {{ if gt .page 1 }}
-                    <li class="page-item">
-                        <a class="page-link"
-                           href="?page={{ .page 1 }}&tipo={{ .filters.tipo }}&estado={{ .filters.estado }}&q={{ .filters.q }}">
-                            <i class="bi bi-chevron-left"></i>
-                        </a>
-                    </li>
-                    {{ end }}
-
-                    <li class="page-item active">
-                        <span class="page-link">{{ .page }}</span>
-                    </li>
-
-                    <li class="page-item">
-                        <a class="page-link"
-                           href="?page={{  .page 1 }}&tipo={{ .filters.tipo }}&estado={{ .filters.estado }}&q={{ .filters.q }}">
-                            <i class="bi bi-chevron-right"></i>
-                        </a>
-                    </li>
-                </ul>
-            </nav>
-        </div>
-        {{ end }}
+    <section class="tf-table-card" data-view-table hidden>
+        <header class="tf-table-card__header"><h2 class="tf-table-card__title">{{ if .browse }}Resultados disponibles{{ else }}Empresas{{ end }}</h2><div data-view-toolbar></div><span class="tf-table-card__count">{{ .total }}</span></header>
+        <div class="table-responsive"><table class="tf-table"><thead><tr><th>Empresa</th><th>Tipo</th><th>MC / DOT</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>
+            {{ range .empresas }}<tr><td>{{ if .CanChat }}<a href="/empresas/{{ .ID }}/chat">{{ .NombreLegal }}</a>{{ else }}<a href="/empresas/{{ .ID }}">{{ .NombreLegal }}</a>{{ end }}</td><td>{{ .Tipo }}</td><td>{{ if .MCNumber }}MC {{ .MCNumber }}{{ end }}{{ if .DOTNumber }} · DOT {{ .DOTNumber }}{{ end }}{{ if and (not .MCNumber) (not .DOTNumber) }}—{{ end }}</td><td>{{ .Estado }}</td><td><div class="tf-action-group">{{ if .CanChat }}<a href="/empresas/{{ .ID }}/chat" class="btn btn-primary btn-sm">Chat</a>{{ else }}<a href="/empresas/{{ .ID }}" class="btn btn-outline-primary btn-sm">Perfil</a>{{ end }}{{ if .CanRequestMembership }}<form method="POST" action="/empresas/{{ .ID }}/membership"><input type="hidden" name="_csrf" value="{{ $.csrfToken }}"><button class="btn btn-outline-primary btn-sm" type="submit">Solicitar afiliación</button></form>{{ else if .MembershipPending }}<span class="badge bg-warning text-dark">Pendiente</span>{{ end }}{{ if .CanManage }}<a href="/empresas/{{ .ID }}/edit" class="btn btn-outline-secondary btn-sm">Editar</a>{{ end }}</div></td></tr>
+            {{ else }}<tr><td colspan="5">{{ if .browse }}{{ if .hasSearch }}No hay resultados para este filtro.{{ else }}Usa el filtro para buscar una empresa.{{ end }}{{ else }}No hay empresas asociadas.{{ end }}</td></tr>{{ end }}
+        </tbody></table></div>
     </section>
 </div>

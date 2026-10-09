@@ -1,4 +1,5 @@
-{{ if or (eq .role "chofer") (eq .role "publicador") }}<form method="POST" action="/empresas/{{ .empresa.ID }}/membership"><input type="hidden" name="_csrf" value="{{ .csrfToken }}"><p>La asociación requiere aprobación administrativa y un perfil sin otra empresa.</p><button class="btn btn-primary">Solicitar asociación</button></form>{{ end }}
+<div data-entity-view data-view-key="company-{{ .empresa.ID }}-members">
+{{ if .canRequestMembership }}<form method="POST" action="/empresas/{{ .empresa.ID }}/membership" class="tf-company-membership-cta"><input type="hidden" name="_csrf" value="{{ .csrfToken }}"><p>Solicita unirte a esta empresa. Su propietario revisará la solicitud.</p><button class="btn btn-primary" type="submit"><i class="bi bi-person-plus"></i> Solicitar afiliación</button></form>{{ else if .canChat }}<p class="tf-company-member-note"><i class="bi bi-check-circle"></i> Ya perteneces a esta empresa. <a href="/empresas/{{ .empresa.ID }}/chat">Abrir chat</a></p>{{ else if .isOwner }}<p class="tf-company-member-note"><i class="bi bi-shield-check"></i> Eres propietario de esta empresa y puedes administrar su información y chat.</p>{{ end }}
 <div class="tf-page-header">
     <div>
         <h1>
@@ -10,10 +11,13 @@
         </p>
     </div>
     <div class="tf-page-header__actions">
+        {{ if .canChat }}
+        <a href="/empresas/{{ .empresa.ID }}/chat" class="btn btn-primary"><i class="bi bi-chat-dots"></i> Chat de la empresa</a>
+        {{ end }}
         <a href="/empresas" class="btn btn-secondary">
             <i class="bi bi-arrow-left"></i> Volver
         </a>
-        {{ if or (eq .role "admin") (and .empresa.OwnerID (eq (printf "%v" .empresa.OwnerID) (printf "%v" $.userID))) }}
+        {{ if .canManage }}
         <a href="/empresas/{{ .empresa.ID }}/edit" class="btn btn-primary">
             <i class="bi bi-pencil"></i> Editar
         </a>
@@ -26,6 +30,9 @@
 
 <!-- ─────────── HERO ─────────── -->
 <section class="tf-empresa-hero">
+    <div class="tf-empresa-hero__photo">
+        {{ if .empresa.ProfilePhoto }}<img src="{{ .empresa.ProfilePhoto }}" alt="Logo de {{ .empresa.NombreLegal }}">{{ else }}<i class="bi bi-building" aria-hidden="true"></i>{{ end }}
+    </div>
     <div class="tf-empresa-hero__badge tf-empresa-hero__badge--{{ .empresa.Tipo }}">
         {{ if eq (printf "%v" .empresa.Tipo) "broker" }}
             <i class="bi bi-briefcase"></i>
@@ -220,38 +227,52 @@
     {{ end }}
 
     <!-- CHOFERES (solo carriers) -->
-    {{ if and (eq (printf "%v" .empresa.Tipo) "carrier") .choferes }}
+    {{ if .members }}
     <section class="tf-info-block" data-block="choferes">
         <header class="tf-info-block__head">
             <i class="bi bi-person-badge tf-info-block__icon"></i>
             <div class="tf-info-block__text">
-                <h2>Choferes</h2>
-                <p>{{ len .choferes }} conductores registrados</p>
+                <h2>Usuarios de la empresa</h2>
+                <p>{{ len .members }} usuarios vinculados en esta página</p>
             </div>
+            <div data-view-toolbar></div>
         </header>
-        <div class="tf-info-block__body">
-            <ul class="tf-chip-list">
-                {{ range .choferes }}
-                <li>
-                    <a href="/choferes/{{ .ID }}" class="tf-chip">
-                        <i class="bi bi-person-fill"></i>
-                        {{ if .User }}{{ .User.Name }}{{ else }}Chofer #{{ .ID }}{{ end }}
-                    </a>
-                </li>
-                {{ end }}
-            </ul>
-        </div>
+        <div class="tf-info-block__body" data-view-cards><div data-view-toolbar></div><div class="entity-card-grid">{{ range .members }}<article class="entity-card entity-member-card"><div class="entity-card__identity"><div class="entity-card__avatar">{{ if .ProfilePhoto }}<img src="{{ .ProfilePhoto }}" alt="Foto de {{ .Name }}" loading="lazy">{{ else }}<i class="bi bi-person-fill"></i>{{ end }}</div><div><h3>{{ .Name }}</h3><p>{{ if eq .Role "publicador" }}Broker{{ else if eq .Role "chofer" }}Chofer{{ else if eq .Role "admin" }}Administrador{{ else }}Usuario{{ end }}</p></div></div><div class="entity-card__actions">{{ if .Chofer }}<a href="/choferes/{{ .Chofer.ID }}" class="btn btn-outline-primary">Ver perfil</a>{{ else if .Publicador }}<a href="/publicadores/{{ .Publicador.ID }}" class="btn btn-outline-primary">Ver perfil</a>{{ end }}</div></article>{{ else }}<div class="tf-empty">No hay usuarios vinculados.</div>{{ end }}</div></div>
+        <div class="tf-info-block__body" data-view-table hidden><div data-view-toolbar></div><div class="table-responsive"><table class="tf-table"><thead><tr><th>Usuario</th><th>Rol</th><th>Perfil</th></tr></thead><tbody>{{ range .members }}<tr><td>{{ .Name }}</td><td>{{ .Role }}</td><td>{{ if .Chofer }}<a href="/choferes/{{ .Chofer.ID }}">Ver perfil</a>{{ else if .Publicador }}<a href="/publicadores/{{ .Publicador.ID }}">Ver perfil</a>{{ else }}—{{ end }}</td></tr>{{ else }}<tr><td colspan="3">No hay usuarios vinculados.</td></tr>{{ end }}</tbody></table></div></div>
     </section>
     {{ end }}
 
 </div>
+
+{{ if .canManage }}
+<section class="tf-info-block">
+  <header class="tf-info-block__head"><i class="bi bi-person-check tf-info-block__icon"></i><div class="tf-info-block__text"><h2>Solicitudes de afiliación</h2><p>Revisa el perfil antes de aprobar o rechazar el acceso a la empresa.</p></div></header>
+  <div class="tf-info-block__body">
+    {{ range .membershipRequests }}
+    <article class="membership-request-card">
+      <div class="membership-request-card__person">
+        {{ if and .User .User.ProfilePhoto }}<img src="{{ .User.ProfilePhoto }}" alt="" loading="lazy">{{ else }}<span class="membership-request-card__avatar" aria-hidden="true"><i class="bi bi-person-fill"></i></span>{{ end }}
+        <div><h3>{{ if .User }}{{ .User.Name }}{{ else }}Usuario #{{ .UserID }}{{ end }}</h3>
+          <p>{{ if .User }}{{ if eq .User.Role "chofer" }}Chofer{{ else if eq .User.Role "publicador" }}Publicador{{ else }}Miembro{{ end }} · {{ .User.Email }}{{ else }}Perfil no disponible{{ end }}</p>
+        </div>
+      </div>
+      <div class="membership-request-card__meta"><span class="membership-request-card__status"><i class="bi bi-hourglass-split" aria-hidden="true"></i> Pendiente</span><time datetime="{{ .CreatedAt.Format "2006-01-02T15:04:05Z07:00" }}">Solicitada el {{ .CreatedAt.Format "02/01/2006" }}</time>{{ if and .User (userProfileURL .User) }}<a href="{{ userProfileURL .User }}">Ver perfil <i class="bi bi-arrow-up-right" aria-hidden="true"></i></a>{{ end }}</div>
+      <div class="membership-request-card__actions">
+        <form method="POST" action="/empresas/{{ $.empresa.ID }}/membership-requests/{{ .ID }}"><input type="hidden" name="_csrf" value="{{ $.csrfToken }}"><input type="hidden" name="decision" value="approve"><button class="btn btn-success" type="submit"><i class="bi bi-check2" aria-hidden="true"></i> Aprobar solicitud</button></form>
+        <form method="POST" action="/empresas/{{ $.empresa.ID }}/membership-requests/{{ .ID }}"><input type="hidden" name="_csrf" value="{{ $.csrfToken }}"><input type="hidden" name="decision" value="reject"><button class="btn btn-outline-danger" type="submit"><i class="bi bi-x-lg" aria-hidden="true"></i> Rechazar</button></form>
+      </div>
+    </article>
+    {{ else }}<p>No hay solicitudes pendientes.</p>{{ end }}
+  </div>
+</section>
+{{ end }}
 
 <!-- ─────────── ACCIONES FINALES ─────────── -->
 <footer class="tf-profile__footer">
     <a href="/empresas" class="btn btn-secondary">
         <i class="bi bi-arrow-left"></i> Volver al listado
     </a>
-    {{ if or (eq .role "admin") (and .empresa.OwnerID (eq (printf "%v" .empresa.OwnerID) (printf "%v" $.userID))) }}
+    {{ if .canManage }}
     <form action="/empresas/{{ .empresa.ID }}/delete" method="POST" style="display:inline"
           onsubmit="return confirm('¿Eliminar esta empresa? Esta acción no se puede deshacer.')">
         <input type="hidden" name="_csrf" value="{{ .csrfToken }}">
@@ -266,3 +287,5 @@
 </footer>
 
 <nav aria-label="Páginas de conductores de la empresa">{{ if gt .driverPrevious 0 }}<a href="?driver_page={{ .driverPrevious }}">Anteriores</a>{{ end }} {{ if .driverHasNext }}<a href="?driver_page={{ .driverNext }}">Siguientes</a>{{ end }}</nav>
+ </div>
+<script src="/js/entity-view-toggle.js" defer></script>

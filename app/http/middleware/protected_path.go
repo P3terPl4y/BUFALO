@@ -8,7 +8,7 @@ import "strings"
 func isProtectedRequestPath(path string) bool {
 	path = strings.TrimSuffix(path, "/")
 	for _, prefix := range []string{
-		"/home", "/logout", "/presence", "/profile", "/red-choferes",
+		"/home", "/logout", "/presence", "/profile", "/notifications", "/red-choferes",
 		"/loads", "/direcciones", "/empresas", "/choferes", "/publicadores",
 		"/facturas", "/admin",
 	} {

@@ -7,6 +7,7 @@ type Empresa struct {
 	Tipo            TipoEmpresa `json:"tipo" db:"tipo" gorm:"type:empresa_tipo;not null;index"`
 	NombreLegal     string      `json:"nombre_legal" db:"nombre_legal" gorm:"size:255;not null"`
 	NombreComercial *string     `json:"nombre_comercial,omitempty" db:"nombre_comercial" gorm:"size:255"`
+	ProfilePhoto    string      `json:"profile_photo,omitempty" db:"profile_photo" gorm:"size:255"`
 	TaxID           *string     `json:"tax_id,omitempty" db:"tax_id" gorm:"size:50;uniqueIndex"`
 	MCNumber        *string     `json:"mc_number,omitempty" db:"mc_number" gorm:"size:20;index"`
 	DOTNumber       *string     `json:"dot_number,omitempty" db:"dot_number" gorm:"size:20"`
@@ -18,8 +19,12 @@ type Empresa struct {
 	DaysToPay       *float64    `json:"days_to_pay,omitempty" db:"days_to_pay" gorm:"type:numeric(5,2)"`
 
 	// ── Propietario: el user que creó la empresa ──
-	OwnerID *uint `json:"owner_id,omitempty" db:"owner_id" gorm:"index"`
-	Owner   *User `json:"owner,omitempty" gorm:"foreignKey:OwnerID"`
+	OwnerID              *uint `json:"owner_id,omitempty" db:"owner_id" gorm:"index"`
+	Owner                *User `json:"owner,omitempty" gorm:"foreignKey:OwnerID"`
+	CanManage            bool  `json:"-" gorm:"-"` // computed by the controller for owner-only UI actions
+	CanChat              bool  `json:"-" gorm:"-"`
+	CanRequestMembership bool  `json:"-" gorm:"-"`
+	MembershipPending    bool  `json:"-" gorm:"-"`
 
 	Estado    EstadoEmpresa `json:"estado" db:"estado" gorm:"type:empresa_estado;not null;default:'activo';index"`
 	CreatedAt time.Time     `json:"created_at" db:"created_at" gorm:"autoCreateTime"`

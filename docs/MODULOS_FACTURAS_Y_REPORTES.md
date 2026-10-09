@@ -8,12 +8,10 @@ PDF abre la impresión del navegador sobre la vista de salud existente. Así con
 
 `app/exports.Section` es la unidad extensible para agrupar un informe. Los módulos pueden añadir secciones sin alterar los generadores CSV/XLSX/PDF. XLSX comparte los encabezados BUFALO y conserva la primera fila al desplazarse. CSV lleva BOM UTF-8 y neutraliza texto que Excel interpretaría como fórmula.
 
-## Laboratorio de factura
+## Diseños de factura por broker
 
-`/facturas/disenador` y `/admin/facturas/disenador` comparten una única vista. El módulo no crea ni emite facturas reales. Usa datos de demostración y persiste hasta doce diseños locales en el navegador, nunca información de facturas.
+`/facturas/disenador` es una herramienta autenticada para publicadores. Guarda hasta 24 plantillas por perfil de broker en `factura_plantillas`; los diseños ya no dependen del navegador. Un publicador puede marcar una como predeterminada, seleccionarla al crear un borrador o cambiar el formato asociado a una factura existente. Cada factura conserva su selección, mientras los cambios al diseño guardado se reflejan en las facturas que lo usan.
 
-Cada bloque aporta sus metadatos y su función de renderizado. `window.BufaloInvoiceStudio.attachModule(id, descriptor)` acopla un bloque nuevo; `detachModule(id)` lo retira del catálogo y de los diseños abiertos. Se permiten hasta dieciséis módulos y dieciséis bloques por diseño. Los diseños conservan los identificadores válidos de módulos que todavía no se hayan cargado y los muestran cuando el módulo se acopla; esto permite cargar extensiones después del editor sin perder configuraciones guardadas. El lienzo, orden, presets, persistencia e impresión no necesitan conocer el contenido de los bloques. Los renderizadores son código confiable de la aplicación; deben escapar cualquier valor de usuario y validar listas antes de incorporarlo a la vista.
+La factura seleccionada se presenta con sus datos reales en la vista del chofer y puede imprimirse o guardarse como PDF. Los bloques de partes, datos y totales son obligatorios para no ocultar quién cobra, quién paga o el importe; el servidor valida formato, color, orden, duplicados, propiedad del diseño y el límite de 16 bloques. Los bloques persistidos se limitan a los módulos registrados por la aplicación. `window.BufaloInvoiceStudio.attachModule(id, descriptor)` sigue disponible para añadir módulos de vista en la sesión; guardar nuevos módulos requiere registrarlos y permitirlos en el servidor.
 
-Los diseños guardados son deliberadamente locales a cada navegador: este entorno de prueba no añade migraciones ni modifica el flujo de emisión. La conexión posterior a plantillas compartidas debe añadir almacenamiento autenticado y versionar el esquema antes de usar los diseños para emitir documentos.
-
-La prueba de interfaz aislada del diseñador se ejecuta con `cd tests/browser && npm install && npm run test:invoice`. Usa un documento de demostración y almacenamiento simulado; no requiere ni toca una cuenta ni una base de datos.
+Las pruebas de servicios y controladores ejecutan la migración en PostgreSQL aislado y cubren la propiedad entre brokers, la elección del diseño, el flujo de creación y la vista del chofer. La prueba de interfaz del diseñador simula el API para validar la carga y guardado remoto sin acceder a cuentas reales.

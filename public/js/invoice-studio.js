@@ -10,7 +10,9 @@
     const modules = new Map();
     const maxModules = 16;
     const maxBlocks = 16;
-    const maxSavedDesigns = 12;
+    const maxSavedDesigns = 24;
+    const templatesEndpoint = root.dataset.templatesEndpoint;
+    let templates = [];
     let initialized = false;
     const presets = {
         classic: { preset: 'classic', name: 'Factura clásica', format: 'a4', color: '#253746', currency: 'CUP', blocks: ['brand', 'parties', 'details', 'items', 'totals', 'payment', 'notes', 'signature'] },
@@ -56,17 +58,6 @@
         } catch (_) { /* Ignore malformed or unavailable browser storage. */ }
         return { ...presets.classic };
     }
-    function savedDesigns() {
-        try {
-            const stored = localStorage.getItem(`${storageKey}.saved`) || '[]';
-            if (stored.length > 65536) return [];
-            const designs = JSON.parse(stored);
-            if (!Array.isArray(designs)) return [];
-            return designs.slice(0, maxSavedDesigns)
-                .filter((item) => item && typeof item === 'object' && typeof item.name === 'string' && Array.isArray(item.blocks) && item.blocks.length <= maxBlocks && new Set(item.blocks).size === item.blocks.length && item.blocks.every((block) => typeof block === 'string' && /^[a-z][a-z0-9_-]{0,31}$/.test(block)))
-                .map((item) => ({ ...sanitizeState(item), name: item.name.slice(0, 48) }));
-        } catch (_) { return []; }
-    }
     function safeText(value) { return String(value).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
     function sanitizeState(value) {
         if (!value || !Array.isArray(value.blocks) || value.blocks.length > maxBlocks || new Set(value.blocks).size !== value.blocks.length || !value.blocks.every((block) => typeof block === 'string' && /^[a-z][a-z0-9_-]{0,31}$/.test(block))) return { ...presets.classic };
@@ -74,7 +65,8 @@
             format: ['a4', 'letter', 'receipt'].includes(value.format) ? value.format : 'a4',
             color: typeof value.color === 'string' && /^#[0-9a-f]{6}$/i.test(value.color) ? value.color : '#253746',
             currency: ['CUP', 'USD', 'EUR', 'MLC'].includes(value.currency) ? value.currency : 'CUP',
-            blocks: [...value.blocks], preset: ['classic', 'modern', 'receipt'].includes(value.preset) ? value.preset : '' };
+            blocks: [...value.blocks], preset: ['classic', 'modern', 'receipt'].includes(value.preset) ? value.preset : '',
+            id: Number.isInteger(value.id) && value.id > 0 ? value.id : 0, default: value.default === true };
     }
     function render() {
         paper.dataset.format = state.format;
@@ -83,6 +75,7 @@
         document.getElementById('studioFormat').value = state.format;
         document.getElementById('studioColor').value = state.color;
         document.getElementById('studioCurrency').value = state.currency;
+        document.getElementById('studioDefault').checked = state.default === true;
         document.getElementById('studioFormatLabel').textContent = ({ a4: 'A4 · vertical', letter: 'Carta · vertical', receipt: 'Recibo · 80 mm' })[state.format];
         canvas.replaceChildren();
         for (const [index, type] of state.blocks.entries()) {
@@ -96,7 +89,7 @@
             for (const [label, movement] of [['↑', -1], ['↓', 1], ['Quitar', 0]]) {
                 const button = document.createElement('button'); button.type = 'button'; button.textContent = label;
                 button.setAttribute('aria-label', movement === 0 ? `Quitar ${label}` : `${movement < 0 ? 'Subir' : 'Bajar'} ${label}`);
-                button.disabled = movement < 0 && index === 0 || movement > 0 && index === state.blocks.length - 1;
+                button.disabled = movement === 0 && ['parties', 'details', 'totals'].includes(type) || movement < 0 && index === 0 || movement > 0 && index === state.blocks.length - 1;
                 button.addEventListener('click', () => { if (!movement) state.blocks.splice(index, 1); else [state.blocks[index], state.blocks[index + movement]] = [state.blocks[index + movement], state.blocks[index]]; render(); });
                 actions.append(button);
             }
@@ -118,19 +111,41 @@
     }
     function renderSaved() {
         const select = document.getElementById('studioSaved'), current = select.value;
-        const designs = savedDesigns();
+        const designs = templates;
         select.replaceChildren(new Option('Seleccionar diseño guardado', ''));
-        designs.forEach((design, index) => select.add(new Option(design.name, String(index))));
+        designs.forEach((design) => select.add(new Option(`${design.name}${design.default ? ' · predeterminado' : ''}`, String(design.id))));
         if ([...select.options].some((option) => option.value === current)) select.value = current;
     }
-    function save() {
+    async function save() {
         state.name = document.getElementById('studioName').value.trim().slice(0, 48) || 'Diseño sin nombre';
+        state.default = document.getElementById('studioDefault').checked;
+        if (!templatesEndpoint) { notice.textContent = 'No se pudo conectar el guardado al servidor.'; return; }
         try {
-            const designs = savedDesigns();
-            const next = [{ ...state, blocks: [...state.blocks] }, ...designs.filter((item) => item.name !== state.name)].slice(0, maxSavedDesigns);
-            localStorage.setItem(`${storageKey}.saved`, JSON.stringify(next));
-            notice.textContent = `Diseño «${state.name}» guardado en este navegador.`; renderSaved();
-        } catch (_) { notice.textContent = 'El navegador no permitió guardar el diseño. Puedes seguir usando la vista previa.'; }
+            const form = new URLSearchParams();
+            form.set('_csrf', root.dataset.csrf || '');
+            form.set('config', JSON.stringify(state));
+            const response = await fetch(templatesEndpoint, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: form.toString(), credentials: 'same-origin' });
+            const result = await response.json();
+            if (!response.ok || !result.data) throw new Error('save failed');
+            state.id = result.data.id;
+            await loadTemplates();
+            notice.textContent = `Diseño «${state.name}» guardado en tu cuenta.`;
+            render();
+        } catch (_) { notice.textContent = 'No se pudo guardar el diseño en el servidor. Revisa la conexión e inténtalo de nuevo.'; }
+    }
+    async function loadTemplates() {
+        if (!templatesEndpoint) return;
+        try {
+            const response = await fetch(templatesEndpoint, { credentials: 'same-origin', headers: { Accept: 'application/json' } });
+            const result = await response.json();
+            if (!response.ok || !Array.isArray(result.data)) throw new Error('load failed');
+            templates = result.data.slice(0, maxSavedDesigns).map((item) => ({
+                id: Number(item.id), name: String(item.name || '').slice(0, 48), format: item.format,
+                color: item.color, currency: item.currency || 'CUP', blocks: item.blocks,
+                preset: item.preset, default: item.default === true
+            })).filter((item) => Number.isInteger(item.id) && item.id > 0);
+            renderSaved();
+        } catch (_) { notice.textContent = 'No se pudieron cargar tus diseños guardados.'; }
     }
     function wirePaletteButton(button) {
         button.addEventListener('dragstart', (event) => { event.dataTransfer.setData('text/bufalo-invoice-module', button.dataset.block); event.dataTransfer.effectAllowed = 'copy'; });
@@ -156,11 +171,12 @@
     document.getElementById('studioCurrency').addEventListener('change', (event) => { state.currency = ['CUP', 'USD', 'EUR', 'MLC'].includes(event.target.value) ? event.target.value : 'CUP'; render(); });
     document.getElementById('studioSave').addEventListener('click', save);
     document.getElementById('studioReset').addEventListener('click', () => { state = { ...presets.classic }; notice.textContent = 'Se restauró el formato clásico. Tus diseños guardados siguen disponibles.'; render(); });
-    document.getElementById('studioClear').addEventListener('click', () => { state.blocks = []; render(); });
+    document.getElementById('studioClear').addEventListener('click', () => { state.blocks = state.blocks.filter((block) => ['parties', 'details', 'totals'].includes(block)); notice.textContent = 'Se conservaron los bloques esenciales de partes, datos y total.'; render(); });
     document.getElementById('studioPrint').addEventListener('click', () => window.print());
-    document.getElementById('studioSaved').addEventListener('change', (event) => { if (event.target.value === '') return; try { const saved = JSON.parse(localStorage.getItem(`${storageKey}.saved`) || '[]')[Number(event.target.value)]; if (saved) state = sanitizeState(saved); render(); } catch (_) { notice.textContent = 'No se pudo abrir el diseño guardado.'; } });
+    document.getElementById('studioSaved').addEventListener('change', (event) => { if (event.target.value === '') return; const saved = templates.find((item) => item.id === Number(event.target.value)); if (saved) { state = sanitizeState(saved); render(); } });
     // Stable extension seam: feature bundles can attach or detach invoice blocks
     // without changing the canvas, drag behavior, persistence or print surface.
     window.BufaloInvoiceStudio = Object.freeze({ attachModule, detachModule });
     render();
+    loadTemplates();
 })();

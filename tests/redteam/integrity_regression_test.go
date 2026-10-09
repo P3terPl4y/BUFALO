@@ -3,6 +3,7 @@ package redteam
 import (
 	"context"
 	"errors"
+	"fmt"
 	"goravel/app/facades"
 	"goravel/app/models"
 	"goravel/app/services"
@@ -12,7 +13,99 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 )
+
+func TestLoadAssignmentAndTransitionsNotifyDriverAndPublisher(t *testing.T) {
+	tests.ResetDB(t)
+	fx := seedFixture(t, 6)
+	var driver principal
+	for _, p := range fx.people {
+		if p.role == "chofer" {
+			driver = p
+			break
+		}
+	}
+	if err := services.NewCargaService().AssignChofer(fmt.Sprint(fx.raceLoadID), *driver.user.ChoferID, fx.ownerID); err != nil {
+		t.Fatal(err)
+	}
+	var profile models.Chofer
+	if err := facades.Orm().Query().Where("user_id = ?", driver.user.ID).First(&profile); err != nil {
+		t.Fatal(err)
+	}
+	if err := services.NewCargaService().StartTransit(fmt.Sprint(fx.raceLoadID), profile.ID, driver.user.ID); err != nil {
+		t.Fatal(err)
+	}
+	if err := services.NewCargaService().MarkDelivered(fmt.Sprint(fx.raceLoadID), profile.ID, driver.user.ID); err != nil {
+		t.Fatal(err)
+	}
+	driverNotices, err := facades.Orm().Query().Model(&models.UserNotification{}).Where("user_id = ?", driver.user.ID).Count()
+	if err != nil || driverNotices != 1 {
+		t.Fatalf("driver assignment notice count=%d err=%v", driverNotices, err)
+	}
+	var publisher models.Publicador
+	if err := facades.Orm().Query().Where("user_id = ?", fx.ownerID).First(&publisher); err != nil {
+		t.Fatal(err)
+	}
+	publisherNotices, err := facades.Orm().Query().Model(&models.UserNotification{}).Where("user_id = ?", fx.ownerID).Count()
+	if err != nil || publisherNotices != 3 {
+		t.Fatalf("publisher should receive assignment and both status events; count=%d err=%v", publisherNotices, err)
+	}
+	var emailCount int64
+	if err := facades.DB().Select(&emailCount, "SELECT count(*) FROM notification_email_outbox WHERE user_id=$1 AND sent_at IS NULL", driver.user.ID); err != nil || emailCount != 1 {
+		t.Fatalf("assignment email not durably queued: count=%d err=%v", emailCount, err)
+	}
+}
+
+func TestPrivateNetworkPublicationCreatesInboxNoticesOnlyForMembers(t *testing.T) {
+	tests.ResetDB(t)
+	fx := seedFixture(t, 9)
+	var owner, member, outside principal
+	for _, p := range fx.people {
+		if p.user.ID == fx.ownerID {
+			owner = p
+		}
+		if p.role == "chofer" {
+			if member.user == nil {
+				member = p
+			} else {
+				outside = p
+			}
+		}
+	}
+	if member.user == nil || outside.user == nil {
+		t.Fatal("expected two drivers")
+	}
+	var driverProfile models.Chofer
+	if err := facades.Orm().Query().Where("user_id = ?", member.user.ID).First(&driverProfile); err != nil {
+		t.Fatal(err)
+	}
+	if err := facades.Orm().Query().Create(&models.RedChofer{EmpresaID: fx.brokerIDs[0], ChoferID: driverProfile.ID}); err != nil {
+		t.Fatal(err)
+	}
+	var prior models.Carga
+	if err := facades.Orm().Query().Where("id = ?", fx.raceLoadID).First(&prior); err != nil {
+		t.Fatal(err)
+	}
+	var publisher models.Publicador
+	if err := facades.Orm().Query().Where("user_id = ?", owner.user.ID).First(&publisher); err != nil {
+		t.Fatal(err)
+	}
+	load := &models.Carga{NumeroReferencia: "RT-NETWORK-NOTICE", PublicadorID: publisher.ID, OrigenDireccionID: prior.OrigenDireccionID, DestinoDireccionID: prior.DestinoDireccionID, FechaRecogida: time.Now(), TipoCarga: models.CargaFTL, TipoEquipo: models.EquipoDryVan, DistanciaKm: 10, Moneda: models.MonedaUSD, Estado: models.CargaPublicada, Audiencia: models.AudienciaRedPrivada}
+	if err := services.NewCargaService().CreateForActor(load, owner.user.ID, "publicador"); err != nil {
+		t.Fatal(err)
+	}
+	var count int64
+	var err error
+	count, err = facades.Orm().Query().Model(&models.UserNotification{}).Where("user_id = ? AND event_type = ? AND resource_id = ?", member.user.ID, "load_published", load.ID).Count()
+	if err != nil || count != 1 {
+		t.Fatalf("network member was not notified: count=%d err=%v", count, err)
+	}
+	count, err = facades.Orm().Query().Model(&models.UserNotification{}).Where("user_id = ? AND event_type = ? AND resource_id = ?", outside.user.ID, "load_published", load.ID).Count()
+	if err != nil || count != 0 {
+		t.Fatalf("non-member was notified: count=%d err=%v", count, err)
+	}
+}
 
 func TestLoadPrivacyIntegrityAndInterest(t *testing.T) {
 	tests.ResetDB(t)

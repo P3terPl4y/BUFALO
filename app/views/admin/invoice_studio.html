@@ -1,9 +1,9 @@
-<section class="bf-invoice-studio" id="invoiceStudio">
+<section class="bf-invoice-studio" id="invoiceStudio" data-templates-endpoint="{{ .templatesEndpoint }}" data-csrf="{{ .csrfToken }}">
     <header class="bf-studio__header">
-        <div><a href="/facturas" class="bf-health__back">Facturas / Laboratorio de diseño</a><h1>Diseñador de facturas <span class="bf-studio__badge">MÓDULO DE PRUEBA</span></h1><p>Arrastra bloques para crear formatos y revisar una factura de ejemplo antes de llevar el diseño a producción.</p></div>
+        <div><a href="/facturas" class="bf-health__back">Facturas / Diseños del broker</a><h1>Diseñador de facturas</h1><p>Guarda tus formatos y selecciónalos al crear una factura. El chofer verá el diseño con los datos reales de su carga.</p></div>
         <div class="bf-studio__actions"><button type="button" class="btn btn-outline-secondary" id="studioReset">Restablecer</button><button type="button" class="btn btn-outline-primary" id="studioSave">Guardar diseño</button><button type="button" class="btn btn-primary" id="studioPrint"><i class="bi bi-file-earmark-pdf"></i> Imprimir / PDF</button></div>
     </header>
-    <div class="bf-studio__notice" role="status" id="studioNotice">Los diseños se guardan en este navegador. Este laboratorio nunca crea ni emite facturas reales.</div>
+    <div class="bf-studio__notice" role="status" id="studioNotice">Los diseños guardados pertenecen a tu perfil de broker. Los bloques de partes, datos y total siempre se incluyen.</div>
     <div class="bf-studio__presets" role="group" aria-label="Formatos de página">
         <button type="button" data-preset="classic" class="is-active">Clásico · A4</button><button type="button" data-preset="modern">Moderno · A4</button><button type="button" data-preset="receipt">Recibo · 80 mm</button>
         <label>Mis diseños<select id="studioSaved"><option value="">Seleccionar diseño guardado</option></select></label>
@@ -13,6 +13,7 @@
             <h2>Bloques del diseño</h2><p>Arrastra al documento. Puedes reordenarlos o quitarlos después.</p>
             <div id="studioPalette" class="bf-studio__blocks"></div>
             <label class="bf-studio__name">Nombre del diseño<input id="studioName" maxlength="48" value="Factura clásica"></label>
+            <label class="bf-studio__default"><input id="studioDefault" type="checkbox"> Usar como predeterminado para nuevas facturas</label>
         </aside>
         <section class="bf-studio__preview-wrap" aria-label="Vista previa de factura">
             <div class="bf-studio__preview-head"><strong>Vista previa</strong><span id="studioFormatLabel">A4 · vertical</span></div>

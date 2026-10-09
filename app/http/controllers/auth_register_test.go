@@ -5,6 +5,7 @@ import (
 	"goravel/app/facades"
 	"goravel/app/http/controllers"
 	"goravel/app/models"
+	"goravel/app/services"
 	"goravel/app/viewhelpers"
 	"goravel/bootstrap"
 	"goravel/tests"
@@ -212,15 +213,23 @@ func TestHandleRegister_Chofer_ExistingEmpresa(t *testing.T) {
 
 	resp := postForm(t, "/register", form)
 	body, _ := io.ReadAll(resp.Body)
-	if !strings.Contains(string(body), "requiere aprobación") {
+	if !strings.Contains(string(body), "Confirma tu correo") {
 		t.Fatalf("unexpected response: %s", body)
 	}
 	if tests.CountUsers(t) != 0 {
-		t.Fatal("self registration joined an existing company")
+		t.Fatal("registration created the account before email confirmation")
 	}
-	count, err := facades.Orm().Query().Model(&models.PendingRegistration{}).Count()
-	if err != nil || count != 0 {
-		t.Fatalf("unauthorized pending registration: count=%d err=%v", count, err)
+	confirmPendingRegistration(t).Body.Close()
+	var user models.User
+	if err := facades.Orm().Query().Where("email = ?", "pedro@test.com").First(&user); err != nil {
+		t.Fatal(err)
+	}
+	if user.EmpresaID != nil {
+		t.Fatal("account must remain unaffiliated until owner approval")
+	}
+	var request services.CompanyMembershipRequest
+	if err := facades.Orm().Query().Where("user_id = ? AND empresa_id = ? AND status = ?", user.ID, emp.ID, "pending").First(&request); err != nil || request.ID == 0 {
+		t.Fatalf("verified registration should create a pending membership request: request=%+v err=%v", request, err)
 	}
 }
 
@@ -494,7 +503,7 @@ func TestHandleRegister_ExistingEmpresaDeOtroTipo(t *testing.T) {
 	if n := tests.CountUsers(t); n != 0 {
 		t.Errorf("no debe crear usuario, got %d", n)
 	}
-	if !strings.Contains(string(body), "requiere aprobación") {
+	if !strings.Contains(string(body), "La empresa seleccionada no es válida") {
 		t.Errorf("esperaba mensaje de empresa inválida. Body: %s", string(body))
 	}
 }

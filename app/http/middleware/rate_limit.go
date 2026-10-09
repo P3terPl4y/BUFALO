@@ -167,6 +167,14 @@ func InterestAccountRateLimiter(counter RateCounter) fiber.Handler {
 	return NewRateLimit(counter, "interest:account", 10, time.Hour, func(c fiber.Ctx) string { return fmt.Sprint(c.Locals("user_id")) })
 }
 
+func CompanyChatReadRateLimiter(counter RateCounter) fiber.Handler {
+	return NewRateLimit(counter, "company-chat:read", 60, time.Minute, func(c fiber.Ctx) string { return fmt.Sprint(c.Locals("user_id")) })
+}
+
+func CompanyChatWriteRateLimiter(counter RateCounter) fiber.Handler {
+	return NewRateLimit(counter, "company-chat:write", 20, time.Minute, func(c fiber.Ctx) string { return fmt.Sprint(c.Locals("user_id")) })
+}
+
 func ProfileAccountRateLimiter(counter RateCounter) fiber.Handler {
 	return NewRateLimit(counter, "profile:account", 10, time.Minute, func(c fiber.Ctx) string { return fmt.Sprint(c.Locals("user_id")) })
 }

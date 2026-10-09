@@ -2,6 +2,7 @@ package requests
 
 type FacturaStoreRequest struct {
 	CargaID          uint    `form:"carga_id"          json:"carga_id"`
+	PlantillaID      uint    `form:"plantilla_id"      json:"plantilla_id"`
 	NumeroFactura    string  `form:"numero_factura"    json:"numero_factura"`
 	FechaEmision     string  `form:"fecha_emision"     json:"fecha_emision"`
 	FechaVencimiento string  `form:"fecha_vencimiento" json:"fecha_vencimiento"`

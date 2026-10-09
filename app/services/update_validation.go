@@ -45,6 +45,12 @@ func ValidateCompanyUpdate(values map[string]interface{}) error {
 	if err := validateChoice(values, "estado", "activo", "inactivo", "suspendido"); err != nil {
 		return err
 	}
+	if photo, ok := values["profile_photo"]; ok {
+		value, valid := photo.(string)
+		if !valid || len(value) > 255 || (value != "" && !strings.HasPrefix(value, "/uploads/company-logos/")) {
+			return fmt.Errorf("imagen de empresa inválida")
+		}
+	}
 	if days, ok := values["days_to_pay"].(float64); ok && (math.IsNaN(days) || math.IsInf(days, 0) || days < 0 || days > 999) {
 		return fmt.Errorf("plazo de pago inválido")
 	}

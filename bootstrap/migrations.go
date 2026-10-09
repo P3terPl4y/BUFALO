@@ -25,5 +25,10 @@ func Migrations() []schema.Migration {
 		&migrations.M20261009000003AddVerificationResend{},
 		&migrations.M20261009000004CreateCompanyMembershipRequests{},
 		&migrations.M20261009000005AddIntegrityConstraints{},
+		&migrations.M20261009000006AddInvoiceTemplates{},
+		&migrations.M20261009000007CreateCompanyChatMessages{},
+		&migrations.M20261009000008CreateUserNotifications{},
+		&migrations.M20261010000001AddNotificationActor{},
+		&migrations.M20261010000002AddEmpresaProfilePhoto{},
 	}
 }

@@ -100,6 +100,7 @@ func RunInterestOutbox(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
+			ProcessEmailNoticeOutbox(ctx)
 			if err := ProcessInterestOutbox(ctx, NewEmailService().SendLoadInterest); err != nil && ctx.Err() == nil {
 				log.Print("notification outbox unavailable")
 			}

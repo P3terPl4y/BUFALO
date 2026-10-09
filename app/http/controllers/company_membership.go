@@ -6,6 +6,7 @@ import (
 	"github.com/gofiber/fiber/v3/middleware/csrf"
 	"goravel/app/facades"
 	"goravel/app/services"
+	"net/url"
 	"strconv"
 )
 
@@ -20,7 +21,20 @@ func (c *EmpresaController) RequestMembership(ctx fiber.Ctx) error {
 	}
 	if err := services.RequestCompanyMembership(uid, uint(id)); err != nil {
 		if errors.Is(err, services.ErrMembershipDenied) || errors.Is(err, services.ErrNotFound) {
-			return fiber.ErrConflict
+			message := "No se pudo solicitar la afiliación. Comprueba que tu perfil y la empresa estén activos."
+			switch {
+			case errors.Is(err, services.ErrMembershipAlreadyAssociated):
+				message = "Tu perfil ya está asociado a una empresa."
+			case errors.Is(err, services.ErrMembershipPending):
+				message = "Ya tienes una solicitud de afiliación pendiente."
+			case errors.Is(err, services.ErrMembershipRequestLimit):
+				message = "Alcanzaste el límite de cinco solicitudes en 24 horas. Inténtalo más tarde."
+			case errors.Is(err, services.ErrMembershipWrongCompanyType):
+				message = "El tipo de empresa no corresponde a tu perfil."
+			case errors.Is(err, services.ErrMembershipCompanyOwner):
+				message = "Como propietario, administra las empresas que creaste desde Mis empresas; no puedes afiliarte a otra empresa."
+			}
+			return ctx.Redirect().To("/empresas/" + strconv.FormatUint(id, 10) + "?flash_error=" + url.QueryEscape(message))
 		}
 		return fiber.ErrServiceUnavailable
 	}

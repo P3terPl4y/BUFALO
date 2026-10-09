@@ -169,8 +169,7 @@ func (a *AuthController) ShowLogin(ctx fiber.Ctx) error {
 
 func (a *AuthController) ShowRegister(ctx fiber.Ctx) error {
 	ctx.Set("Cache-Control", "no-store, private")
-	empresasBroker := []models.Empresa{}
-	empresasCarrier := []models.Empresa{}
+	empresasBroker, empresasCarrier := registrationCompanies()
 
 	return ctx.Render("auth/register", fiber.Map{
 		"title":           "Crear Cuenta",
@@ -281,10 +280,7 @@ func (a *AuthController) HandleRegister(ctx fiber.Ctx) error {
 	}
 
 	// 3. Empresa: existing | new | none
-	if req.EmpresaMode == "existing" {
-		return a.renderRegister(ctx, "La asociación a una empresa existente requiere aprobación de un administrador", nil, &req)
-	}
-	if req.EmpresaMode != "new" && req.EmpresaMode != "none" {
+	if req.EmpresaMode != "new" && req.EmpresaMode != "none" && req.EmpresaMode != "existing" {
 		return a.renderRegister(ctx, "Selecciona una opción de empresa válida", nil, &req)
 	}
 	if req.EmpresaMode == "existing" && req.EmpresaID == 0 {
@@ -543,7 +539,10 @@ func createConfirmedRegistration(tx orm.Query, req requests.UserRegisterRequest)
 	var empresa *models.Empresa
 	switch req.EmpresaMode {
 	case "existing":
-		return errors.New("existing company membership requires administrator approval")
+		var selected models.Empresa
+		if req.EmpresaID == 0 || tx.Where("id = ? AND tipo = ? AND estado = ? AND deleted_at IS NULL", req.EmpresaID, tipoEmpresa, models.EmpresaActiva).First(&selected) != nil || selected.ID == 0 {
+			return errors.New("selected company is unavailable")
+		}
 	case "new":
 		if strings.TrimSpace(req.EmpresaNombreLegal) == "" {
 			return errors.New("company name is required")
@@ -582,7 +581,10 @@ func createConfirmedRegistration(tx orm.Query, req requests.UserRegisterRequest)
 			Certificaciones: req.ChoferCertificaciones, NumeroSeguro: req.ChoferNumeroSeguro,
 			FechaVencimientoSeguro: parseDate(req.ChoferFechaVencimientoSeguro), Estado: models.ChoferDisponible,
 		}
-		return userService.CreateWithRoleInTransaction(tx, &user, empresa, profile, nil)
+		if err := userService.CreateWithRoleInTransaction(tx, &user, empresa, profile, nil); err != nil {
+			return err
+		}
+		return createRegistrationMembershipRequest(tx, req, user.ID)
 	}
 	pais := req.PublicadorPaisEmisionLicencia
 	if pais == "" {
@@ -594,12 +596,39 @@ func createConfirmedRegistration(tx orm.Query, req requests.UserRegisterRequest)
 		AniosExperiencia:         req.PublicadorAniosExperiencia, Especialidad: req.PublicadorEspecialidad,
 		Comision: req.PublicadorComision, CreditScore: req.PublicadorCreditScore, Estado: models.PublicadorActivo,
 	}
-	return userService.CreateWithRoleInTransaction(tx, &user, empresa, nil, profile)
+	if err := userService.CreateWithRoleInTransaction(tx, &user, empresa, nil, profile); err != nil {
+		return err
+	}
+	return createRegistrationMembershipRequest(tx, req, user.ID)
+}
+
+func registrationCompanies() ([]models.Empresa, []models.Empresa) {
+	var broker, carrier []models.Empresa
+	_ = facades.Orm().Query().Where("tipo = ? AND estado = ? AND deleted_at IS NULL", "broker", models.EmpresaActiva).Order("nombre_legal").Limit(500).Find(&broker)
+	_ = facades.Orm().Query().Where("tipo = ? AND estado = ? AND deleted_at IS NULL", "carrier", models.EmpresaActiva).Order("nombre_legal").Limit(500).Find(&carrier)
+	return broker, carrier
+}
+
+func createRegistrationMembershipRequest(tx orm.Query, req requests.UserRegisterRequest, userID uint) error {
+	if req.EmpresaMode != "existing" {
+		return nil
+	}
+	row := services.CompanyMembershipRequest{UserID: userID, EmpresaID: req.EmpresaID, Status: "pending", CreatedAt: time.Now().UTC()}
+	if err := tx.Create(&row); err != nil {
+		return err
+	}
+	var company models.Empresa
+	if err := tx.Where("id = ?", req.EmpresaID).First(&company); err != nil {
+		return err
+	}
+	if company.OwnerID != nil {
+		return services.CreateUserNotification(tx, *company.OwnerID, "membership_requested", "Nueva solicitud de afiliación", "Un usuario solicitó unirse a tu empresa.", "company", company.ID, false)
+	}
+	return nil
 }
 
 func (a *AuthController) renderRegister(ctx fiber.Ctx, msg string, errs map[string]string, old *requests.UserRegisterRequest) error {
-	empresasBroker := []models.Empresa{}
-	empresasCarrier := []models.Empresa{}
+	empresasBroker, empresasCarrier := registrationCompanies()
 
 	// Nunca re-enviar la contraseña al template
 	if old != nil {

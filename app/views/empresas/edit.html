@@ -12,13 +12,22 @@
 </div>
 
 {{ if .flash_error }}<div class="alert alert-danger tf-mb-4">{{ .flash_error }}</div>{{ end }}
+{{ if .flash_success }}<div class="alert alert-success tf-mb-4">{{ .flash_success }}</div>{{ end }}
 
-<form action="/empresas/{{ .empresa.ID }}" method="POST" class="tf-form-page" id="empresaEditForm">
+<form action="/empresas/{{ .empresa.ID }}" method="POST" enctype="multipart/form-data" class="tf-form-page" id="empresaEditForm">
     <input type="hidden" name="_csrf" value="{{ .csrfToken }}">
     <input type="hidden" name="_method" value="PUT">
 
     <div class="tf-form-page__main">
         <div class="tf-form-card">
+
+            <section class="tf-form-block" id="block-company-photo" data-block="company-photo">
+                <header class="tf-form-block__head"><i class="bi bi-image tf-form-block__icon"></i><div class="tf-form-block__text"><h2>Imagen de la empresa</h2><p>La imagen aparece en tus tarjetas y en la ficha pública.</p></div></header>
+                <div class="tf-form-block__body">
+                    {{ if .empresa.ProfilePhoto }}<img class="tf-company-photo-preview" src="{{ .empresa.ProfilePhoto }}" alt="Logo actual de {{ .empresa.NombreLegal }}">{{ end }}
+                    <div class="tf-field"><label for="company_photo" class="form-label">{{ if .empresa.ProfilePhoto }}Cambiar imagen{{ else }}Subir logo o foto de perfil{{ end }}</label><input class="form-control" id="company_photo" name="profile_photo" type="file" accept="image/jpeg,image/png"><span class="tf-field-hint">JPEG o PNG · máximo 5 MB.</span></div>
+                </div>
+            </section>
 
             <!-- IDENTIFICACIÓN -->
             <section class="tf-form-block" id="block-identity" data-block="identity">

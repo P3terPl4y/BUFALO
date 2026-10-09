@@ -98,6 +98,12 @@ func SendLoadInterest(userID, loadID uint, comment string, sender InterestSender
 	if err := tx.Create(&notification); err != nil {
 		return err
 	}
+	if err := CreateUserNotification(tx, recipient.ID, "load_interest", "Nuevo interés en tu carga", user.Name+" está interesado en la carga "+load.NumeroReferencia+" y envió un mensaje.", "load", load.ID, false, userID); err != nil {
+		return err
+	}
+	if err := recordLoadActivity(tx, load.ID, load.Estado, "Chofer envió un mensaje de interés", userID); err != nil {
+		return err
+	}
 	if err := tx.Commit(); err != nil {
 		return err
 	}

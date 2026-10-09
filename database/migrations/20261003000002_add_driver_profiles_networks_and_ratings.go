@@ -63,6 +63,15 @@ func (m *M20261003000002AddDriverProfilesNetworksAndRatings) Up() error {
 			return err
 		}
 	}
+	// Schema.Table checks can return a stale catalog result directly after the
+	// base table is created in a fresh database. Keep the rating columns
+	// idempotent and guarantee they exist before the integrity migration runs.
+	if _, err := facades.Orm().Query().Exec(`
+ALTER TABLE chofers ADD COLUMN IF NOT EXISTS rating_average numeric(3,2) NOT NULL DEFAULT 0;
+ALTER TABLE chofers ADD COLUMN IF NOT EXISTS rating_count bigint NOT NULL DEFAULT 0;
+`); err != nil {
+		return err
+	}
 	return nil
 }
 

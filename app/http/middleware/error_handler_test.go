@@ -17,6 +17,7 @@ import (
 	"github.com/gofiber/fiber/v3/middleware/csrf"
 	"github.com/gofiber/template/html/v3"
 	"github.com/jackc/pgx/v5/pgconn"
+	"goravel/app/models"
 	"goravel/app/viewhelpers"
 )
 
@@ -70,7 +71,7 @@ func TestProtectedPathMatcherKeepsPublicUnknownURLsPublic(t *testing.T) {
 			t.Errorf("%q should not be treated as protected", path)
 		}
 	}
-	for _, path := range []string{"/home", "/loads/12", "/profile/edit", "/admin/users", "/facturas/export"} {
+	for _, path := range []string{"/home", "/loads/12", "/profile/edit", "/notifications", "/notifications/12/read", "/admin/users", "/facturas/export"} {
 		if !isProtectedRequestPath(path) {
 			t.Errorf("%q should remain protected", path)
 		}
@@ -98,5 +99,55 @@ func TestErrorHandlerRendersStatusAndKeepsHTTPCode(t *testing.T) {
 	}
 	if !strings.Contains(string(body), "Página no encontrada") || !strings.Contains(string(body), "404") {
 		t.Fatalf("expected branded 404 page, got %q", string(body))
+	}
+}
+
+func TestConflictPageCentersLogoAndStatusCode(t *testing.T) {
+	engine := html.New("../../../app/views", ".html")
+	viewhelpers.Register(engine)
+	app := fiber.New(fiber.Config{Views: engine})
+	app.Use(ErrorHandler())
+	app.Get("/conflict", func(c fiber.Ctx) error { return fiber.ErrConflict })
+
+	resp, err := app.Test(httptest.NewRequest(http.MethodGet, "/conflict", nil))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	page := string(body)
+	if resp.StatusCode != http.StatusConflict || !strings.Contains(page, `class="bf-error-art__brand"`) || !strings.Contains(page, `/img/bufalo-wide.png`) || !strings.Contains(page, `class="bf-error-art__status">409</span>`) {
+		t.Fatalf("409 page did not center BUFALO logo with status code: status=%d page=%q", resp.StatusCode, page)
+	}
+	if strings.Contains(page, "bufalo-error.svg") {
+		t.Fatal("409 page still renders the old truck illustration")
+	}
+}
+
+func TestEmptyNotificationsOnlyShowEmptyMessage(t *testing.T) {
+	engine := html.New("../../../app/views", ".html")
+	viewhelpers.Register(engine)
+	app := fiber.New(fiber.Config{Views: engine})
+	app.Get("/notifications", func(c fiber.Ctx) error {
+		return c.Render("notifications/index", fiber.Map{"title": "Notificaciones", "notifications": []models.UserNotification{}, "hasNext": false})
+	})
+	resp, err := app.Test(httptest.NewRequest(http.MethodGet, "/notifications", nil))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	page := string(body)
+	if resp.StatusCode != http.StatusOK || !strings.Contains(page, "Tu bandeja está vacía.") {
+		t.Fatalf("empty inbox message missing: status=%d page=%q", resp.StatusCode, page)
+	}
+	if strings.Contains(page, "bf-error-art") || strings.Contains(page, "bf-loader") || strings.Contains(page, "Eventos relacionados") {
+		t.Fatalf("empty inbox must not show an error/loading animation or explanatory copy: %q", page)
 	}
 }

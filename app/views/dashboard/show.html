@@ -339,6 +339,25 @@
     </section>
     {{ end }}
 
+    <section class="tf-info-block" aria-labelledby="loadActivityTitle">
+        <header class="tf-info-block__head">
+            <i class="bi bi-clock-history tf-info-block__icon"></i>
+            <div class="tf-info-block__text"><h2 id="loadActivityTitle">Actividad de la carga</h2><p>Actualizaciones y confirmaciones visibles para las partes autorizadas.</p></div>
+        </header>
+        <div class="tf-info-block__body">
+            {{ if .activity }}
+            <ol class="load-activity">
+                {{ range .activity }}
+                <li class="load-activity__item">
+                    <span class="load-activity__state">{{ .Estado }}</span>
+                    <div><strong>{{ .Comentario }}</strong><time datetime="{{ .CreatedAt.Format "2006-01-02T15:04:05Z07:00" }}">{{ .CreatedAt.Format "02/01/2006 15:04" }}</time></div>
+                </li>
+                {{ end }}
+            </ol>
+            {{ else }}<p class="empty-value">Aún no hay actividad registrada.</p>{{ end }}
+        </div>
+    </section>
+
     <!-- ══════════ FOOTER DE ACCIONES ══════════ -->
     <footer class="tf-profile__footer">
         <a href="/loads" class="btn btn-secondary">

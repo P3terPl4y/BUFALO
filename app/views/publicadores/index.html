@@ -1,41 +1,7 @@
-<div class="tf-loads-page">
-    <header class="tf-loads-header">
-        <div class="tf-loads-header__left">
-            <div class="tf-loads-header__icon"><i class="bi bi-briefcase"></i></div>
-            <div><h1>Publicadores</h1><p>Perfiles profesionales de brokers</p></div>
-        </div>
-    </header>
-
-    {{ if .flash_success }}<div class="alert alert-success tf-mb-4">{{ .flash_success }}</div>{{ end }}
-    {{ if .flash_error }}<div class="alert alert-danger tf-mb-4">{{ .flash_error }}</div>{{ end }}
-
-    <section class="tf-table-card">
-        <header class="tf-table-card__header">
-            <h2 class="tf-table-card__title"><i class="bi bi-list-ul"></i> Resultados</h2>
-            <span class="tf-table-card__count">{{ .total }} publicadores</span>
-        </header>
-        <div class="table-responsive">
-            <table class="tf-table">
-                <thead><tr><th>ID</th><th>Nombre</th><th>Licencia</th><th>Empresa</th><th>Estado</th><th>Acciones</th></tr></thead>
-                <tbody>
-                    {{ range .publicadores }}
-                    <tr>
-                        <td class="tf-cell-id">#{{ .ID }}</td>
-                        <td>{{ if .User }}{{ .User.Name }}{{ else }}—{{ end }}</td>
-                        <td>{{ .NumeroLicenciaBroker }}</td>
-                        <td>{{ if .Empresa }}{{ .Empresa.NombreLegal }}{{ else }}—{{ end }}</td>
-                        <td>{{ .Estado }}</td>
-                        <td class="tf-cell-actions">
-                            <a href="/publicadores/{{ .ID }}" class="btn btn-outline-primary" aria-label="Ver publicador">Ver</a>
-                            {{ if eq $.role "admin" }}<a href="/admin/publicadores/{{ .ID }}/edit" class="btn btn-outline-secondary">Editar</a>
-                            {{ else if and .User (eq .User.ID $.currentUserID) }}<a href="/publicadores/{{ .ID }}/edit" class="btn btn-outline-secondary">Editar</a>{{ end }}
-                        </td>
-                    </tr>
-                    {{ else }}
-                    <tr><td colspan="6"><div class="tf-empty"><h3>No hay publicadores</h3></div></td></tr>
-                    {{ end }}
-                </tbody>
-            </table>
-        </div>
-    </section>
+<div class="tf-loads-page" data-entity-view data-view-key="publishers">
+    <header class="tf-loads-header"><div class="tf-loads-header__left"><div class="tf-loads-header__icon"><i class="bi bi-briefcase"></i></div><div><h1>Publicadores</h1><p>Perfiles profesionales de brokers</p></div></div><div data-view-toolbar></div><span class="tf-table-card__count">{{ .total }} publicadores</span></header>
+    {{ if .flash_success }}<div class="alert alert-success tf-mb-4">{{ .flash_success }}</div>{{ end }}{{ if .flash_error }}<div class="alert alert-danger tf-mb-4">{{ .flash_error }}</div>{{ end }}
+    <section class="tf-table-card" data-view-cards><header class="tf-table-card__header"><h2 class="tf-table-card__title">Resultados</h2><div data-view-toolbar></div><span class="tf-table-card__count">{{ .total }}</span></header><div class="entity-card-grid">{{ range .publicadores }}<article class="entity-card"><div class="entity-card__identity"><div class="entity-card__avatar">{{ if and .User .User.ProfilePhoto }}<img src="{{ .User.ProfilePhoto }}" alt="Foto de {{ .User.Name }}" loading="lazy">{{ else }}<i class="bi bi-person-badge"></i>{{ end }}</div><div><h3>{{ if .User }}{{ .User.Name }}{{ else }}Publicador #{{ .ID }}{{ end }}</h3><p>{{ if .Empresa }}{{ .Empresa.NombreLegal }}{{ else }}Broker independiente{{ end }}</p></div></div><div class="entity-card__badges"><span class="badge {{ if eq .Estado "activo" }}bg-success{{ else if eq .Estado "suspendido" }}bg-danger{{ else }}bg-secondary{{ end }}">{{ .Estado }}</span>{{ if .Especialidad }}<span class="badge bg-light text-dark">{{ .Especialidad }}</span>{{ end }}</div><dl class="entity-card__details"><div><dt>Licencia</dt><dd>{{ if eq .NumeroLicenciaBroker "Privado" }}Privada{{ else if .NumeroLicenciaBroker }}{{ .NumeroLicenciaBroker }}{{ else }}—{{ end }}</dd></div><div><dt>Experiencia</dt><dd>{{ .AniosExperiencia }} años</dd></div></dl><div class="entity-card__actions"><a href="/publicadores/{{ .ID }}" class="btn btn-outline-primary">Ver perfil</a>{{ if and .User (eq .User.ID $.currentUserID) }}<a href="/publicadores/{{ .ID }}/edit" class="btn btn-outline-secondary">Editar</a>{{ end }}</div></article>{{ else }}<div class="tf-empty"><h3>No hay publicadores</h3></div>{{ end }}</div></section>
+    <section class="tf-table-card" data-view-table hidden><header class="tf-table-card__header"><h2 class="tf-table-card__title">Resultados</h2><div data-view-toolbar></div><span class="tf-table-card__count">{{ .total }}</span></header><div class="table-responsive"><table class="tf-table"><thead><tr><th>ID</th><th>Nombre</th><th>Licencia</th><th>Empresa</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>{{ range .publicadores }}<tr><td>#{{ .ID }}</td><td>{{ if .User }}{{ .User.Name }}{{ else }}—{{ end }}</td><td>{{ if eq .NumeroLicenciaBroker "Privado" }}Privada{{ else if .NumeroLicenciaBroker }}{{ .NumeroLicenciaBroker }}{{ else }}—{{ end }}</td><td>{{ if .Empresa }}{{ .Empresa.NombreLegal }}{{ else }}—{{ end }}</td><td>{{ .Estado }}</td><td><a href="/publicadores/{{ .ID }}" class="btn btn-outline-primary">Ver</a>{{ if eq $.role "admin" }} <a href="/admin/publicadores/{{ .ID }}/edit" class="btn btn-outline-secondary">Editar</a>{{ else if and .User (eq .User.ID $.currentUserID) }} <a href="/publicadores/{{ .ID }}/edit" class="btn btn-outline-secondary">Editar</a>{{ end }}</td></tr>{{ else }}<tr><td colspan="6">No hay publicadores.</td></tr>{{ end }}</tbody></table></div></section>
 </div>
+<script src="/js/entity-view-toggle.js" defer></script>

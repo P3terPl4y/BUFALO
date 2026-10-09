@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"encoding/json"
 	"fmt"
 	"goravel/app/billing"
 	"goravel/app/exports"
@@ -163,15 +164,84 @@ func (c *FacturaController) Show(ctx fiber.Ctx) error {
 	if err := c.authorize(ctx, f, false); err != nil {
 		return err
 	}
-	return ctx.Render("facturas/show", fiber.Map{"title": "Detalle Factura", "flash_error": ctx.Query("flash_error"), "flash_success": ctx.Query("flash_success"), "factura": f, "csrfToken": csrf.TokenFromContext(ctx), "role": sess.Get("role")}, "layouts/base")
+	var blocks []string
+	var presentationJSON string
+	if f.Plantilla != nil {
+		_ = json.Unmarshal([]byte(f.Plantilla.BloquesJSON), &blocks)
+		issuerName, recipientName := invoiceParticipantNames(f)
+		loadReference := fmt.Sprintf("Carga #%d", f.CargaID)
+		if f.Carga != nil && f.Carga.NumeroReferencia != "" {
+			loadReference = f.Carga.NumeroReferencia
+		}
+		presentation, _ := json.Marshal(fiber.Map{
+			"template": fiber.Map{"name": f.Plantilla.Nombre, "format": f.Plantilla.Formato, "color": f.Plantilla.Color, "blocks": blocks},
+			"invoice": fiber.Map{
+				"number": f.NumeroFactura, "issue_date": f.FechaEmision.Format("02/01/2006"),
+				"due_date": invoiceDueDate(f.FechaVencimiento), "load_id": f.CargaID, "load_reference": loadReference,
+				"issuer": issuerName, "recipient": recipientName, "distance_km": fmt.Sprintf("%.2f", f.DistanciaKm),
+				"rate_per_km": fmt.Sprintf("%.4f", f.TarifaPorKm), "subtotal": fmt.Sprintf("%.2f", f.Subtotal),
+				"taxes": fmt.Sprintf("%.2f", f.Impuestos), "total": fmt.Sprintf("%.2f", f.Total),
+				"currency": f.Moneda, "status": f.Estado, "payment_method": invoicePaymentMethod(f.MetodoPago),
+			},
+		})
+		presentationJSON = string(presentation)
+	}
+	var templates []models.FacturaPlantilla
+	var canChooseTemplate bool
+	user, _ := c.currentUser(ctx)
+	if user != nil && user.Role == "publicador" && f.PublicadorID != nil {
+		profile, profileErr := c.publicadorForUser(user)
+		if profileErr == nil && profile.ID == *f.PublicadorID {
+			canChooseTemplate = true
+			templates, _ = services.NewFacturaPlantillaService().List(profile.ID)
+		}
+	}
+	return ctx.Render("facturas/show", fiber.Map{"title": "Detalle Factura", "flash_error": ctx.Query("flash_error"), "flash_success": ctx.Query("flash_success"), "factura": f, "invoiceBlocks": blocks, "invoicePresentationJSON": presentationJSON, "plantillas": templates, "canChooseTemplate": canChooseTemplate, "csrfToken": csrf.TokenFromContext(ctx), "role": sess.Get("role")}, "layouts/base")
+}
+
+func invoiceParticipantNames(f *models.Factura) (string, string) {
+	issuer, recipient := "Participante", "Participante"
+	if f.Emisor != nil && f.Emisor.NombreLegal != "" {
+		issuer = f.Emisor.NombreLegal
+	} else if f.EmisorTipo == models.EmisorFacturaPublicador && f.Publicador != nil && f.Publicador.User != nil {
+		issuer = f.Publicador.User.Name
+	} else if f.EmisorTipo == models.EmisorFacturaChofer && f.Chofer != nil && f.Chofer.User != nil {
+		issuer = f.Chofer.User.Name
+	}
+	if f.Receptor != nil && f.Receptor.NombreLegal != "" {
+		recipient = f.Receptor.NombreLegal
+	} else if f.EmisorTipo == models.EmisorFacturaPublicador && f.Chofer != nil && f.Chofer.User != nil {
+		recipient = f.Chofer.User.Name
+	} else if f.EmisorTipo == models.EmisorFacturaChofer && f.Publicador != nil && f.Publicador.User != nil {
+		recipient = f.Publicador.User.Name
+	}
+	return issuer, recipient
+}
+
+func invoiceDueDate(value *time.Time) string {
+	if value == nil {
+		return "Sin vencimiento"
+	}
+	return value.Format("02/01/2006")
+}
+
+func invoicePaymentMethod(value *string) string {
+	if value == nil {
+		return "Pendiente de registrar"
+	}
+	return *value
 }
 
 func (c *FacturaController) Create(ctx fiber.Ctx) error {
 	sess := session.FromContext(ctx)
+	user, err := c.currentUser(ctx)
+	if err != nil {
+		return fiber.ErrForbidden
+	}
 	cargaID := ctx.Query("carga_id")
 	var carga *models.Carga
+	var templates []models.FacturaPlantilla
 	if cargaID != "" {
-		var err error
 		carga, err = c.cargaService.GetByID(cargaID)
 		if err != nil {
 			return fiber.ErrNotFound
@@ -184,21 +254,126 @@ func (c *FacturaController) Create(ctx fiber.Ctx) error {
 			return err
 		}
 	}
+	ownerID := uint(0)
+	if user.Role == "publicador" {
+		profile, profileErr := c.publicadorForUser(user)
+		if profileErr != nil {
+			return fiber.ErrForbidden
+		}
+		ownerID = profile.ID
+	} else if carga != nil {
+		ownerID = carga.PublicadorID
+	}
+	if ownerID > 0 {
+		templates, err = services.NewFacturaPlantillaService().List(ownerID)
+		if services.IsInfrastructureError(err) {
+			return fiber.ErrServiceUnavailable
+		}
+	}
 	return ctx.Render("facturas/create", fiber.Map{
 		"title": "Nueva Factura", "flash_error": ctx.Query("flash_error"),
-		"carga":     carga,
-		"csrfToken": csrf.TokenFromContext(ctx),
-		"role":      sess.Get("role"),
+		"carga":      carga,
+		"plantillas": templates,
+		"csrfToken":  csrf.TokenFromContext(ctx),
+		"role":       sess.Get("role"),
 	}, "layouts/base")
 }
 
-// Studio is an isolated invoice-layout sandbox. It never creates, edits or
-// emits a financial document; layouts remain local to the current browser.
+// Studio manages broker-owned invoice layouts used by newly created documents.
 func (c *FacturaController) Studio(ctx fiber.Ctx) error {
 	ctx.Set("Cache-Control", "no-store, private")
+	user, err := c.currentUser(ctx)
+	if err != nil || user.Role != "publicador" {
+		return fiber.ErrForbidden
+	}
+	if _, err := c.publicadorForUser(user); err != nil {
+		return fiber.ErrForbidden
+	}
 	return ctx.Render("admin/invoice_studio", fiber.Map{
 		"title": "Diseñador de facturas", "csrfToken": csrf.TokenFromContext(ctx),
+		"templatesEndpoint": "/facturas/plantillas",
 	}, "layouts/base")
+}
+
+func (c *FacturaController) ListTemplates(ctx fiber.Ctx) error {
+	user, err := c.currentUser(ctx)
+	if err != nil || user.Role != "publicador" {
+		return fiber.ErrForbidden
+	}
+	profile, err := c.publicadorForUser(user)
+	if err != nil {
+		return fiber.ErrForbidden
+	}
+	templates, err := services.NewFacturaPlantillaService().List(profile.ID)
+	if err != nil {
+		return fiber.ErrServiceUnavailable
+	}
+	data := make([]fiber.Map, 0, len(templates))
+	for i := range templates {
+		data = append(data, invoiceTemplateResponse(&templates[i]))
+	}
+	return ctx.JSON(fiber.Map{"data": data})
+}
+
+func (c *FacturaController) SaveTemplate(ctx fiber.Ctx) error {
+	user, err := c.currentUser(ctx)
+	if err != nil || user.Role != "publicador" {
+		return fiber.ErrForbidden
+	}
+	profile, err := c.publicadorForUser(user)
+	if err != nil {
+		return fiber.ErrForbidden
+	}
+	config := ctx.FormValue("config")
+	if len(config) > 8192 {
+		return fiber.ErrRequestEntityTooLarge
+	}
+	if len(config) == 0 {
+		return fiber.ErrBadRequest
+	}
+	var input services.FacturaPlantillaInput
+	if err := json.Unmarshal([]byte(config), &input); err != nil {
+		return fiber.ErrBadRequest
+	}
+	row, err := services.NewFacturaPlantillaService().Save(profile.ID, input)
+	if err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "No se pudo guardar el diseño: revisa nombre y bloques obligatorios."})
+	}
+	return ctx.Status(fiber.StatusCreated).JSON(fiber.Map{"data": invoiceTemplateResponse(row)})
+}
+
+func invoiceTemplateResponse(row *models.FacturaPlantilla) fiber.Map {
+	var blocks []string
+	_ = json.Unmarshal([]byte(row.BloquesJSON), &blocks)
+	return fiber.Map{
+		"id": row.ID, "name": row.Nombre, "preset": row.Preset, "format": row.Formato,
+		"color": row.Color, "blocks": blocks, "default": row.Predeterminada,
+	}
+}
+
+func (c *FacturaController) ChooseTemplate(ctx fiber.Ctx) error {
+	user, err := c.currentUser(ctx)
+	if err != nil || user.Role != "publicador" {
+		return fiber.ErrForbidden
+	}
+	profile, err := c.publicadorForUser(user)
+	if err != nil {
+		return fiber.ErrForbidden
+	}
+	value := ctx.FormValue("plantilla_id")
+	var templateID *uint
+	if value != "" && value != "0" {
+		parsed, parseErr := strconv.ParseUint(value, 10, 32)
+		if parseErr != nil || parsed == 0 {
+			return fiber.ErrBadRequest
+		}
+		id := uint(parsed)
+		templateID = &id
+	}
+	if err := c.service.SetTemplate(ctx.Params("id"), profile.ID, templateID); err != nil {
+		return fiber.ErrBadRequest
+	}
+	return ctx.Redirect().To("/facturas/" + ctx.Params("id") + "?flash_success=Formato de factura actualizado")
 }
 
 func (c *FacturaController) Store(ctx fiber.Ctx) error {
@@ -238,6 +413,7 @@ func (c *FacturaController) Store(ctx fiber.Ctx) error {
 	}
 	f := models.Factura{
 		CargaID:          req.CargaID,
+		PlantillaID:      nil,
 		EmisorTipo:       models.TipoEmisorFactura(user.Role),
 		NumeroFactura:    req.NumeroFactura,
 		FechaEmision:     fechaEmision,
@@ -250,6 +426,9 @@ func (c *FacturaController) Store(ctx fiber.Ctx) error {
 		Moneda:           models.Moneda(req.Moneda),
 		Estado:           models.FacturaBorrador,
 		MetodoPago:       strPtr(req.MetodoPago),
+	}
+	if req.PlantillaID > 0 {
+		f.PlantillaID = &req.PlantillaID
 	}
 	switch user.Role {
 	case "publicador":

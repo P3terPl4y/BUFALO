@@ -125,7 +125,7 @@
     </section>
 
     <!-- ══════════ TABLA ══════════ -->
-    <section class="tf-table-card">
+    <section class="tf-table-card" data-entity-view data-view-key="loads">
         <header class="tf-table-card__header">
             <h3 class="tf-table-card__title">
                 <i class="bi bi-list-ul"></i> Resultados
@@ -134,9 +134,33 @@
                 {{ if .total }}{{ .total }}{{ else }}0{{ end }}
                 {{ if eq .total 1 }}carga{{ else }}cargas{{ end }}
             </span>
+            <div data-view-toolbar></div>
         </header>
 
-        <div class="table-responsive">
+        <div data-view-cards>
+            <div class="entity-card-grid">
+                {{ range .loads }}
+                <article class="entity-card">
+                    <div class="entity-card__identity"><div class="entity-card__avatar">
+                        {{ if and .Publicador .Publicador.User .Publicador.User.ProfilePhoto }}<img src="{{ .Publicador.User.ProfilePhoto }}" alt="Foto de {{ .Publicador.User.Name }}" loading="lazy">{{ else }}<i class="bi bi-box-seam"></i>{{ end }}
+                    </div><div><h3>{{ .NumeroReferencia }}</h3><p>Carga #{{ .ID }}</p></div></div>
+                    <div class="entity-card__badges">
+                        {{ if eq .Estado "publicada" }}<span class="badge bg-success">Publicada</span>{{ end }}{{ if eq .Estado "negociando" }}<span class="badge bg-info">Negociando</span>{{ end }}{{ if eq .Estado "asignada" }}<span class="badge bg-warning">Asignada</span>{{ end }}{{ if eq .Estado "en_transito" }}<span class="badge bg-info">En tránsito</span>{{ end }}{{ if eq .Estado "entregada" }}<span class="badge bg-primary">Entregada</span>{{ end }}{{ if eq .Estado "cancelada" }}<span class="badge bg-danger">Cancelada</span>{{ end }}
+                    </div>
+                    <dl class="entity-card__details">
+                        <div><dt>Publicador</dt><dd>{{ if and .Publicador .Publicador.User }}<span class="entity-table-user">{{ if .Publicador.User.ProfilePhoto }}<img src="{{ .Publicador.User.ProfilePhoto }}" alt="" loading="lazy">{{ end }}{{ .Publicador.User.Name }}</span>{{ else }}—{{ end }}</dd></div>
+                        <div><dt>Chofer</dt><dd>{{ if and .Chofer .Chofer.User }}<span class="entity-table-user">{{ if .Chofer.User.ProfilePhoto }}<img src="{{ .Chofer.User.ProfilePhoto }}" alt="" loading="lazy">{{ end }}{{ .Chofer.User.Name }}</span>{{ else }}No asignado{{ end }}</dd></div>
+                        <div><dt>Ruta</dt><dd>{{ if .OrigenDireccion }}{{ .OrigenDireccion.Ciudad }}, {{ .OrigenDireccion.EstadoProvincia }}{{ else }}—{{ end }} → {{ if .DestinoDireccion }}{{ .DestinoDireccion.Ciudad }}, {{ .DestinoDireccion.EstadoProvincia }}{{ else }}—{{ end }}</dd></div>
+                        <div><dt>Recogida</dt><dd>{{ .FechaRecogida.Format "02/01/2006 15:04" }}</dd></div>
+                        <div><dt>Tarifa</dt><dd>{{ if .TarifaTotal }}{{ .TarifaTotal }} {{ .Moneda }}{{ else }}—{{ end }}</dd></div>
+                    </dl>
+                    <div class="entity-card__actions"><a href="/loads/{{ .ID }}" class="btn btn-outline-primary"><i class="bi bi-eye"></i> Ver</a>{{ if or (eq $.role "publicador") (eq $.role "admin") }}<a href="/loads/{{ .ID }}/edit" class="btn btn-outline-secondary"><i class="bi bi-pencil"></i> Editar</a><form action="/loads/{{ .ID }}/delete" method="POST" onsubmit="return confirm('¿Eliminar esta carga?')"><input type="hidden" name="_csrf" value="{{ $.csrfToken }}"><button type="submit" class="btn btn-outline-danger"><i class="bi bi-trash"></i> Eliminar</button></form>{{ end }}</div>
+                </article>
+                {{ else }}<div class="tf-empty">No se encontraron cargas que coincidan con los filtros aplicados.</div>{{ end }}
+            </div>
+        </div>
+
+        <div data-view-table hidden><div class="table-responsive">
             <table class="tf-table">
                 <thead>
                     <tr>
@@ -255,7 +279,7 @@
                     {{ end }}
                 </tbody>
             </table>
-        </div>
+        </div></div>
 
         {{ if gt .total .perPage }}
         <div class="tf-pagination-wrap">
@@ -287,5 +311,6 @@
         </div>
         {{ end }}
     </section>
+    <script src="/js/entity-view-toggle.js" defer></script>
 
 </div>

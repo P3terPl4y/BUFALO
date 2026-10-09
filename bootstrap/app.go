@@ -23,8 +23,10 @@ func Boot() contractsfoundation.Application {
 					&models.User{},       // FK a Empresa
 					&models.Chofer{},     // FK a User + Empresa
 					&models.Publicador{}, // FK a User + Empresa
-					&models.Carga{},      // FK a Publicador + Empresa + Chofer + Direcciones
-					&models.Factura{},    // FK a Carga + Empresas + Chofer
+					&models.FacturaPlantilla{},
+					&models.EmpresaChatMensaje{},
+					&models.Carga{},   // FK a Publicador + Empresa + Chofer + Direcciones
+					&models.Factura{}, // FK a Carga + Empresas + Chofer
 					models.CargaHistorial{},
 				},
 			})

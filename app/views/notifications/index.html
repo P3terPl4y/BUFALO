@@ -1,0 +1,66 @@
+<main class="notification-page container py-4">
+  <header class="notification-page__header">
+    <div>
+      {{ if .notifications }}<p class="notification-page__eyebrow">TU ACTIVIDAD</p>{{ end }}
+      <h1>Notificaciones</h1>
+      {{ if .notifications }}<p>Actualizaciones importantes sobre tus cargas y empresas.</p>{{ end }}
+    </div>
+    {{ if .notifications }}
+    <div class="notification-page__summary" aria-label="Resumen de notificaciones">
+      <span class="notification-page__summary-count">{{ .unreadCount }}</span>
+      <span>sin leer</span>
+    </div>
+    {{ end }}
+  </header>
+
+  {{ if .notifications }}
+  <ol class="notification-feed" aria-label="Actividad reciente">
+    {{ range .notifications }}
+    {{ $actorURL := userProfileURL .Actor }}
+    {{ $resourceURL := notificationResourceURL .ResourceType .ResourceID }}
+    <li>
+      <article class="notification-card{{ if not .ReadAt }} notification-card--unread{{ end }}" aria-label="{{ if not .ReadAt }}No leída: {{ end }}{{ .Title }}">
+        <div class="notification-card__icon" aria-hidden="true"><i class="bi {{ notificationIcon .EventType }}"></i></div>
+        <div class="notification-card__content">
+          <header class="notification-card__meta">
+            <span class="notification-card__kind">{{ notificationLabel .EventType }}</span>
+            <time datetime="{{ .CreatedAt.Format "2006-01-02T15:04:05Z07:00" }}">{{ .CreatedAt.Format "02/01/2006 · 15:04" }}</time>
+          </header>
+          <h2>{{ .Title }}</h2>
+          <p class="notification-card__message">{{ .Message }}</p>
+
+          <div class="notification-card__actor">
+            {{ if and .Actor .Actor.ProfilePhoto }}
+            <img class="notification-card__avatar" src="{{ .Actor.ProfilePhoto }}" alt="" loading="lazy">
+            {{ else }}<span class="notification-card__avatar notification-card__avatar--fallback" aria-hidden="true"><i class="bi bi-person-fill"></i></span>{{ end }}
+            <span>Por
+              {{ if $actorURL }}<a href="{{ $actorURL }}">{{ .Actor.Name }}</a>
+              {{ else if .Actor }}<strong>{{ .Actor.Name }}</strong>
+              {{ else }}<strong>BUFALO</strong>{{ end }}
+            </span>
+          </div>
+
+          <footer class="notification-card__actions">
+            {{ if $resourceURL }}
+              {{ if eq .ResourceType "load" }}<a class="notification-card__link" href="{{ $resourceURL }}"><i class="bi bi-box-arrow-up-right" aria-hidden="true"></i> Ver carga</a>
+              {{ else if eq .ResourceType "company" }}<a class="notification-card__link" href="{{ $resourceURL }}"><i class="bi bi-building" aria-hidden="true"></i> Ver empresa</a>{{ end }}
+            {{ end }}
+            {{ if not .ReadAt }}
+            <form method="POST" action="/notifications/{{ .ID }}/read">
+              <input type="hidden" name="_csrf" value="{{ $.csrfToken }}">
+              <button class="notification-card__read" type="submit"><i class="bi bi-check2" aria-hidden="true"></i> Marcar como leída</button>
+            </form>
+            {{ else }}<span class="notification-card__read-state"><i class="bi bi-check2-all" aria-hidden="true"></i> Leída</span>{{ end }}
+          </footer>
+        </div>
+        {{ if not .ReadAt }}<span class="notification-card__unread-dot" aria-label="No leída"></span>{{ end }}
+      </article>
+    </li>
+    {{ end }}
+  </ol>
+  {{ else }}
+  <p class="notification-page__empty">Tu bandeja está vacía.</p>
+  {{ end }}
+
+  {{ if .hasNext }}<nav class="notification-page__pagination" aria-label="Paginación de notificaciones"><a class="btn btn-outline-primary" href="?page={{ .nextPage }}">Ver notificaciones anteriores <i class="bi bi-arrow-down" aria-hidden="true"></i></a></nav>{{ end }}
+</main>

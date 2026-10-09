@@ -362,6 +362,9 @@ func TestProductionJourneys(t *testing.T) {
 		"destino_direccion_id": {u(fx.addressID + 1)}, "fecha_recogida": {now},
 		"tipo_carga": {"FTL"}, "tipo_equipo": {"dry_van"}, "peso_kg": {"1200"},
 		"distancia_km": {"20"}, "tarifa_total": {"500"}, "moneda": {"USD"}, "audiencia": {"load_board"},
+		// A forged form must not choose ownership, assignment, or state.
+		"empresa_id": {u(fx.brokerIDs[1])}, "publicador_id": {"99999999"},
+		"chofer_id": {u(*driver.user.ChoferID)}, "estado": {string(models.CargaEntregada)},
 	}
 	res := request(t, owner.client, http.MethodPost, "/loads", loadForm, owner.csrf, "")
 	if res.StatusCode != http.StatusSeeOther {
@@ -372,7 +375,7 @@ func TestProductionJourneys(t *testing.T) {
 	if err := facades.Orm().Query().Where("numero_referencia = ?", "FLOW-LOAD-001").First(&load); err != nil {
 		t.Fatalf("load create was not persisted: %v", err)
 	}
-	if load.Estado != models.CargaPublicada || load.PublicadorID == 0 {
+	if load.Estado != models.CargaPublicada || load.PublicadorID == 0 || load.PublicadorID != *owner.user.PublicadorID || load.EmpresaID != fx.brokerIDs[0] || load.ChoferID != nil {
 		t.Fatalf("new load has invalid ownership/state: %+v", load)
 	}
 	loadForm.Set("numero_referencia", "FLOW-LOAD-001-EDIT")
