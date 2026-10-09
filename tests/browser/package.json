@@ -2,7 +2,8 @@
   "private": true,
   "scripts": {
     "test:admin": "node admin-crud.cjs",
-    "test:registration": "node registration.cjs"
+    "test:registration": "node registration.cjs",
+    "test:invoice": "node invoice-studio.cjs"
   },
   "devDependencies": {
     "playwright": "1.63.0"

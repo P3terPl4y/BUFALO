@@ -8,6 +8,10 @@
     const paper = document.getElementById('studioPaper');
     const notice = document.getElementById('studioNotice');
     const modules = new Map();
+    const maxModules = 16;
+    const maxBlocks = 16;
+    const maxSavedDesigns = 12;
+    let initialized = false;
     const presets = {
         classic: { preset: 'classic', name: 'Factura clásica', format: 'a4', color: '#253746', currency: 'CUP', blocks: ['brand', 'parties', 'details', 'items', 'totals', 'payment', 'notes', 'signature'] },
         modern: { preset: 'modern', name: 'Factura moderna', format: 'a4', color: '#9a6810', currency: 'USD', blocks: ['brand', 'details', 'parties', 'items', 'totals', 'payment', 'signature'] },
@@ -26,12 +30,13 @@
         ['signature', 'Firma y cierre', 'Firma y agradecimiento', 'pen', () => `<div class="bf-paper-signature"><span>Firma autorizada</span><strong>Gracias por su preferencia</strong></div>`]
     ];
     function attachModule(id, module) {
-        if (!/^[a-z][a-z0-9_-]{0,31}$/.test(id) || modules.has(id) || modules.size >= 16 || !module || typeof module.label !== 'string' || typeof module.description !== 'string' || typeof module.render !== 'function') return false;
+        if (!/^[a-z][a-z0-9_-]{0,31}$/.test(id) || modules.has(id) || modules.size >= maxModules || !module || typeof module.label !== 'string' || typeof module.description !== 'string' || typeof module.render !== 'function') return false;
         modules.set(id, module);
         const button = document.createElement('button'); button.type = 'button'; button.draggable = true; button.dataset.block = id;
-        const label = document.createElement('span'); label.innerHTML = `<i class="bi bi-${/^[a-z0-9-]+$/.test(module.icon) ? module.icon : 'puzzle'}"></i> ${safeText(module.label)}`;
+        const label = document.createElement('span'); label.innerHTML = `<i class="bi bi-${typeof module.icon === 'string' && /^[a-z0-9-]+$/.test(module.icon) ? module.icon : 'puzzle'}"></i> ${safeText(module.label.slice(0, 80))}`;
         const description = document.createElement('small'); description.textContent = module.description.slice(0, 80);
         button.append(label, description); wirePaletteButton(button); palette.append(button);
+        if (initialized) render();
         return true;
     }
     function detachModule(id) {
@@ -41,17 +46,30 @@
     }
     definitions.forEach(([id, label, description, icon, renderBlock]) => attachModule(id, { label, description, icon, render: renderBlock }));
     let state = loadState();
-    let dragIndex = -1;
+    initialized = true;
     function loadState() {
         try {
-            const saved = JSON.parse(localStorage.getItem(storageKey) || 'null');
+            const stored = localStorage.getItem(storageKey) || 'null';
+            if (stored.length > 4096) return { ...presets.classic };
+            const saved = JSON.parse(stored);
             if (saved) return sanitizeState(saved);
         } catch (_) { /* Ignore malformed or unavailable browser storage. */ }
         return { ...presets.classic };
     }
+    function savedDesigns() {
+        try {
+            const stored = localStorage.getItem(`${storageKey}.saved`) || '[]';
+            if (stored.length > 65536) return [];
+            const designs = JSON.parse(stored);
+            if (!Array.isArray(designs)) return [];
+            return designs.slice(0, maxSavedDesigns)
+                .filter((item) => item && typeof item === 'object' && typeof item.name === 'string' && Array.isArray(item.blocks) && item.blocks.length <= maxBlocks && new Set(item.blocks).size === item.blocks.length && item.blocks.every((block) => typeof block === 'string' && /^[a-z][a-z0-9_-]{0,31}$/.test(block)))
+                .map((item) => ({ ...sanitizeState(item), name: item.name.slice(0, 48) }));
+        } catch (_) { return []; }
+    }
     function safeText(value) { return String(value).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
     function sanitizeState(value) {
-        if (!value || !Array.isArray(value.blocks) || value.blocks.length > 8 || !value.blocks.every((block) => modules.has(block))) return { ...presets.classic };
+        if (!value || !Array.isArray(value.blocks) || value.blocks.length > maxBlocks || new Set(value.blocks).size !== value.blocks.length || !value.blocks.every((block) => typeof block === 'string' && /^[a-z][a-z0-9_-]{0,31}$/.test(block))) return { ...presets.classic };
         return { name: typeof value.name === 'string' ? value.name.slice(0, 48) : presets.classic.name,
             format: ['a4', 'letter', 'receipt'].includes(value.format) ? value.format : 'a4',
             color: typeof value.color === 'string' && /^#[0-9a-f]{6}$/i.test(value.color) ? value.color : '#253746',
@@ -71,7 +89,8 @@
             const block = document.createElement('section');
             block.className = 'bf-paper-block'; block.dataset.index = String(index); block.dataset.type = type; block.draggable = true;
             const heading = document.createElement('div'); heading.className = 'bf-paper-block__toolbar';
-            const label = modules.get(type).label;
+            const definition = modules.get(type);
+            const label = definition ? definition.label : `Módulo pendiente: ${type}`;
             const title = document.createElement('strong'); title.textContent = label;
             const actions = document.createElement('span');
             for (const [label, movement] of [['↑', -1], ['↓', 1], ['Quitar', 0]]) {
@@ -83,7 +102,14 @@
             }
             actions.append(title); heading.append(actions);
             const content = document.createElement('div'); content.className = `bf-paper-content bf-paper-content--${type}`;
-            content.innerHTML = modules.get(type).render(state);
+            try {
+                if (!definition) content.textContent = 'Este bloque aún no está acoplado en esta sesión.';
+                else {
+                    const output = definition.render(state);
+                    if (typeof output === 'string') content.innerHTML = output;
+                    else content.textContent = 'Este bloque no devolvió contenido válido.';
+                }
+            } catch (_) { content.textContent = 'No se pudo mostrar este bloque.'; }
             block.append(heading, content); canvas.append(block);
         }
         palette.querySelectorAll('[data-block]').forEach((button) => { button.disabled = state.blocks.includes(button.dataset.block); button.classList.toggle('is-added', button.disabled); });
@@ -92,17 +118,16 @@
     }
     function renderSaved() {
         const select = document.getElementById('studioSaved'), current = select.value;
-        let designs = [];
-        try { designs = JSON.parse(localStorage.getItem(`${storageKey}.saved`) || '[]'); } catch (_) { designs = []; }
+        const designs = savedDesigns();
         select.replaceChildren(new Option('Seleccionar diseño guardado', ''));
-        designs.slice(0, 12).forEach((design, index) => select.add(new Option(design.name, String(index))));
+        designs.forEach((design, index) => select.add(new Option(design.name, String(index))));
         if ([...select.options].some((option) => option.value === current)) select.value = current;
     }
     function save() {
         state.name = document.getElementById('studioName').value.trim().slice(0, 48) || 'Diseño sin nombre';
         try {
-            const designs = JSON.parse(localStorage.getItem(`${storageKey}.saved`) || '[]');
-            const next = [{ ...state, blocks: [...state.blocks] }, ...designs.filter((item) => item.name !== state.name)].slice(0, 12);
+            const designs = savedDesigns();
+            const next = [{ ...state, blocks: [...state.blocks] }, ...designs.filter((item) => item.name !== state.name)].slice(0, maxSavedDesigns);
             localStorage.setItem(`${storageKey}.saved`, JSON.stringify(next));
             notice.textContent = `Diseño «${state.name}» guardado en este navegador.`; renderSaved();
         } catch (_) { notice.textContent = 'El navegador no permitió guardar el diseño. Puedes seguir usando la vista previa.'; }
@@ -111,18 +136,19 @@
         button.addEventListener('dragstart', (event) => { event.dataTransfer.setData('text/bufalo-invoice-module', button.dataset.block); event.dataTransfer.effectAllowed = 'copy'; });
         button.addEventListener('click', () => { if (modules.has(button.dataset.block) && !state.blocks.includes(button.dataset.block)) { state.blocks.push(button.dataset.block); render(); } });
     }
-    canvas.addEventListener('dragstart', (event) => { const block = event.target.closest('.bf-paper-block'); if (block) { dragIndex = Number(block.dataset.index); event.dataTransfer.setData('text/bufalo-invoice-order', String(dragIndex)); event.dataTransfer.effectAllowed = 'move'; } });
+    canvas.addEventListener('dragstart', (event) => { const block = event.target.closest('.bf-paper-block'); if (block) { event.dataTransfer.setData('text/bufalo-invoice-order', block.dataset.index); event.dataTransfer.effectAllowed = 'move'; } });
     canvas.addEventListener('dragover', (event) => { if (event.target.closest('.bf-paper-block') || event.target === canvas) { event.preventDefault(); event.dataTransfer.dropEffect = event.dataTransfer.types.includes('text/bufalo-invoice-order') ? 'move' : 'copy'; } });
     canvas.addEventListener('drop', (event) => {
         const target = event.target.closest('.bf-paper-block');
         const targetIndex = target ? Number(target.dataset.index) : state.blocks.length;
         const newBlock = event.dataTransfer.getData('text/bufalo-invoice-module');
-        if (newBlock && modules.has(newBlock) && !state.blocks.includes(newBlock) && state.blocks.length < 8) state.blocks.splice(targetIndex, 0, newBlock);
-        else {
+        if (newBlock) {
+            if (modules.has(newBlock) && !state.blocks.includes(newBlock) && state.blocks.length < maxBlocks) state.blocks.splice(Math.min(targetIndex, state.blocks.length), 0, newBlock);
+        } else if (event.dataTransfer.types.includes('text/bufalo-invoice-order')) {
             const source = Number(event.dataTransfer.getData('text/bufalo-invoice-order'));
             if (Number.isInteger(source) && source >= 0 && source < state.blocks.length) { const [item] = state.blocks.splice(source, 1); const adjustedTarget = targetIndex > source ? targetIndex - 1 : targetIndex; state.blocks.splice(Math.min(adjustedTarget, state.blocks.length), 0, item); }
         }
-        dragIndex = -1; event.preventDefault(); render();
+        event.preventDefault(); render();
     });
     document.querySelectorAll('[data-preset]').forEach((button) => button.addEventListener('click', () => { state = { ...presets[button.dataset.preset], preset: button.dataset.preset }; render(); }));
     document.getElementById('studioFormat').addEventListener('change', (event) => { state.format = ['a4', 'letter', 'receipt'].includes(event.target.value) ? event.target.value : 'a4'; render(); });

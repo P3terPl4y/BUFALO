@@ -113,3 +113,54 @@ func TestRenderRejectsUnknownFormat(t *testing.T) {
 		t.Fatalf("unknown format error = %v", err)
 	}
 }
+
+func TestSectionReportsKeepOneBoundedLayoutAcrossFormats(t *testing.T) {
+	report := Report{Title: "Salud BUFALO", Sections: []Section{{
+		Title: "Tráfico", Headers: []string{"Indicador", "Valor"},
+		Rows: [][]Cell{{{Value: "Rechazos"}, Number(42)}, {{Value: "Texto no confiable"}, {Value: "=1+1"}}},
+	}}}
+
+	csvBody, _, _, err := Render(report, "csv")
+	if err != nil {
+		t.Fatal(err)
+	}
+	rows, err := csv.NewReader(bytes.NewReader(bytes.TrimPrefix(csvBody, []byte{0xef, 0xbb, 0xbf}))).ReadAll()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(rows) != 4 || rows[0][0] != "Tráfico" || rows[1][1] != "Indicador" || rows[2][1] != "Rechazos" || rows[2][2] != "42" || rows[3][2] != "'=1+1" {
+		t.Fatalf("section rows or formula protection changed: %#v", rows)
+	}
+
+	xlsx, _, _, err := Render(report, "xlsx")
+	if err != nil {
+		t.Fatal(err)
+	}
+	archive, err := zip.NewReader(bytes.NewReader(xlsx), int64(len(xlsx)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	entries := make(map[string][]byte, len(archive.File))
+	for _, file := range archive.File {
+		opened, openErr := file.Open()
+		if openErr != nil {
+			t.Fatal(openErr)
+		}
+		entries[file.Name], err = io.ReadAll(opened)
+		_ = opened.Close()
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+	if !bytes.Contains(entries["xl/worksheets/sheet1.xml"], []byte(`s="2"`)) || !bytes.Contains(entries["xl/styles.xml"], []byte("styleSheet")) {
+		t.Fatal("section headings or workbook styles are missing")
+	}
+
+	pdf, _, _, err := Render(report, "pdf")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Contains(pdf, []byte("<"+hex.EncodeToString(winAnsi("--- Tráfico ---"))+"> Tj")) {
+		t.Fatal("PDF omitted the section heading")
+	}
+}
